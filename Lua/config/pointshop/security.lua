@@ -21,7 +21,7 @@ category.Products = {
 
     {
         Price = 200,
-        Limit = 5,
+        Limit = 3,
         IsLimitGlobal = false,
         Items = {"coilgunammobox"},
     },
@@ -42,7 +42,7 @@ category.Products = {
 
     {
         Price = 200,
-        Limit = 1,
+        Limit = 2,
         IsLimitGlobal = false,
         Items = {"stungun", "stungundart", "stungundart", "stungundart", "stungundart"},
     },
@@ -58,7 +58,7 @@ category.Products = {
     {
         Identifier = "revolverammo",
         Price = 200,
-        Limit = 1,
+        Limit = 2,
         IsLimitGlobal = false,
         Items = {"revolverround", "revolverround","revolverround", "revolverround", "revolverround", "revolverround"},
     },
@@ -66,7 +66,7 @@ category.Products = {
     {
         Identifier = "smgammo",
         Price = 250,
-        Limit = 5,
+        Limit = 2,
         IsLimitGlobal = false,
         Items = {"smgmagazine", "smgmagazine"},
     },
@@ -74,25 +74,52 @@ category.Products = {
     {
         Identifier = "shotgunammo",
         Price = 250,
-        Limit = 5,
+        Limit = 2,
         IsLimitGlobal = false,
         Items = {"shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell"},
     },
+	
+    {
+        Price = 400,
+        Limit = 2,
+        IsLimitGlobal = false,
+        Items = {"hmgmagazine"},
+    },
+	
+    {
+        Price = 4000,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Items = {"hmg", "hmgmagazine"},
+    },
 
     {
-        Price = 390,
+        Price = 350,
         Limit = 3,
         IsLimitGlobal = false,
         Items = {"stungrenade"},
     },
 
     {
-        Price = 600,
+        Price = 400,
         Limit = 1,
         IsLimitGlobal = false,
         Items = {"flamer", "incendiumfueltank"},
     },
-
+	
+    {
+        Price = 1250,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Items = {"thermalgoggles"},
+    },
+	
+    {
+        Price = 2000,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Items = {"dirtybomb"},
+    },
 }
 
 return category

@@ -5,7 +5,7 @@ event.Name = "EmergencyTeam"
 event.MinRoundTime = 5
 event.MinIntensity = 0.8
 event.MaxIntensity = 1
-event.ChancePerMinute = 0.05
+event.ChancePerMinute = 0.075
 event.OnlyOncePerRound = true
 
 event.Start = function()
@@ -23,11 +23,11 @@ event.Start = function()
 
     local area = areas[math.random(#areas)]
 
-    local jobs = {"mechanic", "engineer"}
-
-    for i = 1, 4, 1 do
+    local crew = {"mechanic", "engineer", "mechanic", "engineer"}
+    for k, v in pairs(crew) do
         local info = CharacterInfo(Identifier("human"))
-        info.Job = Job(JobPrefab.Get(jobs[math.random(#jobs)]), false)
+		info.Name = "Emergency " .. info.Name
+        info.Job = Job(JobPrefab.Get(v), false)
 
         local character = Character.Create(info, area.WorldPosition, info.Name, 0, false, true)
 
@@ -56,8 +56,15 @@ event.Start = function()
         local leakOrderPrefab = OrderPrefab.Prefabs["fixleaks"]
         local leakOrder = Order(leakOrderPrefab, nil, nil).WithManualPriority(CharacterInfo.HighestManualOrderPriority)
         character.SetOrder(leakOrder, true, false, true)
-    end
+		
+        Traitormod.GhostRoles.Ask("Emergency " .. k, function (client)
+            Traitormod.LostLivesThisRound[client.SteamID] = false
+            client.SetClientCharacter(character)
 
+            Traitormod.SendMessageCharacter(character, Traitormod.Language.EmergencyYou, "InfoFrameTabButton.Mission")
+        end, character)
+    end
+	
     local text = Traitormod.Language.EmergencyTeam
     Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
 

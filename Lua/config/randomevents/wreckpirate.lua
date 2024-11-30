@@ -8,8 +8,8 @@ event.MaxIntensity = 1
 event.ChancePerMinute = 0.15
 event.OnlyOncePerRound = true
 
-event.AmountPoints = 800
-event.AmountPointsPirate = 500
+event.AmountPoints = 1000
+event.AmountPointsPirate = 850
 
 event.Start = function ()
     if #Level.Loaded.Wrecks == 0 then
@@ -74,35 +74,48 @@ event.Start = function ()
 
     Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("smgmagazine"), character.Inventory)
     Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("smgmagazine"), character.Inventory)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antiparalysis"), character.Inventory)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antiparalysis"), character.Inventory)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("oxygenitetank"), character.Inventory)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("oxygenitetank"), character.Inventory)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("oxygenitetank"), character.Inventory)
     Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("oxygenitetank"), character.Inventory)
 
     for i = 1, 12, 1 do
         Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("shotgunshell"), character.Inventory)
     end
-
-    for i = 1, 4, 1 do
-        Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antibiotics"), character.Inventory)
-    end
+	
     local toolbelt = character.Inventory.GetItemInLimbSlot(InvSlotType.Bag)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antidama1"), toolbelt.OwnInventory)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antidama1"), toolbelt.OwnInventory)
-    for i = 1, 6, 1 do
-        Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antibleeding1"), toolbelt.OwnInventory)
-    end
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("alienblood"), toolbelt.OwnInventory)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("fuelrod"), toolbelt.OwnInventory)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("underwaterscooter"), toolbelt.OwnInventory, nil, nil, function (item)
-        Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("batterycell"), item.OwnInventory)
-    end)
-    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("handheldsonar"), toolbelt.OwnInventory, nil, nil, function (item)
-        Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("batterycell"), item.OwnInventory)
-    end)
+    toolbelt.Drop()
+    Entity.Spawner.AddEntityToRemoveQueue(toolbelt)
 
+    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("artmod_toolbelt"), character.Inventory, nil, nil, function (item)
+		Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("underwaterscooter"), item.OwnInventory, nil, nil, function (item)
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("batterycell"), item.OwnInventory)
+		end)
+		Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("handheldsonar"), item.OwnInventory, nil, nil, function (item)
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("batterycell"), item.OwnInventory)
+		end)
+		for i = 1, 1, 1 do
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("fuelrod"), item.OwnInventory)
+		end
+		for i = 1, 2, 1 do
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antiparalysis"), item.OwnInventory)
+		end
+		for i = 1, 2, 1 do
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antidama1"), item.OwnInventory)
+		end
+		for i = 1, 2, 1 do
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antibloodloss2"), item.OwnInventory)
+		end
+		for i = 1, 4, 1 do
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antibiotics"), item.OwnInventory)
+		end
+		for i = 1, 2, 1 do
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("ringerssolution"), item.OwnInventory)
+		end
+		for i = 1, 6, 1 do
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("antibleeding1"), item.OwnInventory)
+		end
+		for i = 1, 2, 1 do
+			Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("gypsum"), item.OwnInventory)
+		end
+	end)
     local oldClothes = character.Inventory.GetItemInLimbSlot(InvSlotType.InnerClothes)
     oldClothes.Drop()
     Entity.Spawner.AddEntityToRemoveQueue(oldClothes)

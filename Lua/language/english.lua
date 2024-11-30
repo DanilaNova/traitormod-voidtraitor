@@ -190,6 +190,7 @@ language.ClownMagic = "You feel a strange sensation, and suddenly you're somewhe
 language.CommunicationsOffline = "Something is interfering with all our communications systems. It's been estimated that communications will be offline for atleast %s minutes."
 language.CommunicationsBack = "Communications are back online."
 language.EmergencyTeam = "A group of engineers and mechanics have entered the submarine to assist with repairs."
+language.ElectricalFixDischarge = "An unknown force has repaired all the devices you need for survival by 33% in a submarine"
 language.LightsOff = "All lights suddenly turn off, but power is still on? What's going on?"
 language.MaintenanceToolsDelivery = "A delivery of maintenance tools has been made into the cargo area of the ship. The supplies are inside a yellow crate."
 language.MedicalDelivery = "A medical delivery has been made into the medical area of the ship. The medical supplies are inside a red medical crate."

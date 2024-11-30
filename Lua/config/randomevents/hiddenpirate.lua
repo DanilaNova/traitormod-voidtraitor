@@ -3,7 +3,7 @@ local event = {}
 event.Name = "HiddenPirate"
 event.MinRoundTime = 5
 event.MinIntensity = 0
-event.MaxIntensity = 0.3
+event.MaxIntensity = 0.5
 event.ChancePerMinute = 0.018
 event.OnlyOncePerRound = true
 
@@ -42,7 +42,12 @@ event.Start = function ()
     Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("pirateclothes"), character.Inventory, nil, nil, function (item)
         character.Inventory.TryPutItem(item, character.Inventory.FindLimbSlot(InvSlotType.InnerClothes), true, false, character)
     end)
-
+	
+    Traitormod.GhostRoles.Ask("Hidden Pirate", function (client)
+        Traitormod.LostLivesThisRound[client.SteamID] = false
+        client.SetClientCharacter(character)
+    end, character)
+	
     --local text = "An enemy pirate has been detected near the pumps."
     --Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
 

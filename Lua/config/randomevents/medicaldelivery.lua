@@ -4,11 +4,11 @@ event.Name = "MedicalDelivery"
 event.MinRoundTime = 5
 event.MinIntensity = 0.6
 event.MaxIntensity = 1
-event.ChancePerMinute = 0.03
+event.ChancePerMinute = 0.05
 event.OnlyOncePerRound = false
 
 local cratePrefab = ItemPrefab.GetItemPrefab("mediccrate")
-local items = {"antibleeding1", "antibleeding1", "antibleeding1", "antibleeding1","antibleeding1", "antibleeding1", "antibleeding2", "antibleeding2", "antibloodloss1", "antibloodloss1", "antibloodloss1", "alienblood", "alienblood", "alienblood", "antidama1", "antidama1", "antidama1", "stabilozine", "stabilozine", "stabilozine", "stabilozine", "stabilozine", "stabilozine", "stabilozine","stabilozine", "ethanol", "ethanol", "antibiotics", "calyxanide", "calyxanide", "energydrink", "energydrink", "proteinbar", "proteinbar"}
+local items = { "antidama1", "antidama1", "antidama1", "antidama1", "antibleeding1", "antibleeding1", "antibleeding1", "antibleeding1", "gypsum", "gypsum", "gypsum", "gypsum", "antibiotics", "antibiotics", "antibiotics", "calyxanide", "calyxanide", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture", "mannitol", "mannitol", "mannitol", "antinarc", "antinarc", "antibloodloss2", "antibloodloss2", "antibloodloss2", "antibloodloss2", "energydrink", "energydrink", "ethanol", "ethanol", "aed" }
 
 event.Start = function ()
     local position = nil

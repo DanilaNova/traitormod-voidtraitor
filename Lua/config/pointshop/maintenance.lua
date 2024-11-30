@@ -4,19 +4,31 @@ category.Identifier = "maintenance"
 
 category.Products = {
     {
-        Price = 90,
-        Limit = 1,
+        Price = 50,
+        Limit = 2,
         Items = {"screwdriver"}
     },
 
     {
-        Price = 90,
-        Limit = 1,
+        Price = 50,
+        Limit = 2,
         Items = {"wrench"}
+    },
+	
+    {
+        Price = 150,
+        Limit = 1,
+        Items = {"toolbelt"}
+    },
+	
+	{
+        Price = 400,
+        Limit = 1,
+        Items = {"artmod_toolbelt"}
     },
 
     {
-        Price = 160,
+        Price = 150,
         Limit = 4,
         Items = {"weldingtool", "weldingfueltank"}
     },
@@ -28,24 +40,24 @@ category.Products = {
     },
 
     {
-        Price = 190,
+        Price = 200,
         Limit = 4,
         Items = {"fixfoamgrenade", "fixfoamgrenade"}
     },
 
     {
-        Price = 140,
+        Price = 150,
         Limit = 4,
         Items = {"repairpack", "repairpack", "repairpack", "repairpack"}
     },
 
     {
         Identifier = "fuelrodlowquality",
-        Price = 260,
+        Price = 250,
         Limit = 10,
-
         Items = {{Identifier = "fuelrod", Condition = 9}},
     },
+	
 }
 
 return category
