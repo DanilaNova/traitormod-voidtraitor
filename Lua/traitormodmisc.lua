@@ -48,6 +48,7 @@ Hook.Add("think", "Traitormod.MiscThink", function ()
     if not Traitormod.RoundEvents.EventExists("OutpostPirateAttack") then return end
     if Traitormod.RoundEvents.IsEventActive("OutpostPirateAttack") then return end
     if Traitormod.SelectedGamemode == nil or Traitormod.SelectedGamemode.Name ~= "Secret" then return end
+    if not Level.Loaded.EndOutpost then return end
 
     local targets = {}
     local outpost = Level.Loaded.EndOutpost.WorldPosition
