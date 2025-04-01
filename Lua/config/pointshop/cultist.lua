@@ -131,7 +131,7 @@ category.Products = {
         Identifier = "huskautoinjector",
         Price = 500,
         Limit = 5,
-        IsLimitGlobal = false,
+        IsLimitGlobal = true,
         Action = function (client)
             local prefabInjector = ItemPrefab.GetItemPrefab("autoinjectorheadset")
             local prefabUEX = ItemPrefab.GetItemPrefab("huskeggs")
@@ -189,7 +189,7 @@ category.Products = {
 
     {
         Identifier = "choke",
-        Price = 500,
+        Price = 425,
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)
@@ -212,7 +212,7 @@ category.Products = {
 
     {
         Identifier = "fakehandcuffs",
-        Price = 400,
+        Price = 300,
         Limit = 2,
         IsLimitGlobal = false,
         Action = function (client)
@@ -227,8 +227,9 @@ category.Products = {
 
     {
         Identifier = "spawnhusk",
-        Price = 300,
+        Price = 400,
         Limit = 5,
+        IsLimitGlobal = true,
         Action = function (client, product, items)
             Entity.Spawner.AddCharacterToSpawnQueue("husk", client.Character.WorldPosition, function (character)
             end)
@@ -283,8 +284,8 @@ category.Products = {
     },
 
     {
-        Price = 950,
-        Limit = 3,
+        Price = 800,
+        Limit = 2,
         IsLimitGlobal = false,
         Items = {"detonator"},
     },

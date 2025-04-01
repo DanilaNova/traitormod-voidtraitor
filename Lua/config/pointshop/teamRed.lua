@@ -75,12 +75,6 @@ category.Products = {
 			end, nil, nil, InvSlotType.OuterClothes)
 
 			local injector = ItemPrefab.GetItemPrefab("autoinjectorheadset") -- Шаблон инжектора
-				if headset then
-					local wifi = headset.GetComponentString("WifiComponent")
-					if wifi then
-						wifi.TeamID = CharacterTeamType.Team2
-					end
-				end
 			Entity.Spawner.AddItemToSpawnQueue(injector, client.Character.Inventory, nil, nil, function(item)
 				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.Prefabs["combatstimulantsyringe"], item.OwnInventory)
 			end, nil, nil, InvSlotType.Headset)

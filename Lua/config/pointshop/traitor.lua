@@ -73,7 +73,7 @@ end
 category.Products = {
     {
         Identifier = "explosiveautoinjector",
-        Price = 1750,
+        Price = 1100,
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)
@@ -109,7 +109,7 @@ category.Products = {
 
     {
         Identifier = "teleporterrevolver",
-        Price = 1250,
+        Price = 1150,
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)
@@ -135,7 +135,7 @@ category.Products = {
 
     {
         Identifier = "choke",
-        Price = 500,
+        Price = 425,
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)
@@ -158,7 +158,7 @@ category.Products = {
 
     {
         Identifier = "fakehandcuffs",
-        Price = 400,
+        Price = 300,
         Limit = 2,
         IsLimitGlobal = false,
         Action = function (client)
@@ -181,8 +181,8 @@ category.Products = {
 
     {
         Price = 640,
-        Limit = 5,
-        IsLimitGlobal = false,
+        Limit = 2,
+        IsLimitGlobal = true,
         Items = {"shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell"},
     },
 
@@ -194,14 +194,14 @@ category.Products = {
     },
 
     {
-        Price = 400,
-        Limit = 5,
-        IsLimitGlobal = false,
-        Items = {"smgmagazine"},
+        Price = 650,
+        Limit = 2,
+        IsLimitGlobal = true,
+        Items = {"smgmagazine", "smgmagazine"},
     },
 
     {
-        Price = 1000,
+        Price = 750,
         Limit = 1,
         IsLimitGlobal = false,
         Items = {"flamerunique", "incendiumfueltank"},
@@ -209,14 +209,14 @@ category.Products = {
 
     {
         Price = 800,
-        Limit = 3,
+        Limit = 2,
         IsLimitGlobal = false,
         Items = {"detonator"},
     },
 
     {
         Price = 700,
-        Limit = 5,
+        Limit = 3,
         IsLimitGlobal = false,
         Items = {"uex"},
     },
@@ -252,7 +252,7 @@ category.Products = {
 
     {
         Identifier = "turnofflights",
-        Price = 350,
+        Price = 425,
         Limit = 1,
         IsLimitGlobal = true,
 
@@ -267,7 +267,7 @@ category.Products = {
 
     {
         Identifier = "turnoffcommunications",
-        Price = 400,
+        Price = 740,
         Limit = 1,
         IsLimitGlobal = true,
 

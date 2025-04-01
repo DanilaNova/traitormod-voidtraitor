@@ -105,7 +105,7 @@ category.Products = {
 
     {
         Identifier = "fakehandcuffs",
-        Price = 200,
+        Price = 300,
         Limit = 2,
         IsLimitGlobal = false,
         Action = function (client)

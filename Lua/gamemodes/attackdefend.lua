@@ -21,7 +21,7 @@ local function SpawnCharacter(client, team, existingCharacter)
     else
         local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]
 
-        existingCharacter.SetOriginalTeam(team.TeamID)
+        existingCharacter.TeamID = team.TeamID
         existingCharacter.UpdateTeam()
         existingCharacter.TeleportTo(spawnPoint.WorldPosition)
 
@@ -46,6 +46,8 @@ local function SpawnCharacter(client, team, existingCharacter)
 end
 
 local function ChooseTeam(client, team1, team2)
+    if client.SpectateOnly then return end 
+
     for key, value in pairs(team1.Members) do
         if value == client then return end
     end
