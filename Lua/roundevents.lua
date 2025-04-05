@@ -9,6 +9,9 @@ re.EventConfigs = Traitormod.Config.RandomEventConfig
 
 re.AllowedEvents = {}
 
+---Checks if event is happenning right now
+---@param eventName string event.Name field
+---@return boolean
 re.IsEventActive = function (eventName)
     if re.OnGoingEvents[eventName] then
         return true
@@ -16,6 +19,9 @@ re.IsEventActive = function (eventName)
     return false
 end
 
+---Checks if event is registered in the mod
+---@param eventName string event.Name field
+---@return boolean
 re.EventExists = function (eventName)
     local event = nil
     for _, value in pairs(re.EventConfigs.Events) do
@@ -27,6 +33,8 @@ re.EventExists = function (eventName)
     return event ~= nil
 end
 
+---Triggers event
+---@param eventName string event.Name field
 re.TriggerEvent = function (eventName)
     if not Game.RoundStarted then
         Traitormod.Error("Tried to trigger event " .. eventName .. ", but round is not started.")
@@ -39,6 +47,7 @@ re.TriggerEvent = function (eventName)
     end
 
     local event = nil
+    --// TODO: maybe change so the event name can be used for searching
     for _, value in pairs(re.EventConfigs.Events) do
         if value.Name == eventName then
             event = value
@@ -69,6 +78,8 @@ re.TriggerEvent = function (eventName)
     Traitormod.Log("Event " .. eventName .. " triggered.")
 end
 
+---Randomly triggers an event if conditions are met
+---@param event RandomEvent
 re.CheckRandomEvent = function (event)
     if event.MinRoundTime ~= nil and Traitormod.RoundTime / 60 < event.MinRoundTime then
         return
