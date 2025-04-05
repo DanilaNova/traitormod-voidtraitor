@@ -97,7 +97,7 @@ category.Products = {
 	},
 	
 	{
-        Identifier = "randomizelights",
+        Identifier = "randomlights",
         Price = 400,
         Limit = 3,
         IsLimitGlobal = true,
@@ -110,11 +110,11 @@ category.Products = {
             EndTime = 15,
         },
         CanBuy = function (client, product)
-            return not Traitormod.RoundEvents.IsEventActive("randomizelights")
+            return not Traitormod.RoundEvents.IsEventActive("RandomLights")
         end,
 		
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("randomizelights")
+            Traitormod.RoundEvents.TriggerEvent("RandomLights")
         end
 	},
 	
@@ -132,11 +132,11 @@ category.Products = {
             EndTime = 25,
         },
         CanBuy = function (client, product)
-            return not Traitormod.RoundEvents.IsEventActive("clownmagic")
+            return not Traitormod.RoundEvents.IsEventActive("ClownMagic")
         end,
 		
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("clownmagic")
+            Traitormod.RoundEvents.TriggerEvent("ClownMagic")
         end
 	},
 	
