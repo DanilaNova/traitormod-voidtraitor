@@ -4,45 +4,37 @@ local gm = Traitormod.Gamemodes.Gamemode:new()
 gm.Name = "AttackDefend"
 gm.RequiredGamemode = "sandbox"
 
-local function SpawnCharacter(client, team, existingCharacter)
+local function SpawnCharacter(client, team, character)
     if client.SpectateOnly or client.CharacterInfo == nil then return false end
-
-    if not existingCharacter then
-        local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]
-        local character = Character.Create(client.CharacterInfo, spawnPoint.WorldPosition, client.CharacterInfo.Name, 0, true, true)
-
-        character.TeamID = team.TeamID
-
+    local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]
+    if not character then
+        character = Character.Create(client.CharacterInfo, spawnPoint.WorldPosition, client.CharacterInfo.Name, 0, true, true)
         client.SetClientCharacter(character)
         character.GiveJobItems(false)
         character.LoadTalents()
-
-        character.TeleportTo(spawnPoint.WorldPosition)
-    else
-        local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]
-
-        existingCharacter.TeamID = team.TeamID
-        existingCharacter.UpdateTeam()
-        existingCharacter.TeleportTo(spawnPoint.WorldPosition)
-
-        local innerClothes = existingCharacter.Inventory.GetItemInLimbSlot(InvSlotType.InnerClothes)
-        if innerClothes then
-            innerClothes.SpriteColor = team.Color
-            local color = innerClothes.SerializableProperties[Identifier("SpriteColor")]
-            Networking.CreateEntityEvent(innerClothes, Item.ChangePropertyEventData(color, innerClothes))
-        end
-
-        local card = existingCharacter.Inventory.GetItemInLimbSlot(InvSlotType.Card)
-
-        if card then
-            card.Drop()
-            Entity.Spawner.AddEntityToRemoveQueue(card)
-        end
-
-        Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("idcard"), existingCharacter.Inventory, nil, nil, function (item)
-            item.GetComponentString("IdCard").Initialize(spawnPoint, existingCharacter)
-        end, true, false, InvSlotType.Card)
     end
+
+    character.TeamID = team.TeamID
+    character.UpdateTeam()
+    character.TeleportTo(spawnPoint.WorldPosition)
+
+    local innerClothes = character.Inventory.GetItemInLimbSlot(InvSlotType.InnerClothes)
+    if innerClothes then
+        innerClothes.SpriteColor = team.Color
+        local color = innerClothes.SerializableProperties[Identifier("SpriteColor")]
+        Networking.CreateEntityEvent(innerClothes, Item.ChangePropertyEventData(color, innerClothes))
+    end
+
+    local card = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
+
+    if card then
+        card.Drop()
+        Entity.Spawner.AddEntityToRemoveQueue(card)
+    end
+
+    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("idcard"), character.Inventory, nil, nil, function (item)
+        item.GetComponentString("IdCard").Initialize(spawnPoint, character)
+    end, true, false, InvSlotType.Card)
 end
 
 local function ChooseTeam(client, team1, team2)
