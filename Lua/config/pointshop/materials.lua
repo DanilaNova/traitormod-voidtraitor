@@ -4,44 +4,44 @@ category.Identifier = "materials"
 
 category.Products = {
     {
-        Price = 120,
-        Limit = 4,
+        Price = 50,
+        Limit = 8,
         Items = {"aluminium"}
     },
 
     {
-        Price = 60,
-        Limit = 4,
+        Price = 100,
+        Limit = 6,
         Items = {"steel"}
     },
 
     {
-        Price = 35,
-        Limit = 4,
+        Price = 50,
+        Limit = 8,
         Items = {"iron"}
     },
 
     {
-        Price = 160,
-        Limit = 4,
+        Price = 125,
+        Limit = 6,
         Items = {"plastic"}
     },
 
     {
-        Price = 170,
+        Price = 175,
         Limit = 4,
         Items = {"rubber"}
     },
 
     {
-        Price = 90,
-        Limit = 4,
+        Price = 75,
+        Limit = 8,
         Items = {"copper"}
     },
 
     {
-        Price = 110,
-        Limit = 4,
+        Price = 100,
+        Limit = 6,
         Items = {"tin"}
     },
 
@@ -52,25 +52,25 @@ category.Products = {
     },
 
     {
-        Price = 80,
+        Price = 75,
         Limit = 4,
         Items = {"lead"}
     },
 
     {
-        Price = 100,
+        Price = 125,
         Limit = 4,
         Items = {"titanium"}
     },
 
     {
-        Price = 90,
+        Price = 100,
         Limit = 4,
         Items = {"silicon"}
     },
 
     {
-        Price = 95,
+        Price = 75,
         Limit = 6,
         Items = {"scrap"}
     },
@@ -81,6 +81,18 @@ category.Products = {
         Items = {"fulgurium"}
     },
 
+    {
+        Price = 200,
+        Limit = 4,
+        Items = {"oxygeniteshard"}
+    },
+	
+	{
+        Price = 200,
+        Limit = 4,
+        Items = {"dementonite"}
+    },
+	
     {
         Price = 200,
         Limit = 4,

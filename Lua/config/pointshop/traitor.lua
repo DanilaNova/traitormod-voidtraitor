@@ -73,7 +73,7 @@ end
 category.Products = {
     {
         Identifier = "explosiveautoinjector",
-        Price = 1700,
+        Price = 1100,
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)
@@ -97,60 +97,19 @@ category.Products = {
 
     {
         Identifier = "invisibilitygear",
-        Price = 800,
+        Price = 2650,
         Limit = 1,
-        IsLimitGlobal = false,
-        Action = function (client)
-            local suit = ItemPrefab.GetItemPrefab("divingsuit")
-            Entity.Spawner.AddItemToSpawnQueue(suit, client.Character.Inventory, nil, nil, function (item)
-                local light = item.GetComponentString("LightComponent")
-
-                item.set_InventoryIconColor(Color(100, 100, 100, 50))
-                item.SpriteColor = Color(0, 0, 0, 0)
-                item.Tags = "smallitem"
-                light.LightColor = Color(0, 0, 0, 0)
-
-                local color = item.SerializableProperties[Identifier("SpriteColor")]
-                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(color, item))            
-                local invColor = item.SerializableProperties[Identifier("InventoryIconColor")]
-                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(invColor, item))
-                local lightColor = light.SerializableProperties[Identifier("LightColor")]
-                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(lightColor, light))
-
-                Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("oxygentank"), item.OwnInventory)
-            end)
-
-            local robes = ItemPrefab.GetItemPrefab("cultistrobes")
-            Entity.Spawner.AddItemToSpawnQueue(robes, client.Character.Inventory, nil, nil, function (item)
-
-                item.set_InventoryIconColor(Color(100, 100, 100, 50))
-                item.SpriteColor = Color(0, 0, 0, 0)
-                item.Tags = "smallitem"
-
-                local color = item.SerializableProperties[Identifier("SpriteColor")]
-                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(color, item))            
-                local invColor = item.SerializableProperties[Identifier("InventoryIconColor")]
-                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(invColor, item))
-            end)
-
-            local cap = ItemPrefab.GetItemPrefab("ironhelmet")
-            Entity.Spawner.AddItemToSpawnQueue(cap, client.Character.Inventory, nil, nil, function (item)
-
-                item.set_InventoryIconColor(Color(100, 100, 100, 50))
-                item.SpriteColor = Color(0, 0, 0, 0)
-                item.Tags = "smallitem"
-
-                local color = item.SerializableProperties[Identifier("SpriteColor")]
-                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(color, item))            
-                local invColor = item.SerializableProperties[Identifier("InventoryIconColor")]
-                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(invColor, item))
-            end)
-        end
+        IsLimitGlobal = true,
+        Items = {"artmod_clownclothhide"},
+		Action = function ()
+			local text = Traitormod.Language.InvisibilityTraitor
+			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.PVP")
+		end
     },
 
     {
         Identifier = "teleporterrevolver",
-        Price = 1800,
+        Price = 1150,
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)
@@ -176,7 +135,7 @@ category.Products = {
 
     {
         Identifier = "choke",
-        Price = 500,
+        Price = 425,
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)
@@ -199,7 +158,7 @@ category.Products = {
 
     {
         Identifier = "fakehandcuffs",
-        Price = 400,
+        Price = 300,
         Limit = 2,
         IsLimitGlobal = false,
         Action = function (client)
@@ -213,51 +172,51 @@ category.Products = {
     },
 
     {
-        Price = 1800,
+        Price = 2700,
         Limit = 1,
-        IsLimitGlobal = false,
+        IsLimitGlobal = true,
         Items = {"shotgununique", 
         "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell","shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell"},
     },
 
     {
-        Price = 320,
-        Limit = 5,
-        IsLimitGlobal = false,
+        Price = 640,
+        Limit = 2,
+        IsLimitGlobal = true,
         Items = {"shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell", "shotgunshell"},
     },
 
     {
-        Price = 1600,
+        Price = 2950,
         Limit = 1,
-        IsLimitGlobal = false,
+        IsLimitGlobal = true,
         Items = {"smgunique", "smgmagazine", "smgmagazine"},
     },
 
     {
-        Price = 200,
-        Limit = 5,
-        IsLimitGlobal = false,
-        Items = {"smgmagazine"},
+        Price = 650,
+        Limit = 2,
+        IsLimitGlobal = true,
+        Items = {"smgmagazine", "smgmagazine"},
     },
 
     {
-        Price = 1000,
+        Price = 750,
         Limit = 1,
         IsLimitGlobal = false,
         Items = {"flamerunique", "incendiumfueltank"},
     },
 
     {
-        Price = 950,
-        Limit = 3,
+        Price = 800,
+        Limit = 2,
         IsLimitGlobal = false,
         Items = {"detonator"},
     },
 
     {
         Price = 700,
-        Limit = 5,
+        Limit = 3,
         IsLimitGlobal = false,
         Items = {"uex"},
     },
@@ -278,7 +237,7 @@ category.Products = {
 
     {
         Identifier = "poisonoxygensupply",
-        Price = 1000,
+        Price = 1300,
         Limit = 1,
         IsLimitGlobal = true,
 
@@ -293,7 +252,7 @@ category.Products = {
 
     {
         Identifier = "turnofflights",
-        Price = 350,
+        Price = 425,
         Limit = 1,
         IsLimitGlobal = true,
 
@@ -308,7 +267,7 @@ category.Products = {
 
     {
         Identifier = "turnoffcommunications",
-        Price = 400,
+        Price = 740,
         Limit = 1,
         IsLimitGlobal = true,
 

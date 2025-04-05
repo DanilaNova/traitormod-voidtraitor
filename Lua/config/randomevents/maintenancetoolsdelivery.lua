@@ -4,11 +4,11 @@ event.Name = "MaintenanceToolsDelivery"
 event.MinRoundTime = 5
 event.MinIntensity = 0.6
 event.MaxIntensity = 1
-event.ChancePerMinute = 0.03
+event.ChancePerMinute = 0.05
 event.OnlyOncePerRound = false
 
 local cratePrefab = ItemPrefab.GetItemPrefab("metalcrate")
-local items = {"fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "repairpack", "repairpack", "repairpack", "repairpack", "repairpack", "repairpack", "repairpack", "repairpack", "weldingtool", "weldingfueltank"}
+local items = {"fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "fixfoamgrenade", "repairpack", "repairpack", "repairpack", "repairpack", "repairpack", "repairpack", "repairpack", "repairpack", "weldingtool", "weldingfueltank", "artmod_compactpump"}
 
 event.Start = function ()
     local position = nil

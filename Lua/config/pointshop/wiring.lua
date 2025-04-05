@@ -2,6 +2,11 @@ local category = {}
 
 category.Identifier = "wiring"
 
+category.CanAccess = function(client)
+    return client.Character and not client.Character.IsDead and 
+    (client.Character.HasJob("engineer") or client.Character.HasJob("mechanic"))
+end
+
 category.Products = {
     {
         Price = 400,

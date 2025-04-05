@@ -2,6 +2,11 @@ local category = {}
 
 category.Identifier = "medical"
 
+category.CanAccess = function(client)
+    return client.Character and not client.Character.IsDead and 
+    (client.Character.HasJob("medicaldoctor") or client.Character.HasJob("surgeon"))
+end
+
 -- this is just so i don't need to type out all the 34 different unresearched genetic materials
 local geneticMaterials = {}
 for prefab in ItemPrefab.Prefabs do
@@ -12,25 +17,98 @@ end
 
 category.Products = {
     {
-        Price = 130,
+        Price = 250,
+        Limit = 4,
+        Items = {"antibiotics"}
+    },
+	
+	{
+        Price = 300,
+        Limit = 3,
+        Items = {"thiamine"}
+    },
+	
+	{
+        Price = 300,
+        Limit = 3,
+        Items = {"immunosuppressant"}
+    },
+	
+	{
+        Price = 300,
+        Limit = 3,
+        Items = {"mannitol"}
+    },
+	
+    {
+        Price = 600,
+        Limit = 2,
+        Items = {"mannitolplus"}
+    },
+	
+	{
+        Price = 600,
+        Limit = 2,
+        Items = {"antinarc"}
+    },
+	
+	{
+        Price = 600,
+        Limit = 2,
+        Items = {"antiparalysis"}
+    },
+	
+    {
+        Price = 75,
         Limit = 4,
         Items = {"bandage", "bandage"}
     },
 
     {
-        Price = 130,
-        Limit = 3,
+        Price = 150,
+        Limit = 5,
         Items = {"opium", "opium"}
+    },
+	
+	{
+        Price = 250,
+        Limit = 3,
+        Items = {"antidama2"}
+    },
+	
+	{
+        Price = 100,
+        Limit = 5,
+        Items = {"gypsum"}
+    },
+	
+    {
+        Price = 300,
+        Limit = 2,
+        Items = { "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture" }
+    },
+	
+	
+	{
+        Price = 100,
+        Limit = 5,
+        Items = {"ointment"}
+    },
+
+    {
+        Price = 100,
+        Limit = 5,
+        Items = {"blunttraumaointment"}
     },
 
     {
         Price = 125,
-        Limit = 2,
+        Limit = 4,
         Items = {"antibloodloss1"}
     },
 
     {
-        Price = 80,
+        Price = 75,
         Limit = 4,
         Items = {"ethanol"}
     },
@@ -48,21 +126,15 @@ category.Products = {
     },
 
     {
-        Price = 105,
+        Price = 100,
         Limit = 4,
         Items = {"alienblood"}
     },
 
     {
-        Price = 80,
+        Price = 75,
         Limit = 8,
         Items = {"meth"}
-    },
-
-    {
-        Price = 150,
-        Limit = 8,
-        Items = {"paralyxis"}
     },
 
     {
@@ -70,37 +142,7 @@ category.Products = {
         Limit = 5,
         Items = {"adrenalinegland"}
     },
-
-    {
-        Price = 70,
-        Limit = 5,
-        Items = {"aquaticpoppy"}
-    },
-
-    {
-        Price = 50,
-        Limit = 5,
-        Items = {"elastinplant"}
-    },
-
-    {
-        Price = 60,
-        Limit = 5,
-        Items = {"fiberplant"}
-    },
-
-    {
-        Price = 65,
-        Limit = 5,
-        Items = {"yeastshroom"}
-    },
-
-    {
-        Price = 80,
-        Limit = 5,
-        Items = {"slimebacteria"}
-    },
-
+	
     {
         Price = 250,
         Limit = 5,
@@ -108,20 +150,19 @@ category.Products = {
     },
 
     {
-        Identifier = "gardeningkit",
-        Price = 100,
-        Limit = 2,
-        Items = {"raptorbaneseed", "creepingorangevineseed", "saltvineseed", "tobaccovineseed", "smallplanter", "fertilizer", "wateringcan"}
-    },
-
-    {
-        Price = 1800,
-        Limit = 2,
+        Price = 1500,
+        Limit = 1,
         Items = {"advancedgenesplicer"}
     },
+	
+	{
+        Price = 1000,
+        Limit = 2,
+        Items = {"genesplicer"}
+    },
 
     {
-        Price = 250,
+        Price = 150,
         Limit = 10,
         ItemRandom = true,
         Items = geneticMaterials
