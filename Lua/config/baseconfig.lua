@@ -180,6 +180,37 @@ config.GamemodeConfig = {
         DefendRespawn = 60,
         AttackRespawn = 70,
         WinningPoints = 1000,
+
+        ---Calls on spawning character in AttackDefend
+        ---@param client Barotrauma.Networking.Client
+        ---@param team Team
+        ---@param character Barotrauma.Character
+        ---@return boolean|nil
+        OnPlayerSpawn = function (client, team, character)
+            local innerClothes = character.Inventory.GetItemInLimbSlot(InvSlotType.InnerClothes)
+            if innerClothes then
+                innerClothes.SpriteColor = team.Color
+                local color = innerClothes.SerializableProperties[Identifier("SpriteColor")]
+                Networking.CreateEntityEvent(innerClothes, Item.ChangePropertyEventData(color, innerClothes))
+                innerClothes.NonPlayerTeamInteractable = true
+                local lock = innerClothes.SerializableProperties[Identifier("NonPlayerTeamInteractable")]
+                Networking.CreateEntityEvent(innerClothes, Item.ChangePropertyEventData(lock, innerClothes))
+            end
+
+            local card = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
+
+            if card then
+                card.Drop()
+                Entity.Spawner.AddEntityToRemoveQueue(card)
+            end
+
+            Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("idcard"), character.Inventory, nil, nil, function (item)
+                item.GetComponentString("IdCard").Initialize(spawnPoint, character)
+                item.NonPlayerTeamInteractable = true
+                local lock = item.SerializableProperties[Identifier("NonPlayerTeamInteractable")]
+                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(lock, item))
+            end, true, false, InvSlotType.Card)
+        end
     },
 }
 

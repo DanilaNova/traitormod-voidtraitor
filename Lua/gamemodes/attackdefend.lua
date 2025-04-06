@@ -4,6 +4,11 @@ local gm = Traitormod.Gamemodes.Gamemode:new()
 gm.Name = "AttackDefend"
 gm.RequiredGamemode = "sandbox"
 
+---Spawns character
+---@param client Barotrauma.Networking.Client
+---@param team Team
+---@param character Barotrauma.Character
+---@return boolean|nil
 local function SpawnCharacter(client, team, character)
     if client.SpectateOnly or client.CharacterInfo == nil then return false end
     local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]
@@ -18,15 +23,7 @@ local function SpawnCharacter(client, team, character)
     character.UpdateTeam()
     character.TeleportTo(spawnPoint.WorldPosition)
 
-    local innerClothes = character.Inventory.GetItemInLimbSlot(InvSlotType.InnerClothes)
-    if innerClothes then
-        innerClothes.SpriteColor = team.Color
-        local color = innerClothes.SerializableProperties[Identifier("SpriteColor")]
-        Networking.CreateEntityEvent(innerClothes, Item.ChangePropertyEventData(color, innerClothes))
-    end
-
     local card = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
-
     if card then
         card.Drop()
         Entity.Spawner.AddEntityToRemoveQueue(card)
@@ -34,7 +31,12 @@ local function SpawnCharacter(client, team, character)
 
     Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("idcard"), character.Inventory, nil, nil, function (item)
         item.GetComponentString("IdCard").Initialize(spawnPoint, character)
+        item.NonPlayerTeamInteractable = true
+        local lock = item.SerializableProperties[Identifier("NonPlayerTeamInteractable")]
+        Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(lock, item))
     end, true, false, InvSlotType.Card)
+
+    Traitormod.Config.GamemodeConfig.AttackDefend.OnPlayerSpawn(client, team, character)
 end
 
 local function ChooseTeam(client, team1, team2)
@@ -73,8 +75,10 @@ function gm:Start()
     self.DefendCountDown = self.DefendTime * 60
     self.LastDefendCountDown = self.DefendTime * 60
 
+    ---@type Team[]
     local teams = {}
     self.Teams = teams
+    ---@diagnostic disable-next-line: missing-fields
     teams[1] = {}
     teams[1].Name = "Defender Team"
     teams[1].Spawns = {}
@@ -82,6 +86,7 @@ function gm:Start()
     teams[1].TeamID = CharacterTeamType.Team1
     teams[1].RespawnTime = self.DefendRespawn
     teams[1].Color = Color.Blue
+    ---@diagnostic disable-next-line: missing-fields
     teams[2] = {}
     teams[2].Name = "Attacker Team"
     teams[2].Spawns = {}
