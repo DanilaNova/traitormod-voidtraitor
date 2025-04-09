@@ -93,9 +93,9 @@ category.Products = {
     },
 
     {
-        Price = 10,
-        Limit = 50,
-        Items = {"banana"}
+        Price = 40,
+        Limit = 20,
+        Items = {"bananapeel", "bananapeel", "bananapeel", "bananapeel"}
     },
 	
     {
@@ -163,7 +163,8 @@ category.Products = {
     {
         Identifier = "assistantbot",
         Price = 600,
-        Limit = 5,
+        Limit = 3,
+        IsLimitGlobal = true,
         Action = function (client, product, items)
 			local info = CharacterInfo(Identifier("human"))
 			info.Name = "Assistant " .. info.Name

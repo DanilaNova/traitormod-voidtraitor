@@ -84,7 +84,7 @@ end
 
 category.Products = {
     {
-        Price = 50,
+        Price =0,
         Limit = 8,
         IsLimitGlobal = false,
         Items = {"huskeggs"},
@@ -92,9 +92,9 @@ category.Products = {
 
     {
         Identifier = "huskattractorbeacon",
-        Price = 2000,
+        Price = 3000,
         Limit = 1,
-        IsLimitGlobal = false,
+        IsLimitGlobal = true,
         Action = function (client)
             Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("sonarbeacon"), client.Character.Inventory, nil, nil, function (item)
                 item.Description = "‖color:160, 32, 240, 255‖A modified sonar beacon, behind it says \"Leave it active for 30 seconds for a surprise\"‖color:end‖"
@@ -189,7 +189,7 @@ category.Products = {
 
     {
         Identifier = "choke",
-        Price = 425,
+        Price = 375,
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)
@@ -227,8 +227,8 @@ category.Products = {
 
     {
         Identifier = "spawnhusk",
-        Price = 400,
-        Limit = 5,
+        Price = 600,
+        Limit = 3,
         IsLimitGlobal = true,
         Action = function (client, product, items)
             Entity.Spawner.AddCharacterToSpawnQueue("husk", client.Character.WorldPosition, function (character)
@@ -256,13 +256,6 @@ category.Products = {
     },
 
     {
-        Price = 30,
-        Limit = 4,
-        IsLimitGlobal = false,
-        Items = {"skillbookeuropanmedicine"},
-    },
-
-    {
         Price = 370,
         Limit = 3,
         IsLimitGlobal = false,
@@ -277,10 +270,10 @@ category.Products = {
     },
 
     {
-        Price = 250,
-        Limit = 4,
+        Price = 325,
+        Limit = 3,
         IsLimitGlobal = false,
-        Items = {"chloralhydrate", "chloralhydrate", "chloralhydrate", "chloralhydrate"},
+        Items = {"chloralhydrate", "chloralhydrate"},
     },
 
     {

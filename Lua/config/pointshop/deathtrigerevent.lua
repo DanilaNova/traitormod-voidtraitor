@@ -120,14 +120,14 @@ category.Products = {
 	
 	{
         Identifier = "MedicalDelivery",
-        Price = 1000,
+        Price = 1500,
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 300,
         Timeout = 150,
 
         RoundPrice = {
-            PriceReduction = 500,
+            PriceReduction = 750,
             StartTime = 15,
             EndTime = 25,
         },

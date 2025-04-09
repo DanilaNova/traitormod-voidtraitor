@@ -71,7 +71,7 @@ category.Products = {
 	
 	{
 		Identifier = "organs",
-		Price = 1250,
+		Price = 775,
 		Limit = 1,
 		IsLimitGlobal = false,
 		Action = function(client)
@@ -90,38 +90,38 @@ category.Products = {
     },
 	
     {
-        Price = 500,
+        Price = 750,
         Limit = 2,
         Items = {"cyberleg"}
     },
 	
     {
-        Price = 500,
+        Price = 750,
         Limit = 2,
         Items = {"cyberarm"}
     },
 	
     {
-        Price = 1000,
-        Limit = 1,
+        Price = 350,
+        Limit = 2,
         Items = {"llegp"}
     },
 	
     {
-        Price = 1000,
-        Limit = 1,
+        Price = 350,
+        Limit = 2,
         Items = {"rlegp"}
     },
 	
     {
-        Price = 1000,
-        Limit = 1,
+        Price = 350,
+        Limit = 2,
         Items = {"rarmp"}
     },
 	
     {
-        Price = 1000,
-        Limit = 1,
+        Price = 350,
+        Limit = 2,
         Items = {"larmp"}
     }
 }

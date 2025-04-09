@@ -70,9 +70,9 @@ category.Products = {
     },
 
     {
-        Price = 10,
-        Limit = 50,
-        Items = {"bananapeel"}
+        Price = 40,
+        Limit = 20,
+        Items = {"bananapeel", "bananapeel", "bananapeel", "bananapeel"}
     },
 
     {
@@ -239,10 +239,10 @@ category.Products = {
     },
 
     {
-        Price = 250,
-        Limit = 4,
+        Price = 325,
+        Limit = 3,
         IsLimitGlobal = false,
-        Items = {"chloralhydrate", "chloralhydrate", "chloralhydrate", "chloralhydrate"},
+        Items = {"chloralhydrate", "chloralhydrate", },
     },
 
     {
@@ -250,6 +250,44 @@ category.Products = {
         Limit = 3,
         IsLimitGlobal = false,
         Items = {"detonator"},
+    },
+    
+    {
+        Identifier = "fakehandcuffs",
+        Price = 300,
+        Limit = 2,
+        IsLimitGlobal = false,
+        Action = function (client)
+            -- logic is implemented in pointshop/traitor.lua
+            local handcuffs = ItemPrefab.GetItemPrefab("handcuffs")
+            Entity.Spawner.AddItemToSpawnQueue(handcuffs, client.Character.Inventory, nil, nil, function (item)
+                item.Tags = "fakehandcuffs"
+                Traitormod.SendChatMessage(client, Traitormod.Language.FakeHandcuffsUsage , Color.Aqua)
+            end)
+        end
+    },
+    
+    {
+        Identifier = "choke",
+        Price = 375,
+        Limit = 1,
+        IsLimitGlobal = false,
+        Action = function (client)
+            local revolver = ItemPrefab.GetItemPrefab("ironhelmet")
+            Entity.Spawner.AddItemToSpawnQueue(revolver, client.Character.Inventory, nil, nil, function (item)
+                item.Tags = "chocker"
+                item.Description = Traitormod.Language.Pointshop.choke_desc
+
+                item.set_InventoryIconColor(Color(255, 0, 0, 50))
+                item.SpriteColor = Color(255, 0, 0, 50)
+
+                local color = item.SerializableProperties[Identifier("SpriteColor")]
+                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(color, item))            
+                local invColor = item.SerializableProperties[Identifier("InventoryIconColor")]
+                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(invColor, item))
+
+            end)
+        end  
     },
 
     {

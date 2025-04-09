@@ -135,7 +135,7 @@ category.Products = {
 
     {
         Identifier = "choke",
-        Price = 425,
+        Price = 375,
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)

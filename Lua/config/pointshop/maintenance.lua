@@ -22,7 +22,7 @@ category.Products = {
     },
 	
 	{
-        Price = 400,
+        Price = 375,
         Limit = 1,
         Items = {"artmod_toolbelt"}
     },
@@ -46,9 +46,9 @@ category.Products = {
     },
 
     {
-        Price = 150,
-        Limit = 4,
-        Items = {"repairpack", "repairpack", "repairpack", "repairpack"}
+        Price = 250,
+        Limit = 2,
+        Items = {"repairpack"}
     },
 
     {
