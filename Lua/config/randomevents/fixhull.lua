@@ -17,6 +17,7 @@ event.Start = function ()
     end
 
     local text = Traitormod.Language.FixHull
+    Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
 
     event.End()
 end
