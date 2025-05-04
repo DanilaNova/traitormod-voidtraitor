@@ -4,7 +4,7 @@ event.Name = "ClownMagic"
 event.MinRoundTime = 15
 event.MinIntensity = 0
 event.MaxIntensity = 0.1
-event.ChancePerMinute = 0
+event.ChancePerMinute = 0.001
 event.OnlyOncePerRound = true
 
 event.ColorsToRevert = {}

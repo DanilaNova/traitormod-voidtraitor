@@ -3,9 +3,9 @@ local event = {}
 event.Enabled = true
 event.Name = "AmmoDelivery"
 event.MinRoundTime = 5
-event.MinIntensity = 0.6
+event.MinIntensity = 0.5
 event.MaxIntensity = 1
-event.ChancePerMinute = 0.03
+event.ChancePerMinute = 0.05
 event.OnlyOncePerRound = false
 
 local items = {"coilgunammoboxexplosive", "coilgunammoboxexplosive", "coilgunammoboxexplosive", "railgunshell", "railgunshell", "railgunshell", "railgunshell", "railgunshell"}

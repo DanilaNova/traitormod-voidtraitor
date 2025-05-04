@@ -2,8 +2,8 @@ local event = {}
 event.Name = "CleanupCrew"
 event.MinRoundTime = 5
 event.MinIntensity = 0
-event.MaxIntensity = 0.1
-event.ChancePerMinute = 0.000005
+event.MaxIntensity = 1
+event.ChancePerMinute = 0.0005
 event.OnlyOncePerRound = true
 
 event.Start = function()

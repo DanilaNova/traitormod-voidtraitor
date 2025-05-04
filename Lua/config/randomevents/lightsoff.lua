@@ -4,7 +4,7 @@ event.Name = "LightsOff"
 event.MinRoundTime = 15
 event.MinIntensity = 0
 event.MaxIntensity = 0.1
-event.ChancePerMinute = 0.0005
+event.ChancePerMinute = 0.0025
 event.OnlyOncePerRound = true
 
 event.Time = 3

@@ -3,9 +3,9 @@ local event = {}
 event.Name = "ShadyMission"
 event.MinRoundTime = 1
 event.MaxRoundTime = 10
-event.MinIntensity = 0.6
+event.MinIntensity = 0
 event.MaxIntensity = 1
-event.ChancePerMinute = 0.05
+event.ChancePerMinute = 0.025
 event.OnlyOncePerRound = true
 
 local textPromptUtils = require("textpromptutils")

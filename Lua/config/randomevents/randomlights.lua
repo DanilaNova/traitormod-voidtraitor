@@ -1,10 +1,10 @@
 local event = {}
 
 event.Name = "RandomLights"
-event.MinRoundTime = 15
+event.MinRoundTime = 10
 event.MinIntensity = 0
-event.MaxIntensity = 0.1
-event.ChancePerMinute = 0.0005
+event.MaxIntensity = 1
+event.ChancePerMinute = 0.0025
 event.OnlyOncePerRound = true
 
 event.ColorsToRevert = {}

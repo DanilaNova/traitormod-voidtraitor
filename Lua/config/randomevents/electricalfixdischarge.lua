@@ -2,7 +2,7 @@ local event = {}
 
 event.Name = "ElectricalFixDischarge"
 event.MinRoundTime = 0
-event.MinIntensity = 0.6
+event.MinIntensity = 0.5
 event.MaxIntensity = 1
 event.ChancePerMinute = 0.05
 event.OnlyOncePerRound = false

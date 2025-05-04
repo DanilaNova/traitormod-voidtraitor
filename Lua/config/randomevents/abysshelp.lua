@@ -2,7 +2,7 @@ local event = {}
 
 event.Name = "AbyssHelp"
 event.MinRoundTime = 2
-event.MaxRoundTime = 10
+event.MaxRoundTime = 30
 event.MinIntensity = 0
 event.MaxIntensity = 1
 event.ChancePerMinute = 0.01

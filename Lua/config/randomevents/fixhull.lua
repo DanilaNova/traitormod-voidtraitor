@@ -2,7 +2,7 @@ local event = {}
 
 event.Name = "FixHull"
 event.MinRoundTime = 0
-event.MinIntensity = 0.6
+event.MinIntensity = 0.5
 event.MaxIntensity = 1
 event.ChancePerMinute = 0.05
 event.OnlyOncePerRound = false
@@ -17,7 +17,6 @@ event.Start = function ()
     end
 
     local text = Traitormod.Language.FixHull
-    Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
 
     event.End()
 end

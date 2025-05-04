@@ -9,7 +9,7 @@ local event = {}
 event.Name = "CommunicationsOffline"
 event.MinRoundTime = 10
 event.MinIntensity = 0
-event.MaxIntensity = 0.2
+event.MaxIntensity = 0.3
 event.ChancePerMinute = 0.02
 event.OnlyOncePerRound = true
 

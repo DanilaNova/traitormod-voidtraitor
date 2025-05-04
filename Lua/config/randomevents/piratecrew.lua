@@ -2,11 +2,10 @@ local event = {}
 
 event.Enabled = true
 event.Name = "PirateCrew"
-event.MinRoundTime = 0
-event.MaxRoundTime = 0
+event.MinRoundTime = 5
 event.MinIntensity = 0
-event.MaxIntensity = 0
-event.ChancePerMinute = 0
+event.MaxIntensity = 1
+event.ChancePerMinute = 0.0005
 event.OnlyOncePerRound = true
 
 event.AmountPoints = 900

@@ -2,7 +2,7 @@ local event = {}
 
 event.Name = "MaintenanceToolsDelivery"
 event.MinRoundTime = 5
-event.MinIntensity = 0.6
+event.MinIntensity = 0.5
 event.MaxIntensity = 1
 event.ChancePerMinute = 0.05
 event.OnlyOncePerRound = false

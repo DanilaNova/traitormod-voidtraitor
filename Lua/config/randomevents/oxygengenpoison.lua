@@ -4,8 +4,8 @@ event.Enabled = true
 event.Name = "OxygenGeneratorPoison"
 event.MinRoundTime = 15
 event.MinIntensity = 0
-event.MaxIntensity = 0.05
-event.ChancePerMinute = 0.001
+event.MaxIntensity = 0.1
+event.ChancePerMinute = 0.0025
 event.OnlyOncePerRound = true
 
 event.Start = function ()

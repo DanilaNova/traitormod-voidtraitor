@@ -97,7 +97,7 @@ category.Products = {
 	},
 	
 	{
-        Identifier = "randomlights",
+        Identifier = "randomizelights",
         Price = 400,
         Limit = 3,
         IsLimitGlobal = true,
@@ -207,7 +207,7 @@ category.Products = {
 	},
 
 	{
-        Identifier = "OxygenGeneratorPoison",
+        Identifier = "poisonoxygensupply",
         Price = 3300,
         Limit = 1,
         IsLimitGlobal = true,
@@ -229,7 +229,7 @@ category.Products = {
 	},
 	
 	{
-        Identifier = "OxygenGeneratorHusk",
+        Identifier = "huskoxygensupply",
         Price = 3300,
         Limit = 1,
         IsLimitGlobal = true,

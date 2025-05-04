@@ -211,7 +211,7 @@ category.Products = {
         Price = 800,
         Limit = 2,
         IsLimitGlobal = false,
-        Items = {"detonator"},
+        Items = {"timeddetonator"},
     },
 
     {

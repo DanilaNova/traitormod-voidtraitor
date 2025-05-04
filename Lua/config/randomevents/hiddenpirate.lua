@@ -3,8 +3,8 @@ local event = {}
 event.Name = "HiddenPirate"
 event.MinRoundTime = 5
 event.MinIntensity = 0
-event.MaxIntensity = 0.5
-event.ChancePerMinute = 0.018
+event.MaxIntensity = 0.4
+event.ChancePerMinute = 0.015
 event.OnlyOncePerRound = true
 
 event.Start = function ()
@@ -43,6 +43,9 @@ event.Start = function ()
         character.Inventory.TryPutItem(item, character.Inventory.FindLimbSlot(InvSlotType.InnerClothes), true, false, character)
     end)
 	
+    Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("respawndivingsuit"), character.Inventory, nil, nil, function (item)
+    end)
+  
     Traitormod.GhostRoles.Ask("Hidden Pirate", function (client)
         Traitormod.LostLivesThisRound[client.SteamID] = false
         client.SetClientCharacter(character)

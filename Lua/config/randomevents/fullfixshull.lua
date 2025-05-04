@@ -1,10 +1,10 @@
 local event = {}
 
 event.Name = "FullFixHull"
-event.MinRoundTime = 15
-event.MinIntensity = 0
-event.MaxIntensity = 0.05
-event.ChancePerMinute = 0.001
+event.MinRoundTime = 10
+event.MinIntensity = 0.8
+event.MaxIntensity = 1
+event.ChancePerMinute = 0.0025
 event.OnlyOncePerRound = false
 
 event.Start = function ()

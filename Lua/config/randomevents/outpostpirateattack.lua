@@ -4,7 +4,7 @@ event.Name = "OutpostPirateAttack"
 event.MinRoundTime = 0
 event.MinIntensity = 0
 event.MaxIntensity = 1
-event.ChancePerMinute = 0
+event.ChancePerMinute = 0.015
 event.OnlyOncePerRound = true
 
 event.Init = function()
