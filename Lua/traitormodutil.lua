@@ -1,3 +1,4 @@
+---@module 'Lua.config.baseconfig'
 Traitormod.Config = dofile(Traitormod.Path .. "/Lua/config/baseconfig.lua")
 
 if not File.Exists(Traitormod.Path .. "/Lua/config/config.lua") then

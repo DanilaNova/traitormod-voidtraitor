@@ -14,6 +14,8 @@ math.randomseed(os.time())
 
 Traitormod.Gamemodes = {}
 
+---Adds a gamemode and loads its config by gamemode.Name
+---@param gamemode Gamemode
 Traitormod.AddGamemode = function(gamemode)
     Traitormod.Gamemodes[gamemode.Name] = gamemode
 
@@ -28,10 +30,18 @@ if not File.Exists(Traitormod.Path .. "/Lua/data.json") then
     File.Write(Traitormod.Path .. "/Lua/data.json", "{}")
 end
 
+---Number of completed rounds
 Traitormod.RoundNumber = 0
+---Time of current round in seconds
 Traitormod.RoundTime = 0
+---Players who lost a live in a current round
+---@type table<Barotrauma.Networking.SteamId, boolean>
 Traitormod.LostLivesThisRound = {}
+---Commands stored by name as key
+---//TODO: Make a 'Command' type
 Traitormod.Commands = {}
+---Players who respawned with their character as key
+---@type table<Barotrauma.Character, Barotrauma.Networking.Client>
 Traitormod.RespawnedCharacters = {}
 
 local pointsGiveTimer = -1
@@ -46,7 +56,11 @@ end
 
 LuaUserData.RegisterType("Barotrauma.GameModePreset")
 LuaUserData.RegisterType("Barotrauma.Voting")
-Voting = LuaUserData.CreateStatic("Barotrauma.Voting")
+
+Voting = LuaUserData.CreateStatic("Barotrauma.Voting") --[[@as Barotrauma.Voting]]
+---//TODO
+---@param submarineInfo Barotrauma.SubmarineInfo
+---@param chooseGamemode unknown
 Traitormod.PreRoundStart = function (submarineInfo, chooseGamemode)
     Traitormod.SelectedGamemode = nil
 
@@ -199,6 +213,7 @@ Hook.Add("roundEnd", "Traitormod.RoundEnd", function()
     end
 end)
 
+---@param character Barotrauma.Character
 Hook.Add("characterCreated", "Traitormod.CharacterCreated", function(character)
     -- if character is valid player
     if character == nil or
@@ -226,6 +241,7 @@ end)
 local tipDelay = 0
 
 -- register tick
+--//TODO continue here
 Hook.Add("think", "Traitormod.Think", function()
     if Timer.GetTime() > tipDelay then
         tipDelay = Timer.GetTime() + 500
@@ -409,12 +425,19 @@ if Traitormod.Config.OverrideRespawnSubmarine then
     Traitormod.SubmarineBuilder = dofile(Traitormod.Path .. "/Lua/submarinebuilder.lua")
 end
 
+---@module "Lua.stringbuilder"
 Traitormod.StringBuilder = dofile(Traitormod.Path .. "/Lua/stringbuilder.lua")
+---@module "Lua.voting"
 Traitormod.Voting = dofile(Traitormod.Path .. "/Lua/voting.lua")
+---@module "Lua.rolemanager"
 Traitormod.RoleManager = dofile(Traitormod.Path .. "/Lua/rolemanager.lua")
+---@module "Lua.pointshop"
 Traitormod.Pointshop = dofile(Traitormod.Path .. "/Lua/pointshop.lua")
+---@module "Lua.roundevents"
 Traitormod.RoundEvents = dofile(Traitormod.Path .. "/Lua/roundevents.lua")
+---@module "Lua.midroundspawn"
 Traitormod.MidRoundSpawn = dofile(Traitormod.Path .. "/Lua/midroundspawn.lua")
+---@module "Lua.ghostroles"
 Traitormod.GhostRoles = dofile(Traitormod.Path .. "/Lua/ghostroles.lua")
 
 dofile(Traitormod.Path .. "/Lua/playtime.lua")

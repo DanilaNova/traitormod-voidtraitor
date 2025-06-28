@@ -1,3 +1,4 @@
+---@module "Lua.weightedrandom"
 local weightedRandom = dofile(Traitormod.Path .. "/Lua/weightedrandom.lua")
 local gm = Traitormod.Gamemodes.Gamemode:new()
 
@@ -7,8 +8,8 @@ gm.RequiredGamemode = "sandbox"
 ---Spawns character
 ---@param client Barotrauma.Networking.Client
 ---@param team Team
----@param character Barotrauma.Character
----@return boolean|nil
+---@param character Barotrauma.Character?
+---@return boolean?
 local function SpawnCharacter(client, team, character)
     if client.SpectateOnly or client.CharacterInfo == nil then return false end
     local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]

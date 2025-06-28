@@ -9,6 +9,7 @@ print(">> Special thanks to Qunk, Femboy69 and JoneK for helping in the developm
 
 local path = table.pack(...)[1]
 
+--- Path to a mod folder
 Traitormod.Path = path
 
 dofile(Traitormod.Path .. "/Lua/traitormod.lua")
