@@ -194,16 +194,9 @@ config.GamemodeConfig = {
                 Networking.CreateEntityEvent(innerClothes, Item.ChangePropertyEventData(color, innerClothes))
             end
 
-            local card = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
-
-            if card then
-                card.Drop()
-                Entity.Spawner.AddEntityToRemoveQueue(card)
-            end
-
         end
     },
-    
+
     AttackDefendWatter = {
         PointshopCategories = {"maintenance", "materials", "medical", "ores", "other", "wiring"},
         DefendTime = 15,
@@ -224,16 +217,9 @@ config.GamemodeConfig = {
                 Networking.CreateEntityEvent(innerClothes, Item.ChangePropertyEventData(color, innerClothes))
             end
 
-            local card = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
-
-            if card then
-                card.Drop()
-                Entity.Spawner.AddEntityToRemoveQueue(card)
-            end
-
         end
     },
-    
+
     DefendsBomb = {
         PointshopCategories = {"maintenance", "materials", "medical", "ores", "other", "wiring"},
         DefendTime = 15,
@@ -253,14 +239,6 @@ config.GamemodeConfig = {
                 local color = innerClothes.SerializableProperties[Identifier("SpriteColor")]
                 Networking.CreateEntityEvent(innerClothes, Item.ChangePropertyEventData(color, innerClothes))
             end
-
-            local card = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
-
-            if card then
-                card.Drop()
-                Entity.Spawner.AddEntityToRemoveQueue(card)
-            end
-
         end
     },
 }
