@@ -34,7 +34,7 @@ category.Products = {
 		Limit = 30,
 		IsLimitGlobal = true,
 
-		---@param client Client
+		
 		Action = function(client)
 			local helmet = ItemPrefab.GetItemPrefab("ballistichelmet1") -- Шаблон предмета
 			Entity.Spawner.AddItemToSpawnQueue(helmet, client.Character.Inventory, nil, nil, function(item)

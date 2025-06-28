@@ -241,6 +241,15 @@ config.GamemodeConfig = {
             end
         end
     },
+
+    AttackDefendV2 = {
+        PointshopCategories = {"maintenance", "materials", "medical", "ores", "other", "wiring", "teamBlue", "teamRed"},
+        DefendTime = 15,
+        DefendRespawn = 60,
+        AttackRespawn = 70,
+        WinningPointsTeam1 = 1000,
+        WinningPointsTeam2 = 1000
+    },
 }
 
 config.RoleConfig = {
@@ -400,6 +409,8 @@ config.PointShopConfig = {
         dofile(Traitormod.Path .. "/Lua/config/pointshop/wiring.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/deathspawn.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/ships.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamBlue.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamRed.lua")
     }
 }
 

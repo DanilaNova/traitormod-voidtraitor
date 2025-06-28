@@ -4,6 +4,11 @@ local gm = {}
 
 gm.Name = "Gamemode"
 
+---@return boolean
+function gm.CheckRequirements()
+    return true
+end
+
 function gm:PreStart()
     Traitormod.Pointshop.Initialize(self.PointshopCategories or {})
 end

@@ -1,19 +1,38 @@
 ---@class (partial) AttackDefendV2: Gamemode
----@field DefendTime number
+---@field DefendTime number config
 ---@field Respawns table<Barotrauma.Networking.Client, number>
----@field DefendRespawn number
----@field AttackRespawn number
+---@field DefendRespawn number config
+---@field AttackRespawn number config
 ---@field DefendCountDown number
 ---@field Ending boolean
----@field WinningPoints integer?
----@field WinningPointsTeam1 integer?
----@field WinningPointsTeam2 integer?
+---@field WinningPointsTeam1 integer config
+---@field WinningPointsTeam2 integer config
 local gm = Traitormod.Gamemodes.Gamemode:new()
 local TeamID1 = CharacterTeamType.Team1
 local TeamID2 = CharacterTeamType.Team2
 
 gm.Name = "AttackDefendV2"
 gm.RequiredGamemode = "pvp"
+
+--- Проверяются требования режима
+--- 1) В типах миссий есть 'OutpostCombat'
+--- 2) В тегах выбранного аванпоста есть 'PVPOutpost'
+function gm.CheckRequirements()
+	if Game.ServerSettings.MissionTypes:find('OutpostCombat') then
+		for sub in SubmarineInfo.SavedSubmarines do
+			if sub.Name == Game.ServerSettings.SelectedOutpostName then
+				for tag in sub.OutpostTags do
+					if tag == "PVPOutpost" then
+						return true
+					end
+				end
+			end
+		end
+	end
+	return false
+end
+
+--#region Helper functions
 
 ---Adds client to team members
 ---@param client Barotrauma.Networking.Client
@@ -26,6 +45,8 @@ local function ChooseTeam(client, teams)
 		Traitormod.Error("Client " .. client.Name .. " belongs to the unknown team №".. client.TeamID)
 	end
 end
+
+--#endregion
 
 function gm:Start()
 	Traitormod.DisableRespawnShuttle = true
@@ -52,7 +73,7 @@ function gm:Start()
 		TeamID = TeamID1,
 		RespawnTime = self.DefendRespawn,
 		Color = Color.Blue,
-		WinningPoints = self.WinningPointsTeam1 or self.WinningPoints or 0,
+		WinningPoints = self.WinningPointsTeam1,
 
 		CheckWinCondition = function ()
 			return self.DefendCountDown <= 0
@@ -65,7 +86,7 @@ function gm:Start()
 		TeamID = TeamID2,
 		RespawnTime = self.AttackRespawn,
 		Color = Color.Blue,
-		WinningPoints = self.WinningPointsTeam2 or self.WinningPoints or 0,
+		WinningPoints = self.WinningPointsTeam2,
 
 		CheckWinCondition = function ()
 			return teams[1].Reactor and teams[1].Reactor.Condition <= 1
@@ -74,14 +95,13 @@ function gm:Start()
 
 
 	for _, item in pairs(Item.ItemList) do
-		if item.GetComponentString("Reactor") then
-			if item.HasTag("deathmatchteam1reactor") then
-				teams[1].Reactor = item --[[@as Barotrauma.Item]]
-			end
+		if item.GetComponentString("Reactor") and item.HasTag("deathmatchteam1reactor") then
+			teams[1].Reactor = item --[[@as Barotrauma.Item]]
+			break
 		end
 	end
 
-	for _, waypoint in pairs(Submarine.MainSub.GetWaypoints(true)) do
+	for _, waypoint in pairs(Game.GameSession.Level.StartOutpost.GetWaypoints(true)) do
 		for tag in waypoint.Tags do
 			if tag == "deathmatchteam1" then
                 table.insert(teams[1].Spawns, waypoint)
