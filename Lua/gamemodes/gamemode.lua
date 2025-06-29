@@ -5,7 +5,7 @@ local gm = {}
 gm.Name = "Gamemode"
 
 ---@return boolean
-function gm.CheckRequirements()
+function gm:CheckRequirements()
     return true
 end
 

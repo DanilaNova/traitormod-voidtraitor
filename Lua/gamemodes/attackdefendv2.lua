@@ -13,16 +13,18 @@ local TeamID2 = CharacterTeamType.Team2
 
 gm.Name = "AttackDefendV2"
 gm.RequiredGamemode = "pvp"
+gm.OutpostInfo = nil
 
 --- Проверяются требования режима
 --- 1) В типах миссий есть 'OutpostCombat'
 --- 2) В тегах выбранного аванпоста есть 'PVPOutpost'
-function gm.CheckRequirements()
+function gm:CheckRequirements()
 	if Game.ServerSettings.MissionTypes:find('OutpostCombat') then
 		for sub in SubmarineInfo.SavedSubmarines do
 			if sub.Name == Game.ServerSettings.SelectedOutpostName then
 				for tag in sub.OutpostTags do
 					if tag == "PVPOutpost" then
+						self.OutpostInfo = sub
 						return true
 					end
 				end
@@ -47,6 +49,13 @@ local function ChooseTeam(client, teams)
 end
 
 --#endregion
+
+function gm:PreStart()
+	for key, value in pairs(Traitormod.ParseSubmarineConfig(self.OutpostInfo.Description.Value)) do
+		Traitormod.SelectedGamemode[key] = value
+	end
+	Traitormod.Pointshop.Initialize(self.PointshopCategories or {})
+end
 
 function gm:Start()
 	Traitormod.DisableRespawnShuttle = true
@@ -80,7 +89,7 @@ function gm:Start()
 		end
 	}
 	teams[TeamID2] = {
-		Name = "Defenders",
+		Name = "Attackers",
 		Spawns = {},
 		Members = {},
 		TeamID = TeamID2,

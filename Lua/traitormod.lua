@@ -73,7 +73,7 @@ Traitormod.PreRoundStart = function (submarineInfo, chooseGamemode)
             Traitormod.SelectedGamemode[key] = value
         end
     elseif Game.ServerSettings.GameModeIdentifier == "pvp" then
-        if Traitormod.Gamemodes.AttackDefendV2.CheckRequirements() then
+        if Traitormod.Gamemodes.AttackDefendV2:CheckRequirements() then
             Traitormod.SelectedGamemode = Traitormod.Gamemodes.AttackDefendV2:new()
         else
             Traitormod.SelectedGamemode = Traitormod.Gamemodes.PvP:new()
