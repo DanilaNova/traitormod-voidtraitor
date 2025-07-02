@@ -248,7 +248,9 @@ config.GamemodeConfig = {
         DefendRespawn = 60,
         AttackRespawn = 70,
         WinningPointsTeam1 = 1000,
-        WinningPointsTeam2 = 1000
+        DefaultClassTeam1 = "rifleman",
+        WinningPointsTeam2 = 1000,
+        DefaultClassTeam2 = "rifleman",
     },
 }
 

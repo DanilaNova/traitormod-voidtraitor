@@ -1,6 +1,12 @@
+---@class RespawnEntry
+---@field timer number
+---@field class classFunction?
+
+---@alias classFunction fun(character: Barotrauma.Character)
+
 ---@class (partial) AttackDefendV2: Gamemode
 ---@field DefendTime number config
----@field Respawns table<Barotrauma.Networking.Client, number>
+---@field Respawns table<Barotrauma.Networking.Client, RespawnEntry>
 ---@field DefendRespawn number config
 ---@field AttackRespawn number config
 ---@field DefendCountDown number
@@ -48,6 +54,51 @@ local function ChooseTeam(client, teams)
 	end
 end
 
+---Спавнит персонажа для клиента
+---@param client Barotrauma.Networking.Client
+---@param team AttackDefendV2.Team
+---@param class classFunction?
+function SpawnCharacter(client, team, class)
+	if client.SpectateOnly or client.CharacterInfo == nil then return false end
+	local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]
+
+	local character = Character.Create(client.CharacterInfo, spawnPoint.WorldPosition, client.CharacterInfo.Name, 0, true, true)
+	client.SetClientCharacter(character)
+	character.GiveJobItems(false)
+	character.LoadTalents()
+
+    GearUpCharacter(character, team, class)
+end
+
+---Выдаёт экипировку персонажу
+---@param character Barotrauma.Character
+---@param team AttackDefendV2.Team
+---@param class classFunction?
+function GearUpCharacter(character, team, class)
+    local card = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
+	if card then
+		card.NonPlayerTeamInteractable = true
+		local lock = card.SerializableProperties[Identifier("NonPlayerTeamInteractable")]
+		Networking.CreateEntityEvent(card, Item.ChangePropertyEventData(lock, card))
+	else
+		Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("idcard"), character.Inventory, nil, nil, function (card)
+			card.GetComponentString("IdCard").Initialize(spawnPoint, character)
+			card.NonPlayerTeamInteractable = true
+			local lock = card.SerializableProperties[Identifier("NonPlayerTeamInteractable")]
+			Networking.CreateEntityEvent(card, Item.ChangePropertyEventData(lock, card))
+		end, true, false, InvSlotType.Card)
+	end
+
+	local innerClothes = character.Inventory.GetItemInLimbSlot(InvSlotType.InnerClothes)
+	if innerClothes then
+		innerClothes.SpriteColor = team.Color
+		local color = innerClothes.SerializableProperties[Identifier("SpriteColor")]
+		Networking.CreateEntityEvent(innerClothes, Item.ChangePropertyEventData(color, innerClothes))
+	end
+
+	if class then class(character) end
+end
+
 --#endregion
 
 function gm:PreStart()
@@ -55,12 +106,9 @@ function gm:PreStart()
 		Traitormod.SelectedGamemode[key] = value
 	end
 	Traitormod.Pointshop.Initialize(self.PointshopCategories or {})
-end
 
-function gm:Start()
 	Traitormod.DisableRespawnShuttle = true
     Traitormod.DisableMidRoundSpawn = true
-
 
 	self.Ending = false
 	self.Respawns = {}
@@ -94,7 +142,7 @@ function gm:Start()
 		Members = {},
 		TeamID = TeamID2,
 		RespawnTime = self.AttackRespawn,
-		Color = Color.Blue,
+		Color = Color.Red,
 		WinningPoints = self.WinningPointsTeam2,
 
 		CheckWinCondition = function ()
@@ -102,25 +150,6 @@ function gm:Start()
 		end
 	}
 
-
-	for _, item in pairs(Item.ItemList) do
-		if item.GetComponentString("Reactor") and item.HasTag("deathmatchteam1reactor") then
-			teams[1].Reactor = item --[[@as Barotrauma.Item]]
-			break
-		end
-	end
-
-	for _, waypoint in pairs(Game.GameSession.Level.StartOutpost.GetWaypoints(true)) do
-		for tag in waypoint.Tags do
-			if tag == "deathmatchteam1" then
-                table.insert(teams[1].Spawns, waypoint)
-        	elseif tag == "deathmatchteam2" then
-                table.insert(teams[2].Spawns, waypoint)
-        	end
-		end
-    end
-
-	
 	for client in Client.ClientList do
 		ChooseTeam(client, teams)
 	end
@@ -129,10 +158,40 @@ function gm:Start()
 	Hook.Add("client.connected", "Traitormod.AttackDefendV2.ClientConnected", function (client)
 		ChooseTeam(client, teams)
 	end)
+
+	---@param character Barotrauma.Character
+	Hook.Add("character.giveJobItems", "Traitormod.AttackDefendV2.CharacterGiveJobItems", function (character, waypoint)
+		local team = self.Teams[character.TeamID]
+		if team == nil then
+			Traitormod.Error("Created character is on undefined team №"..character.TeamID)
+		else 
+			GearUpCharacter(character, team)
+		end
+	end)
+end
+
+function gm:Start()
+	for _, item in pairs(Item.ItemList) do
+		if item.GetComponentString("Reactor") and item.HasTag("deathmatchteam1reactor") then
+			self.Teams[1].Reactor = item --[[@as Barotrauma.Item]]
+			break
+		end
+	end
+
+	for _, waypoint in pairs(Game.GameSession.Level.StartOutpost.GetWaypoints(true)) do
+		for tag in waypoint.Tags do
+			if tag == "deathmatchteam1" then
+                table.insert(self.Teams[1].Spawns, waypoint)
+        	elseif tag == "deathmatchteam2" then
+                table.insert(self.Teams[2].Spawns, waypoint)
+        	end
+		end
+    end
 end
 
 function gm:End()
     Hook.Remove("client.connected", "Traitormod.AttackDefendV2.ClientConnected")
+	Hook.Remove("character.giveJobItems", "Traitormod.AttackDefendV2.CharacterGiveJobItems")
 
     -- first arg = mission id, second = message, third = completed, forth = list of characters
     return nil
@@ -152,6 +211,22 @@ function gm:Think()
     end
 
 	for _, team in pairs(self.Teams) do
+		for _, member in pairs(team.Members) do
+            if not member.SpectateOnly and (not member.Character or member.Character.IsDead) then
+				local respawn = self.Respawns[member]
+
+                if respawn == nil then
+					self.Respawns[member] = {timer = team.RespawnTime}
+					
+                else
+                    respawn.timer = respawn.timer - 1/60
+					if respawn.timer <= 0 then
+						self.Respawns[member] = nil
+						SpawnCharacter(member, team, respawn.class)
+					end
+                end
+            end
+        end
 		if team.CheckWinCondition() then
             self.Ending = true
             for _, client in pairs(Client.ClientList) do
