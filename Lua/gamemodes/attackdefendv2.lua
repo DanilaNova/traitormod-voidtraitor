@@ -1,43 +1,16 @@
----@class RespawnEntry
----@field timer number
----@field class classFunction?
-
 ---@alias classFunction fun(character: Barotrauma.Character)
 
----@class (partial) AttackDefendV2: Gamemode
----@field DefendTime number config
----@field Respawns table<Barotrauma.Networking.Client, RespawnEntry>
----@field DefendRespawn number config
----@field AttackRespawn number config
----@field DefendCountDown number
----@field Ending boolean
----@field WinningPointsTeam1 integer config
----@field WinningPointsTeam2 integer config
+---@class (partial) Gamemodes.AttackDefendV2: Gamemode
 local gm = Traitormod.Gamemodes.Gamemode:new()
 local TeamID1 = CharacterTeamType.Team1
 local TeamID2 = CharacterTeamType.Team2
 
 gm.Name = "AttackDefendV2"
 gm.RequiredGamemode = "pvp"
-gm.OutpostInfo = nil
+gm.MissionType = "AttackDefenceV2"
 
---- Проверяются требования режима
---- 1) В типах миссий есть 'OutpostCombat'
---- 2) В тегах выбранного аванпоста есть 'PVPOutpost'
 function gm:CheckRequirements()
-	if Game.ServerSettings.MissionTypes:find('OutpostCombat') then
-		for sub in SubmarineInfo.SavedSubmarines do
-			if sub.Name == Game.ServerSettings.SelectedOutpostName then
-				for tag in sub.OutpostTags do
-					if tag == "PVPOutpost" then
-						self.OutpostInfo = sub
-						return true
-					end
-				end
-			end
-		end
-	end
-	return false
+	return Game.ServerSettings.MissionTypes:find(self.MissionType) ~= nil
 end
 
 --#region Helper functions
@@ -59,22 +32,23 @@ end
 ---@param team AttackDefendV2.Team
 ---@param class classFunction?
 function SpawnCharacter(client, team, class)
-	if client.SpectateOnly or client.CharacterInfo == nil then return false end
+	if client.CharacterInfo == nil then return false end
 	local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]
 
 	local character = Character.Create(client.CharacterInfo, spawnPoint.WorldPosition, client.CharacterInfo.Name, 0, true, true)
 	client.SetClientCharacter(character)
-	character.GiveJobItems(false)
+	-- character.GiveJobItems(true)
 	character.LoadTalents()
 
-    GearUpCharacter(character, team, class)
+    GearUpCharacter(character, team, spawnPoint, class)
 end
 
 ---Выдаёт экипировку персонажу
 ---@param character Barotrauma.Character
 ---@param team AttackDefendV2.Team
+---@param waypoint Barotrauma.WayPoint
 ---@param class classFunction?
-function GearUpCharacter(character, team, class)
+function GearUpCharacter(character, team, waypoint, class)
     local card = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
 	if card then
 		card.NonPlayerTeamInteractable = true
@@ -82,7 +56,7 @@ function GearUpCharacter(character, team, class)
 		Networking.CreateEntityEvent(card, Item.ChangePropertyEventData(lock, card))
 	else
 		Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("idcard"), character.Inventory, nil, nil, function (card)
-			card.GetComponentString("IdCard").Initialize(spawnPoint, character)
+			card.GetComponentString("IdCard").Initialize(waypoint, character)
 			card.NonPlayerTeamInteractable = true
 			local lock = card.SerializableProperties[Identifier("NonPlayerTeamInteractable")]
 			Networking.CreateEntityEvent(card, Item.ChangePropertyEventData(lock, card))
@@ -99,18 +73,37 @@ function GearUpCharacter(character, team, class)
 	if class then class(character) end
 end
 
+---@param client Barotrauma.Networking.Client
+---@protected
+function gm:__SetNewClient(client)
+	local character = client.Character
+	if character ~= nil then
+		Timer.Wait(function ()
+			client.SetClientCharacter(nil)
+			character.DespawnNow()
+			Traitormod.Pointshop.ShowCategory(client)
+		end, 1000)
+	end
+	self.Respawns[client] = {timer = 0}
+end
+
 --#endregion
 
 function gm:PreStart()
-	for key, value in pairs(Traitormod.ParseSubmarineConfig(self.OutpostInfo.Description.Value)) do
-		Traitormod.SelectedGamemode[key] = value
+	for sub in SubmarineInfo.SavedSubmarines do
+		if sub.Name == Game.ServerSettings.SelectedOutpostName then
+			for key, value in pairs(Traitormod.ParseSubmarineConfig(sub.Description.Value)) do
+				self[key] = value
+			end	
+		end
 	end
+	
 	Traitormod.Pointshop.Initialize(self.PointshopCategories or {})
 
 	Traitormod.DisableRespawnShuttle = true
     Traitormod.DisableMidRoundSpawn = true
 
-	self.Ending = false
+	self.IsEnding = false
 	self.Respawns = {}
     self.DefendCountDown = self.DefendTime * 60
     self.LastDefendCountDown = self.DefendTime * 60
@@ -150,22 +143,22 @@ function gm:PreStart()
 		end
 	}
 
-	for client in Client.ClientList do
-		ChooseTeam(client, teams)
-	end
+	--Hook.Remove("characterCreated", "Traitormod.CharacterCreated")
 
 	---@param client Barotrauma.Networking.Client
 	Hook.Add("client.connected", "Traitormod.AttackDefendV2.ClientConnected", function (client)
 		ChooseTeam(client, teams)
+		self:__SetNewClient(client)
 	end)
 
 	---@param character Barotrauma.Character
+	---@param waypoint Barotrauma.WayPoint
 	Hook.Add("character.giveJobItems", "Traitormod.AttackDefendV2.CharacterGiveJobItems", function (character, waypoint)
 		local team = self.Teams[character.TeamID]
 		if team == nil then
 			Traitormod.Error("Created character is on undefined team №"..character.TeamID)
 		else 
-			GearUpCharacter(character, team)
+			GearUpCharacter(character, team, waypoint)
 		end
 	end)
 end
@@ -187,18 +180,24 @@ function gm:Start()
         	end
 		end
     end
+
+	for client in Client.ClientList do
+		ChooseTeam(client, self.Teams)
+		---@cast client Barotrauma.Networking.Client
+		self:__SetNewClient(client)
+	end
+
 end
 
 function gm:End()
     Hook.Remove("client.connected", "Traitormod.AttackDefendV2.ClientConnected")
 	Hook.Remove("character.giveJobItems", "Traitormod.AttackDefendV2.CharacterGiveJobItems")
-
-    -- first arg = mission id, second = message, third = completed, forth = list of characters
-    return nil
+	-- local entry = Traitormod.DefaultHooks["Traitormod.CharacterCreated"]
+	-- Hook.Add(entry[1], "Traitormod.CharacterCreated", entry[2])
 end
 
 function gm:Think()
-	if self.Ending then return end
+	if self.IsEnding then return end
 	self.DefendCountDown = self.DefendCountDown - 1/60
 
 	local max = 30
@@ -210,7 +209,7 @@ function gm:Think()
         self.LastDefendCountDown = self.DefendCountDown
     end
 
-	for _, team in pairs(self.Teams) do
+	for _, team in ipairs(self.Teams) do
 		for _, member in pairs(team.Members) do
             if not member.SpectateOnly and (not member.Character or member.Character.IsDead) then
 				local respawn = self.Respawns[member]
@@ -219,27 +218,33 @@ function gm:Think()
 					self.Respawns[member] = {timer = team.RespawnTime}
 					
                 else
+					if respawn.timer == nil then
+						respawn.timer = team.RespawnTime
+					end
                     respawn.timer = respawn.timer - 1/60
-					if respawn.timer <= 0 then
-						self.Respawns[member] = nil
+					if respawn.timer <= 0 and respawn.class ~= nil then
+						self.Respawns[member].timer = nil
 						SpawnCharacter(member, team, respawn.class)
 					end
                 end
             end
         end
 		if team.CheckWinCondition() then
-            self.Ending = true
-            for _, client in pairs(Client.ClientList) do
-                Traitormod.SendMessage(client, team.Name .. " won the game!", "InfoFrameTabButton.Mission")
-            end
+            self.IsEnding = true
+			Game.GameSession.WinningTeam = team.TeamID
+			for mission in Game.GameSession.Missions do
+				if mission.Prefab.Type == self.MissionType then
+					mission.State = team.TeamID --[[@as number]]
+				end
+			end
 
             for _, member in pairs(team.Members) do
                 local points = Traitormod.AwardPoints(member, team.WinningPoints)
-                Traitormod.SendMessage(member, string.format(Traitormod.Language.ReceivedPoints, points), "InfoFrameTabButton.Mission")    
+                Traitormod.SendMessage(member, string.format(Traitormod.Language.ReceivedPoints, points), "InfoFrameTabButton.Mission")
             end
-            Timer.Wait(function ()
-                Game.EndGame()
-            end, 5000)
+            -- Timer.Wait(function ()
+            --     Game.EndGame()
+            -- end, 5000)
         end
 	end
 end

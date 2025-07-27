@@ -34,8 +34,7 @@ local category = {
 
 Identifier = "teamRed",
 CanAccess = function (client)
-	local character = client.Character
-	return (character == nil or character.IsDead) and client.TeamID == CharacterTeamType.Team2
+	return client.TeamID == CharacterTeamType.Team2
 end,
 
 Products = {
@@ -44,14 +43,17 @@ Products = {
 		Price = 0,
 		Limit = 9999,
 		Action = function (client)
-			local character, team = setupCharacter(client, team)
+			---@type RespawnEntry?
+			local respawnEntry = Traitormod.SelectedGamemode.Respawns[client]
 
-			--[[]//TODO
-			Equipment
-			Rifle
-			Light armor
-			]]
-			Traitormod.Log(client.Name .. "has spawned as rifleman")
+			if respawnEntry == nil then
+				respawnEntry = {timer = nil, class = nil}
+			end
+			respawnEntry.class = function (character)
+				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("securityseparatistsuniform3"), character.Inventory, nil, nil, nil, true, false, InvSlotType.InnerClothes)
+				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("rifle"), character.Inventory)
+			end
+			print(client.Name .. " has spawned as rifleman")
 		end
 	},
 	{

@@ -539,6 +539,7 @@ Hook.Add("roundEnd", "TraitorMod.PointShop.RoundEnd", function ()
     end 
 end)
 
+---@param character Barotrauma.Character
 Hook.Add("characterDeath", "Traitormod.Pointshop.Death", function (character)
     if character.IsPet then return end
     local client = Traitormod.FindClientCharacter(character)

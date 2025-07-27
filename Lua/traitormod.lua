@@ -1,4 +1,6 @@
 dofile(Traitormod.Path .. "/Lua/traitormodutil.lua")
+---@type table<string, {[1]: string, [2]: function}>
+Traitormod.DefaultHooks = {}
 
 Game.OverrideTraitors(true)
 
@@ -157,6 +159,7 @@ Hook.Add("roundStart", "Traitormod.RoundStart", function()
     Traitormod.RoundStart()
 end)
 
+---@param missions Barotrauma.Mission[]
 Hook.Add("missionsEnded", "Traitormod.MissionsEnded", function(missions)
     Traitormod.RoundMissions = missions
     Traitormod.Debug("missionsEnded with " .. #Traitormod.RoundMissions .. " missions.")
@@ -218,7 +221,7 @@ Hook.Add("roundEnd", "Traitormod.RoundEnd", function()
 end)
 
 ---@param character Barotrauma.Character
-Hook.Add("characterCreated", "Traitormod.CharacterCreated", function(character)
+Traitormod.DefaultHooks["Traitormod.CharacterCreated"] = {"characterCreated", function(character)
     -- if character is valid player
     if character == nil or
         character.IsBot == true or
@@ -240,7 +243,12 @@ Hook.Add("characterCreated", "Traitormod.CharacterCreated", function(character)
             Traitormod.Error("Loading experience on characterCreated failed! Client was nil after 1sec")
         end
     end, 1000)
-end)
+end}
+
+-- Добавляем все стандартные хуки
+for key, value in pairs(Traitormod.DefaultHooks) do
+    Hook.Add(value[1], key, value[2])
+end
 
 local tipDelay = 0
 
