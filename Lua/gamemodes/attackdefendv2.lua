@@ -8,6 +8,9 @@ local TeamID2 = CharacterTeamType.Team2
 gm.Name = "AttackDefendV2"
 gm.RequiredGamemode = "pvp"
 gm.MissionType = "AttackDefenceV2"
+gm.RandomizeTeams = false
+
+gm.TraitormodSettings.LimitedSuicide = false
 
 function gm:CheckRequirements()
 	return Game.ServerSettings.MissionTypes:find(self.MissionType) ~= nil
@@ -30,15 +33,17 @@ end
 ---Спавнит персонажа для клиента
 ---@param client Barotrauma.Networking.Client
 ---@param team AttackDefendV2.Team
----@param class classFunction?
-function SpawnCharacter(client, team, class)
+---@param class classFunction
+---@param jobId string
+function SpawnCharacter(client, team, class, jobId)
 	if client.CharacterInfo == nil then return false end
 	local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]
 
-	local character = Character.Create(client.CharacterInfo, spawnPoint.WorldPosition, client.CharacterInfo.Name, 0, true, true)
+	local characterInfo = client.characterInfo
+	characterInfo.Job = Job(JobPrefab.Get(jobId or "commoner"), true)
+
+	local character = Character.Create(characterInfo, spawnPoint.WorldPosition, client.CharacterInfo.Name, 0, true, true)
 	client.SetClientCharacter(character)
-	-- character.GiveJobItems(true)
-	character.LoadTalents()
 
     GearUpCharacter(character, team, spawnPoint, class)
 end
@@ -84,7 +89,7 @@ function gm:__SetNewClient(client)
 			Traitormod.Pointshop.ShowCategory(client)
 		end, 1000)
 	end
-	self.Respawns[client] = {timer = 0}
+	self.Respawns[client] = {Timer = 0}
 end
 
 --#endregion
@@ -192,6 +197,7 @@ end
 function gm:End()
     Hook.Remove("client.connected", "Traitormod.AttackDefendV2.ClientConnected")
 	Hook.Remove("character.giveJobItems", "Traitormod.AttackDefendV2.CharacterGiveJobItems")
+	
 	-- local entry = Traitormod.DefaultHooks["Traitormod.CharacterCreated"]
 	-- Hook.Add(entry[1], "Traitormod.CharacterCreated", entry[2])
 end
@@ -215,16 +221,16 @@ function gm:Think()
 				local respawn = self.Respawns[member]
 
                 if respawn == nil then
-					self.Respawns[member] = {timer = team.RespawnTime}
+					self.Respawns[member] = {Timer = team.RespawnTime}
 					
                 else
-					if respawn.timer == nil then
-						respawn.timer = team.RespawnTime
+					if respawn.Timer == nil then
+						respawn.Timer = team.RespawnTime
 					end
-                    respawn.timer = respawn.timer - 1/60
-					if respawn.timer <= 0 and respawn.class ~= nil then
-						self.Respawns[member].timer = nil
-						SpawnCharacter(member, team, respawn.class)
+                    respawn.Timer = respawn.Timer - 1/60
+					if respawn.Timer <= 0 and respawn.OnSpawn ~= nil then
+						self.Respawns[member].Timer = nil
+						SpawnCharacter(member, team, respawn.OnSpawn, respawn.JobId)
 					end
                 end
             end

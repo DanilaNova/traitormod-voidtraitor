@@ -11,6 +11,7 @@
 ---@field new fun(self: self, o: table?): any Takes `o` table, sets self as metatable and makes a proxy for missing fields to self. `o` is empty table by default
 ---@field PointshopCategories string[] Categories used in gamemode. From config
 
+
 ---@class (partial) Gamemodes.AttackDefendV2: Gamemode
 ---@field DefendTime number Time from round start before defenders win. From config
 ---@field Respawns table<Barotrauma.Networking.Client, RespawnEntry>
@@ -25,8 +26,9 @@
 ---@field protected __SetNewClient fun(self: self, client)
 
 ---@class RespawnEntry
----@field timer number?
----@field class classFunction?
+---@field Timer number?
+---@field OnSpawn classFunction?
+---@field JobId string?
 
 ---@alias GamemodeID
 ---| "pvp"

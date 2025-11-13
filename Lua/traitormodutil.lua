@@ -279,6 +279,8 @@ Traitormod.ParseCommand = function (text)
     return result
 end
 
+---@param commandName string
+---@param callback fun(client: Barotrauma.Networking.Client, args: string[])
 Traitormod.AddCommand = function (commandName, callback)
     if type(commandName) == "table" then
         for command in commandName do

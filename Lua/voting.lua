@@ -4,6 +4,11 @@ local textPromptUtils = require("textpromptutils")
 
 vt.Votes = {}
 
+---@param text string
+---@param options unknown[]
+---@param time number
+---@param completed fun(results: table, clients: table)
+---@param clients Barotrauma.Networking.Client[]?
 vt.StartVote = function (text, options, time, completed, clients)
     if clients == nil then clients = Client.ClientList end
 

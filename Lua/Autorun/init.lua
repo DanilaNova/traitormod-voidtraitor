@@ -1,5 +1,6 @@
 if CLIENT then return end
 
+---@class Traitormod
 Traitormod = {}
 Traitormod.VERSION = "2.5.8a"
 

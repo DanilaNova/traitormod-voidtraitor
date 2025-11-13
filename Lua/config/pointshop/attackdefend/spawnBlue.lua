@@ -1,34 +1,3 @@
---#region Utility functions
-
----Creates character for client on desired team
----@param client Barotrauma.Networking.Client
----@param team Team
----@return Barotrauma.Character, Team
-local function setupCharacter(client)
-	local team = Traitormod.SelectedGamemode.Teams[1]
-	local spawnPoint = team.Spawns[math.random(1, #team.Spawns)]
-	local character = Character.Create(client.CharacterInfo, spawnPoint.WorldPosition, client.CharacterInfo.Name, 0, true, true)
-	client.SetClientCharacter(character)
-
-	character.TeamID = team.TeamID
-    character.UpdateTeam()
-    character.TeleportTo(spawnPoint.WorldPosition)
-
-	-- Give id card
-	Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("idcard"), character.Inventory, nil, nil, function (item)
-		item.GetComponentString("IdCard").Initialize(spawnPoint, character)
-		item.NonPlayerTeamInteractable = true
-		local lock = item.SerializableProperties[Identifier("NonPlayerTeamInteractable")]
-		Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(lock, item))
-	end, true, false, InvSlotType.Card)
-
-
-
-	return character, team
-end
-
---#endregion
-
 ---@type Pointshop.Category
 local category = {
 
@@ -47,9 +16,11 @@ Products = {
 			local respawnEntry = Traitormod.SelectedGamemode.Respawns[client]
 
 			if respawnEntry == nil then
-				respawnEntry = {timer = nil, class = nil}
+				respawnEntry = {Timer = nil, OnSpawn = nil}
+				Traitormod.SelectedGamemode.Respawns[client] = respawnEntry
 			end
-			respawnEntry.class = function (character)
+			respawnEntry.OnSpawn = function (character)
+				character.info.SetSkillLevel("weapons", 100)
 				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("securityuniform3"), character.Inventory, nil, nil, nil, true, false, InvSlotType.InnerClothes)
 				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("rifle"), character.Inventory)
 			end
@@ -61,7 +32,13 @@ Products = {
 		Price = 0,
 		Limit = 9999,
 		Action = function (client)
-			local character, team = setupCharacter(client, team)
+			---@type RespawnEntry?
+			local respawnEntry = Traitormod.SelectedGamemode.Respawns[client]
+
+			if respawnEntry == nil then
+				respawnEntry = {Timer = nil, OnSpawn = nil}
+				Traitormod.SelectedGamemode.Respawns[client] = respawnEntry
+			end
 
 			--[[]//TODO
 			Equipment
@@ -76,7 +53,13 @@ Products = {
 		Price = 5000,
 		Limit = 9999,
 		Action = function (client)
-			local character, team = setupCharacter(client, team)
+			---@type RespawnEntry?
+			local respawnEntry = Traitormod.SelectedGamemode.Respawns[client]
+
+			if respawnEntry == nil then
+				respawnEntry = {Timer = nil, OnSpawn = nil}
+				Traitormod.SelectedGamemode.Respawns[client] = respawnEntry
+			end
 
 			--[[]//TODO
 			Equipment

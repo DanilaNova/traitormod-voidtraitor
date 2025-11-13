@@ -123,21 +123,24 @@ Traitormod.AddCommand("!info", function (client, args)
 end)
 
 Traitormod.AddCommand({"!suicide", "!kill", "!death"}, function (client, args)
+    
     if client.Character == nil or client.Character.IsDead then
         Traitormod.SendMessage(client, Traitormod.Language.CMDAlreadyDead)
         return true
     end
 
-    if client.Character.IsHuman then
-        local item = client.Character.Inventory.GetItemInLimbSlot(InvSlotType.RightHand)
-        if item ~= nil and item.Prefab.Identifier == "handcuffs" then
-            Traitormod.SendMessage(client, Traitormod.Language.CMDHandcuffed)
-            return true
-        end
+    if Traitormod.SelectedGamemode.TraitormodSettings.LimitedSuicide then
+        if client.Character.IsHuman then
+            local item = client.Character.Inventory.GetItemInLimbSlot(InvSlotType.RightHand)
+            if item ~= nil and item.Prefab.Identifier == "handcuffs" then
+                Traitormod.SendMessage(client, Traitormod.Language.CMDHandcuffed)
+                return true
+            end
 
-        if client.Character.IsKnockedDown then
-            Traitormod.SendMessage(client, Traitormod.Language.CMDKnockedDown)
-            return true
+            if client.Character.IsKnockedDown then
+                Traitormod.SendMessage(client, Traitormod.Language.CMDKnockedDown)
+                return true
+            end
         end
     end
 

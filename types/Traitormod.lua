@@ -28,3 +28,7 @@
 ---@field IsLimitGlobal boolean? default is false
 ---@field Action fun(client: Barotrauma.Networking.Client)?
 ---@field Items string[]?
+
+---@class Traitormod
+---@field SelectedGamemode Gamemode
+

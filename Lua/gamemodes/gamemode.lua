@@ -2,6 +2,9 @@
 local gm = {}
 
 gm.Name = "Gamemode"
+gm.TraitormodSettings = {
+    LimitedSuicide = true -- Can a player use suicide command if knocked down/handcuffed
+}
 
 function gm:CheckRequirements()
     return true
