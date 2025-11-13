@@ -377,8 +377,17 @@ ps.ShowCategoryItems = function(client, category)
 
     for key, product in pairs(category.Products) do
         if product.Enabled ~= false then
-            local text = string.format("%s - %spt (%s/%s)",
-                ps.GetProductName(product), ps.GetProductPrice(client, product), ps.GetProductLimit(client, product), product.Limit or defaultLimit)
+            local limit = product.Limit or defaultLimit
+            local price = ps.GetProductPrice(client, product)
+            local productInfo = {}
+            local limitText
+
+            if price ~= 0 then table.insert(productInfo, ("%spt"):format(price)) end
+            if limit ~= math.huge then table.insert(productInfo, ("(%s/%s)"):format(ps.GetProductLimit(client, product), limit)) end
+
+            
+            local text = ps.GetProductName(product)
+            if #productInfo > 0 then text = text .. " - " .. table.concat(productInfo, " ") end
 
             table.insert(options, text)
             productsLookup[#options] = product
