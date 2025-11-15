@@ -1,7 +1,7 @@
 ---@type Pointshop.Category
 local category = {
 
-Identifier = "teamBlue",
+Identifier = "spawnBlue",
 CanAccess = function (client)
 	return client.TeamID == CharacterTeamType.Team1
 end,

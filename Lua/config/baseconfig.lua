@@ -9,7 +9,7 @@ config.Languages = {
     dofile(Traitormod.Path .. "/Lua/language/english.lua"), -- If it can't find a specific language key, it will always fallback to the first language on the list.
     dofile(Traitormod.Path .. "/Lua/language/russian.lua"),
 }
-config.Language = "English" -- English, Russian
+config.Language = "Russian" -- English, Russian
 config.SendWelcomeMessage = true
 config.ChatMessageType = ChatMessageType.Private    -- Error = red | Private = green | Dead = blue | Radio = yellow
 
@@ -36,9 +36,9 @@ config.AmountCodeWords = 2
 
 config.OptionalTraitors = true        -- players can use !toggletraitor
 config.RagdollOnDisconnect = false
-config.EnableControlHusk = false     -- EXPERIMENTAL: enable to control husked character after death
+config.EnableControlHusk = true     -- EXPERIMENTAL: enable to control husked character after death
 config.DeathLogBook = true
-config.HideCrewList = false -- EXPERIMENTAL
+config.HideCrewList = true -- EXPERIMENTAL
 
 -- This overrides the game's respawn shuttle, and uses it as a submarine injector, to spawn submarines in game easily. Respawn should still work as expected, but the shuttle submarine file needs to be manually added here.
 -- Note: If this is disabled, traitormod will disable all functions related to submarine spawning.
@@ -70,6 +70,7 @@ config.ExperienceTimer = 120
 
 config.PointsGainedFromSkill = {
     medical = 3,
+    surgical = 2,
     weapons = 2,
     mechanical = 1,
     electrical = 1,
@@ -94,7 +95,7 @@ end
 ----- GAMEMODE -----
 config.GamemodeConfig = {
     Secret = {
-        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "maintenance", "materials", "medical", "ores", "other", "security", "wiring", "ships"},
+        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "plant", "other", "ships"},
         EndOnComplete = true,           -- end round everyone but traitors are dead
         EnableRandomEvents = true,
         EndGameDelaySeconds = 15,
@@ -102,7 +103,7 @@ config.GamemodeConfig = {
         TraitorSelectDelayMin = 120,
         TraitorSelectDelayMax = 150,
 
-        PointsGainedFromHandcuffedTraitors = 1000,
+        PointsGainedFromHandcuffedTraitors = 3500,
         DistanceToEndOutpostRequired = 8000,
 
         MissionPoints = {
@@ -127,7 +128,7 @@ config.GamemodeConfig = {
             return 0
         end,
 
-        TraitorTypeSelectionMode = "Vote", -- Vote | Random
+        TraitorTypeSelectionMode = "Random", -- Vote | Random
         TraitorTypeChance = {
             Traitor = 50, -- Traitors have 33% chance of being a normal traitor
             Cultist = 50,
@@ -157,13 +158,13 @@ config.GamemodeConfig = {
             if client.Character.HasJob("captain") then return 0 end
             if client.Character.HasJob("securityofficer") then return 0 end
             if client.Character.HasJob("medicaldoctor") then return 0.5 end
-
+            if client.Character.HasJob("surgeon") then return 0.5 end
             return 1
         end
     },
 
     PvP = {
-        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "maintenance", "materials", "medical", "ores", "other", "security", "wiring", "ships"},
+        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "plant", "other", "ships"},
         EnableRandomEvents = false, -- most events are coded to only affect the main submarine
         WinningPoints = 1000,
         WinningDeadPoints = 500,
@@ -175,17 +176,11 @@ config.GamemodeConfig = {
     },
 
     AttackDefend = {
-        PointshopCategories = {"maintenance", "materials", "medical", "ores", "other", "wiring"},
+        PointshopCategories = {"teamRed", "teamBlue"},
         DefendTime = 15,
         DefendRespawn = 60,
         AttackRespawn = 70,
         WinningPoints = 1000,
-
-        ---Calls on spawning character in AttackDefend
-        ---@param client Barotrauma.Networking.Client
-        ---@param team Team
-        ---@param character Barotrauma.Character
-        ---@return boolean|nil
         OnPlayerSpawn = function (client, team, character)
             local innerClothes = character.Inventory.GetItemInLimbSlot(InvSlotType.InnerClothes)
             if innerClothes then
@@ -198,17 +193,11 @@ config.GamemodeConfig = {
     },
 
     AttackDefendWatter = {
-        PointshopCategories = {"maintenance", "materials", "medical", "ores", "other", "wiring"},
+        PointshopCategories = {"teamRedWatter", "teamBlueWatter"},
         DefendTime = 15,
         DefendRespawn = 60,
         AttackRespawn = 70,
         WinningPoints = 1000,
-
-        ---Calls on spawning character in AttackDefend
-        ---@param client Barotrauma.Networking.Client
-        ---@param team Team
-        ---@param character Barotrauma.Character
-        ---@return boolean|nil
         OnPlayerSpawn = function (client, team, character)
             local innerClothes = character.Inventory.GetItemInLimbSlot(InvSlotType.InnerClothes)
             if innerClothes then
@@ -221,17 +210,11 @@ config.GamemodeConfig = {
     },
 
     DefendsBomb = {
-        PointshopCategories = {"maintenance", "materials", "medical", "ores", "other", "wiring"},
+        PointshopCategories = {"teamRedDB", "teamBlueDB"},
         DefendTime = 15,
         DefendRespawn = 60,
         AttackRespawn = 70,
         WinningPoints = 1000,
-
-        ---Calls on spawning character in AttackDefend
-        ---@param client Barotrauma.Networking.Client
-        ---@param team Team
-        ---@param character Barotrauma.Character
-        ---@return boolean|nil
         OnPlayerSpawn = function (client, team, character)
             local innerClothes = character.Inventory.GetItemInLimbSlot(InvSlotType.InnerClothes)
             if innerClothes then
@@ -243,7 +226,7 @@ config.GamemodeConfig = {
     },
 
     AttackDefendV2 = {
-        PointshopCategories = {"spawnBlue", "spawnRed", "teamBlue", "teamRed"},
+        PointshopCategories = {"spawnBlue", "spawnRed"},
         DefendTime = 15,
         DefendRespawn = 60,
         AttackRespawn = 70,
@@ -383,7 +366,6 @@ config.RandomEventConfig = {
         dofile(Traitormod.Path .. "/Lua/config/randomevents/abysshelp.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/lightsoff.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/emergencyteam.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/piratecrew.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/outpostpirateattack.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/shadymission.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/oxygengenpoison.lua"),
@@ -391,6 +373,13 @@ config.RandomEventConfig = {
         dofile(Traitormod.Path .. "/Lua/config/randomevents/prisoner.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/randomlights.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/clownmagic.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/fixhull.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/fullfixshull.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/fullelectricalfixdischarge.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/breackelectrical.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/breackhull.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/killelectrical.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/killhull.lua"),
     }
 }
 
@@ -399,9 +388,6 @@ config.PointShopConfig = {
     DeathTimeoutTime = 60,
     DeathSpawnRefundAtEndRound = true,
     ItemCategories = {
-        dofile(Traitormod.Path .. "/Lua/config/pointshop/clown.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/pointshop/cultist.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/pointshop/traitor.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/security.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/maintenance.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/materials.lua"),
@@ -409,18 +395,34 @@ config.PointShopConfig = {
         dofile(Traitormod.Path .. "/Lua/config/pointshop/ores.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/other.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/wiring.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/pointshop/deathspawn.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/ships.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/surgery.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/plant.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/clown.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/cultist.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/traitor.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/spawnBlue.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/spawnRed.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamBlue.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamRed.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamRedDB.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamBlueDB.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamRedWatter.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamBlueWatter.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/deathspawns/deathspawn.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/deathspawns/deathspawnhusk.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/deathspawns/deathspawnfriend.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/events/deathtrigerevent.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/events/deathtrigereventevil.lua"),
     }
 }
 
 config.GhostRoleConfig = {
     Enabled = true,
     MiscGhostRoles = {
+        ["Mudraptor_hatchling"] = true,
+        ["Crawler_hatchling"] = true,
+        ["Tigerthresher_hatchling"] = true,
         ["Watcher"] = true,
         ["Mudraptor_pet"] = true,
         ["Fractalguardian"] = true,
