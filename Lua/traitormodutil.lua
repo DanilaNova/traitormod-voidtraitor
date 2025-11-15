@@ -280,7 +280,7 @@ Traitormod.ParseCommand = function (text)
 end
 
 ---@param commandName string
----@param callback fun(client: Barotrauma.Networking.Client, args: string[])
+---@param callback fun(client: Barotrauma.Networking.Client, args: string[]): boolean?
 Traitormod.AddCommand = function (commandName, callback)
     if type(commandName) == "table" then
         for command in commandName do

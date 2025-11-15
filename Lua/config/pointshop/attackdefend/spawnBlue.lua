@@ -21,7 +21,7 @@ Products = {
 			end
 			respawnEntry.OnSpawn = function (character)
 				character.info.SetSkillLevel("weapons", 100)
-				GameMain.NetworkMember.CreateEntityEvent(character, Character.UpdateSkillsEventData("weapons", true))
+				Networking.CreateEntityEvent(character, Character.UpdateSkillsEventData("weapons", true))
 				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("securityseparatistsuniform3"), character.Inventory, nil, nil, nil, true, false, InvSlotType.InnerClothes)
 				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("rifle"), character.Inventory)
 			end

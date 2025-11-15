@@ -1,6 +1,6 @@
 ---@alias classFunction fun(character: Barotrauma.Character)
 
----@class (partial) Gamemodes.AttackDefendV2: Gamemode
+---@class Gamemodes.AttackDefendV2: Gamemode
 local gm = Traitormod.Gamemodes.Gamemode:new()
 local TeamID1 = CharacterTeamType.Team1
 local TeamID2 = CharacterTeamType.Team2
@@ -13,7 +13,10 @@ gm.RandomizeTeams = false
 gm.TraitormodSettings.LimitedSuicide = false
 
 function gm:CheckRequirements()
-	return Game.ServerSettings.MissionTypes:find(self.MissionType) ~= nil
+	for value in Game.ServerSettings.AllowedRandomMissionTypes do
+		if value == self.MissionType then return true end
+	end
+	return false
 end
 
 --#region Helper functions
