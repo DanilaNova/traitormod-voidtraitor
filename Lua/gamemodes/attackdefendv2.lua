@@ -64,7 +64,7 @@ function GearUpCharacter(character, team, waypoint, class)
 		Networking.CreateEntityEvent(card, Item.ChangePropertyEventData(lock, card))
 	else
 		Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("idcard"), character.Inventory, nil, nil, function (card)
-			card.GetComponentString("IdCard").Initialize(waypoint, character)
+			card.GetComponentString("IdCard")--[[@as Barotrauma.Items.Components.IdCard]].Initialize(waypoint, character)
 			card.NonPlayerTeamInteractable = true
 			local lock = card.SerializableProperties[Identifier("NonPlayerTeamInteractable")]
 			Networking.CreateEntityEvent(card, Item.ChangePropertyEventData(lock, card))
@@ -113,6 +113,7 @@ function gm:PreStart()
 
 	self.IsEnding = false
 	self.Respawns = {}
+	self.ClassCounters = {}
     self.DefendCountDown = self.DefendTime * 60
     self.LastDefendCountDown = self.DefendTime * 60
 
@@ -219,7 +220,7 @@ function gm:Think()
     end
 
 	for _, team in ipairs(self.Teams) do
-		for _, member in pairs(team.Members) do
+		for _, member in ipairs(team.Members) do
             if not member.SpectateOnly and (not member.Character or member.Character.IsDead) then
 				local respawn = self.Respawns[member]
 
@@ -232,8 +233,20 @@ function gm:Think()
 					end
                     respawn.Timer = respawn.Timer - 1/60
 					if respawn.Timer <= 0 and respawn.OnSpawn ~= nil then
-						self.Respawns[member].Timer = nil
+
 						SpawnCharacter(member, team, respawn.OnSpawn, respawn.JobId)
+						self.Respawns[member].Timer = nil
+
+						local prevClassId = self.Respawns[member].PrevClassId
+						if prevClassId ~= nil then
+							local classCounter = self.ClassCounters[prevClassId]
+							if classCounter == nil then
+								Traitormod.Error(("Class counter '%s' was empty"):format(prevClassId))
+							else
+								self.ClassCounters[prevClassId] = classCounter - 1
+							end
+						end
+
 					end
                 end
             end

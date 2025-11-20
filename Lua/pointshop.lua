@@ -5,6 +5,7 @@ local textPromptUtils = require("textpromptutils")
 
 local defaultLimit = 999
 
+---@enum Pointshop.ProductBuyFailureReason.Enum
 ps.ProductBuyFailureReason = {
     NoPoints = 1,
     NoStock = 2,

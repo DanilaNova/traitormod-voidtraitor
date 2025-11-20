@@ -1,3 +1,13 @@
+---@diagnostic disable-next-line: unknown-cast-variable
+---@cast Traitormod.SelectedGamemode Gamemodes.AttackDefendV2
+
+---@module "adv2"
+local ADV2 = dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/utility/adv2.lua")
+local respawnStart = ADV2.RespawnStart
+local CanBuy = ADV2.CanBuy
+local spawnItems = ADV2.SpawnItems
+ADV2 = nil
+
 ---@type Pointshop.Category
 local category = {
 
@@ -11,17 +21,14 @@ Products = {
 		Identifier = "rifleman",
 		Price = 0,
 		Limit = math.huge,
-		Action = function (client)
-			---@type RespawnEntry?
-			local respawnEntry = Traitormod.SelectedGamemode.Respawns[client]
+		CanBuy = function (_, product)
+			return CanBuy(product.Identifier, 10)
+		end,
+		Action = function (client, product)
+			local respawnEntry = respawnStart(client, product.Identifier)
 
-			if respawnEntry == nil then
-				respawnEntry = {Timer = nil, OnSpawn = nil, JobId = nil}
-				Traitormod.SelectedGamemode.Respawns[client] = respawnEntry
-			end
 			respawnEntry.OnSpawn = function (character)
 				character.info.SetSkillLevel("weapons", 100)
-				Networking.CreateEntityEvent(character, Character.UpdateSkillsEventData("weapons", true))
 				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("securityseparatistsuniform3"), character.Inventory, nil, nil, nil, true, false, InvSlotType.InnerClothes)
 				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("rifle"), character.Inventory)
 			end
@@ -32,14 +39,12 @@ Products = {
 		Identifier = "assault",
 		Price = 1,
 		Limit = 9999,
-		Action = function (client)
-			---@type RespawnEntry?
-			local respawnEntry = Traitormod.SelectedGamemode.Respawns[client]
+		CanBuy = function (_, product)
+			return CanBuy(product.Identifier, 10)
+		end,
+		Action = function (client, product)
+			local respawnEntry = respawnStart(client, product.Identifier)
 
-			if respawnEntry == nil then
-				respawnEntry = {Timer = nil, OnSpawn = nil}
-				Traitormod.SelectedGamemode.Respawns[client] = respawnEntry
-			end
 			--[[]//TODO
 			Equipment
 			Submachine gun
@@ -52,14 +57,11 @@ Products = {
 		Identifier = "juggernaut",
 		Price = 1,
 		Limit = math.huge,
-		Action = function (client)
-			---@type RespawnEntry?
-			local respawnEntry = Traitormod.SelectedGamemode.Respawns[client]
-
-			if respawnEntry == nil then
-				respawnEntry = {Timer = nil, OnSpawn = nil}
-				Traitormod.SelectedGamemode.Respawns[client] = respawnEntry
-			end
+		CanBuy = function (_, product)
+			return CanBuy(product.Identifier, 10)
+		end,
+		Action = function (client, product)
+			local respawnEntry = respawnStart(client, product.Identifier)
 
 			--[[]//TODO
 			Equipment
@@ -70,19 +72,84 @@ Products = {
 		end
 	},
 	{
-		Identifier = "test",
+		Identifier = "scout",
 		Price = 0,
-		Limit = 9999,
-		Action = function (client)
-			---@type RespawnEntry?
-			local respawnEntry = Traitormod.SelectedGamemode.Respawns[client]
+		Limit = math.huge,
+		CanBuy = function (_, product)
+			return CanBuy(product.Identifier, 10)
+		end,
+		Action = function (client, product)
+			local respawnEntry = respawnStart(client, product.Identifier)
 
-			if respawnEntry == nil then
-				respawnEntry = {Timer = nil, OnSpawn = nil}
-				Traitormod.SelectedGamemode.Respawns[client] = respawnEntry
+			respawnEntry.OnSpawn = function (character)
+				local inventory = character.Inventory
+				---@type ItemTable
+				local inventoryItems = {
+					["advancedgenesplicer"] = {
+						SpawnIfFull = true,
+						IgnoreLimbs = false,
+						InvSlotType = InvSlotType.HealthInterface,
+						Items = {
+							["geneticmaterialskitter"] = 1,
+							["geneticmaterialmantis"] = 1,
+						}
+					},
+					["autoinjectorheadset"] = {
+						SpawnIfFull = true,
+						IgnoreLimbs = false,
+						InvSlotType = InvSlotType.Headset,
+						Items = {
+							["adrenaline"] = 1,
+						}
+					},
+					["piratebandana"] = {
+						SpawnIfFull = true,
+						IgnoreLimbs = false,
+						InvSlotType = InvSlotType.Head
+					},
+					["securityuniform2"] = {
+						SpawnIfFull = true,
+						IgnoreLimbs = false,
+						InvSlotType = InvSlotType.InnerClothes,
+					},
+					["toolbelt"] = {
+						SpawnIfFull = true,
+						IgnoreLimbs = false,
+						InvSlotType = InvSlotType.Bag,
+						Items = {
+							["smgmagazine"] = 4,
+							["hyperzine"] = 2,
+							["wrench"] = 1,
+						}
+					},
+					["machinepistol"] = {
+						Quantity = 2,
+						Items = {
+							["smgmagazine"] = 1,
+						}
+					},
+					["medtoolbox"] = {
+						Items = {
+							["adrenaline"] = 2,
+							["pills6"] = 1,
+							["pills2"] = 1,
+							["ointment"] = 1,
+							["blunttraumaointment"] = 1,
+							["opium"] = 4,
+							["antibleeding1"] = 6,
+							["gypsum"] = 2,
+							["antibloodloss2"] = 2,
+						}
+					},
+					["artmod_scrapclub"] = 1,
+				}
+
+				for key, value in pairs(inventoryItems) do
+					spawnItems(key, inventory, value)
+				end
 			end
-			
-			Traitormod.Log(client.Name .. "has spawned as juggernaut")
+	
+			Traitormod.Log(client.Name .. "has spawned as scout")
 		end
 	}
 }

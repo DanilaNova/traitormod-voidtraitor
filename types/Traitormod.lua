@@ -26,8 +26,11 @@
 ---@field Price integer
 ---@field Limit integer?
 ---@field IsLimitGlobal boolean? default is false
----@field Action fun(client: Barotrauma.Networking.Client)?
+---@field Action fun(client: Barotrauma.Networking.Client, product: Pointshop.Product, spawnedItems: Barotrauma.Item[], paidPrice: number)?
+---@field CanBuy ?fun(client: Barotrauma.Networking.Client, product: Pointshop.Product): boolean, Pointshop.ProductBuyFailureReason?
 ---@field Items string[]?
+
+---@alias Pointshop.ProductBuyFailureReason string |  Pointshop.ProductBuyFailureReason.Enum
 
 ---@class Traitormod
 ---@field SelectedGamemode Gamemode

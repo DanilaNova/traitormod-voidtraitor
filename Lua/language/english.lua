@@ -367,4 +367,6 @@ language.CMDRoundTime = "This round has been going for %s."
 language.CMDPlaytime = "Your playtime is %s."
 language.CMDMonsterBroadcast = "[%s %s]: %s"
 
+language.ReachedClassLimit = "Reached class limit"
+
 return language
