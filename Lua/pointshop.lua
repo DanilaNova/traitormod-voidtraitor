@@ -1,3 +1,4 @@
+---@class Pointshop
 local ps = {}
 
 local config = Traitormod.Config
@@ -11,13 +12,20 @@ ps.ProductBuyFailureReason = {
     NoStock = 2,
 }
 
+---@type table<string, integer>
 ps.GlobalProductLimits = {}
+---@type table<string, integer>
 ps.LocalProductLimits = {}
+---@type table<Barotrauma.Networking.Client[], string>
+ps.SlotReserve = {}
+---@type table<string, Barotrauma.Character[]>
+ps.TakenSlots = {}
 ps.Timeouts = {}
 ps.Refunds = {}
 ps.ActiveCategories = {}
 ps.AllCategories = {} -- It has config categories parsed as a table
 
+---@param categories Pointshop.Category[]
 ps.Initialize = function(categories)
     -- Adds required categories to a list so it can be used by the gamemode
     for _, category in pairs(categories) do
@@ -50,8 +58,12 @@ end
 ps.ResetProductLimits = function()
     ps.GlobalProductLimits = {}
     ps.LocalProductLimits = {}
+    ps.SlotReserve = {}
+    ps.TakenSlots = {}
 end
 
+---@param product Pointshop.Product
+---@return boolean
 ps.GetProductHasInstallation = function(product)
     if product.Items ~= nil then
         for key, value in pairs(product.Items) do
@@ -64,6 +76,9 @@ ps.GetProductHasInstallation = function(product)
     return false
 end
 
+---@param client Barotrauma.Networking.Client
+---@param product Pointshop.Product
+---@return integer
 ps.GetProductLimit = function (client, product)
     if product.IsLimitGlobal then
         if ps.GlobalProductLimits[product.Identifier] == nil then
@@ -86,8 +101,93 @@ ps.GetProductLimit = function (client, product)
     end
 end
 
+---@param product Pointshop.Product
+---@return Barotrauma.Character[]
+ps.GetTakenSlots = function (product)
+    local takenSlots = ps.TakenSlots[product.Identifier]
+    if takenSlots == nil then
+        takenSlots = {}
+        ps.TakenSlots[product.Identifier] = takenSlots
+    end
+
+    return takenSlots
+end
+
+---@param product Pointshop.Product
+---@return Barotrauma.Networking.Client[]
+ps.GetReservedSlots = function (product)
+    local slots = {}
+    local indentifier = product.Identifier
+    for client, slot in pairs(ps.SlotReserve) do
+        if slot == indentifier then
+            table.insert(slots, client)
+        end
+    end
+    return slots
+end
+
+ps.FreeReservedSlot = function ()
+    
+end
+
+---@param client Barotrauma.Networking.Client
+---@param character Barotrauma.Character
+---@return boolean
+ps.TakeReservedSlot = function (client, character)
+    for indentifier, reservedSlots in pairs(ps.ReservedSlots) do
+        for index, slot in ipairs(reservedSlots) do
+            if slot == client then
+                table.insert(ps.TakenSlots[indentifier], character)
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+---@param product Pointshop.Product
+---@return integer
+ps.CountAllSlots = function (product)
+    local reservedSlots = ps.GetReservedSlots(product.Identifier)
+    local takenSlots = ps.GetTakenSlots(product.Identifier)
+
+    local slotLookup = {}
+    local counter = 0
+    for _, slot in ipairs(reservedSlots) do
+        slotLookup[slot.AccountId] = true
+        counter = counter + 1
+    end
+    for _, slot in ipairs(takenSlots) do
+        if not slotLookup[slot.ownerClientAccountId] then
+            counter = counter + 1
+        end
+    end
+
+    return counter
+end
+
+---@param client Barotrauma.Networking.Client
+---@param product Pointshop.Product
+---@param amount integer?
+---@return boolean
 ps.UseProductLimit = function (client, product, amount)
     amount = amount or 1
+
+    local productSlots = product.Slots
+    if productSlots ~= nil then
+        if productSlots - ps.CountAllSlots(product) > 0 then
+            local chosenSlots
+            if product.ReserveSlots then
+                
+            else
+                chosenSlots = ps.GetTakenSlots(product)
+            end
+
+        else
+            return false
+        end
+    end
 
     if product.IsLimitGlobal then
         if ps.GlobalProductLimits[product.Identifier] == nil then
@@ -120,6 +220,8 @@ ps.UseProductLimit = function (client, product, amount)
     end
 end
 
+---@param product Pointshop.Product
+---@return string
 ps.GetProductName = function (product)
     if product == nil then
         error("GetProductName: argument #1 was nil", 2)
@@ -136,6 +238,8 @@ ps.GetProductName = function (product)
     return product.Identifier
 end
 
+---@param category Pointshop.Category
+---@return string
 ps.GetCategoryName = function (category)
     if category == nil then
         error("GetCategoryName: argument #1 was nil", 2)
@@ -149,6 +253,9 @@ ps.GetCategoryName = function (category)
     return category.Identifier
 end
 
+---@param client Barotrauma.Networking.Client
+---@param name string
+---@return Pointshop.Product
 ps.FindProductByName = function (client, name)
     for i, category in pairs(config.PointShopConfig.ItemCategories) do
         if ps.CanClientAccessCategory(client, category) then
@@ -161,6 +268,9 @@ ps.FindProductByName = function (client, name)
     end 
 end
 
+---@param client Barotrauma.Networking.Client
+---@param category Pointshop.Category
+---@return boolean
 ps.CanClientAccessCategory = function(client, category)
     if category.CanAccess ~= nil then
         return category.CanAccess(client)
@@ -171,6 +281,8 @@ ps.CanClientAccessCategory = function(client, category)
     return true
 end
 
+---@param client Barotrauma.Networking.Client
+---@return boolean
 ps.ValidateClient = function(client)
     if not config.PointShopConfig.Enabled then
         Traitormod.SendMessage(client, Traitormod.Language.CommandNotActive)
@@ -185,6 +297,9 @@ ps.ValidateClient = function(client)
     return true
 end
 
+---@param client Barotrauma.Networking.Client
+---@param item Pointshop.Item
+---@param onSpawned fun(obj: Barotrauma.Item)
 ps.SpawnItem = function(client, item, onSpawned)
     local prefab = ItemPrefab.GetItemPrefab(item.Identifier)
     local condition = item.Condition or item.MaxCondition
@@ -226,6 +341,9 @@ ps.SpawnItem = function(client, item, onSpawned)
     end
 end
 
+---@param client Barotrauma.Networking.Client
+---@param product Pointshop.Product
+---@param paidPrice integer
 ps.ActivateProduct = function (client, product, paidPrice)
     local spawnedItems = {}
     local spawnedItemCount = 0
@@ -245,13 +363,13 @@ ps.ActivateProduct = function (client, product, paidPrice)
             local randomIndex = math.random(1, #product.Items)
             local item = product.Items[randomIndex]
 
-            if type(product.Items[randomIndex]) == "string" then
-                item = {Identifier = product.Items[randomIndex]}
+            if type(item) == "string" then
+                item = {Identifier = item}
             end
 
             ps.SpawnItem(client, item, OnSpawned)
         else
-            for key, value in pairs(product.Items) do
+            for _, value in pairs(product.Items) do
                 if type(value) == "string" then
                     value = {Identifier = value}
                 end
@@ -266,6 +384,9 @@ ps.ActivateProduct = function (client, product, paidPrice)
     end
 end
 
+---@param client Barotrauma.Networking.Client
+---@param product Pointshop.Product
+---@return integer
 ps.GetProductPrice = function (client, product)
     local mult = 0
 
@@ -280,6 +401,9 @@ ps.GetProductPrice = function (client, product)
     return product.Price + (product.Limit - ps.GetProductLimit(client, product)) * (product.PricePerLimit or 0) - mult
 end
 
+---@param client Barotrauma.Networking.Client
+---@param product Pointshop.Product
+---@return Pointshop.ProductBuyFailureReason?
 ps.BuyProduct = function(client, product)
     local price = 0
     if not Traitormod.Config.TestMode then
@@ -321,6 +445,10 @@ ps.BuyProduct = function(client, product)
     ps.ActivateProduct(client, product, price)
 end
 
+---@param client Barotrauma.Networking.Client
+---@param product Pointshop.Product
+---@param result Pointshop.ProductBuyFailureReason?
+---@param quantity integer?
 ps.HandleProductBuy = function (client, product, result, quantity)
     quantity = quantity or 1
     if result == ps.ProductBuyFailureReason.NoPoints then
@@ -369,6 +497,8 @@ ps.HandleProductBuy = function (client, product, result, quantity)
     end
 end
 
+---@param client Barotrauma.Networking.Client
+---@param category Pointshop.Category
 ps.ShowCategoryItems = function(client, category)
     local options = {}
     local productsLookup = {}
@@ -379,14 +509,20 @@ ps.ShowCategoryItems = function(client, category)
     for key, product in pairs(category.Products) do
         if product.Enabled ~= false then
             local limit = product.Limit or defaultLimit
+            local playerLimit = product.Slots
             local price = ps.GetProductPrice(client, product)
             local productInfo = {}
-            local limitText
 
-            if price ~= 0 then table.insert(productInfo, ("%spt"):format(price)) end
-            if limit ~= math.huge then table.insert(productInfo, ("(%s/%s)"):format(ps.GetProductLimit(client, product), limit)) end
+            if price ~= 0 then
+                table.insert(productInfo, ("%spt"):format(price))
+            end
+            if limit ~= math.huge then
+                table.insert(productInfo, ("%s/%s products"):format(ps.GetProductLimit(client, product), limit))
+            end
+            if playerLimit ~= nil then
+                table.insert(productInfo, ("%s/%s slots taken"):format(ps.CountAllSlots(product), playerLimit))
+            end
 
-            
             local text = ps.GetProductName(product)
             if #productInfo > 0 then text = text .. " - " .. table.concat(productInfo, " ") end
 
@@ -437,6 +573,7 @@ ps.ShowCategoryItems = function(client, category)
     end, category.Decoration or "gambler", category.FadeToBlack)
 end
 
+---@param client Barotrauma.Networking.Client
 ps.ShowCategory = function(client)
     local options = {}
     local categoryLookup = {}
@@ -551,6 +688,18 @@ end)
 
 ---@param character Barotrauma.Character
 Hook.Add("characterDeath", "Traitormod.Pointshop.Death", function (character)
+    for _, takenSlots in pairs(ps.TakenSlots) do
+        local removeList = {}
+        for index, slot in ipairs(takenSlots) do
+            if slot == character then table.insert(removeList, index) end
+        end
+
+        -- Удаляем в обратном порядке
+        for i = #removeList, 1, -1 do
+            table.remove(takenSlots, removeList[i])
+        end
+    end
+
     if character.IsPet then return end
     local client = Traitormod.FindClientCharacter(character)
     if client == nil then return end
@@ -564,9 +713,25 @@ Hook.Add("characterDeath", "Traitormod.Pointshop.Death", function (character)
     else
         ps.Timeouts[client.SteamID] = Timer.GetTime() + config.PointShopConfig.DeathTimeoutTime
     end
+
     -- this line will make sure it doesnt stay in the memory
     ps.Refunds[client] = nil
 end)
+
+---@param client Barotrauma.Networking.Client
+-- Hook.Add("client.disconnected", "Traitormod.Pointshop.Disconnect", function (client)
+--     for _, reservedSlots in pairs(ps.ReservedSlots) do
+--         local removeList = {}
+--         for index, slot in ipairs(reservedSlots) do
+--             if slot == client then table.insert(removeList, index) end
+--         end
+
+--         -- Удаляем в обратном порядке
+--         for i = #removeList, 1, -1 do
+--             table.remove(reservedSlots, removeList[i])
+--         end
+--     end
+-- end)
 
 for _, category in pairs(config.PointShopConfig.ItemCategories) do
     if category.Init then category.Init() end

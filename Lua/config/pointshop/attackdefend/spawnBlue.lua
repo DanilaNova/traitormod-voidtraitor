@@ -8,12 +8,14 @@ local CanBuy = ADV2.CanBuy
 local spawnItems = ADV2.SpawnItems
 ADV2 = nil
 
+local ShopTeamID = CharacterTeamType.Team1
+
 ---@type Pointshop.Category
 local category = {
 
 Identifier = "spawnBlue",
 CanAccess = function (client)
-	return client.TeamID == CharacterTeamType.Team1
+	return Traitormod.SelectedGamemode.Teams[ShopTeamID].Respawns[client.AccountId] ~= nil
 end,
 
 Products = {
@@ -25,7 +27,7 @@ Products = {
 			return CanBuy(product.Identifier, 10)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
 			
 			respawnEntry.OnSpawn = function (character)
 				character.info.SetSkillLevel("weapons", 100)
@@ -43,7 +45,7 @@ Products = {
 			return CanBuy(product.Identifier, 10)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
 			--[[]//TODO
 			Equipment
 			Submachine gun
@@ -60,7 +62,7 @@ Products = {
 			return CanBuy(product.Identifier, 10)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
 
 			--[[]//TODO
 			Equipment
@@ -74,11 +76,13 @@ Products = {
 		Identifier = "scout",
 		Price = 0,
 		Limit = math.huge,
+		-- Slots = 10,
+		-- ReserveSlots = true,
 		CanBuy = function (_, product)
 			return CanBuy(product.Identifier, 10)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
 
 			respawnEntry.JobId = "captain"
 
@@ -152,9 +156,11 @@ Products = {
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
+				-- Traitormod.Pointshop.TakeReservedSlot(client, character)
 			end
 	
-			Traitormod.Log(client.Name .. "has spawned as scout")
+			
+			Traitormod.Log(client.Name .. "chosen scout")
 		end
 	}
 }

@@ -8,7 +8,7 @@ local TeamID2 = CharacterTeamType.Team2
 gm.Name = "AttackDefendV2"
 gm.RequiredGamemode = "pvp"
 gm.MissionType = "AttackDefenceV2"
-gm.RandomizeTeams = false
+gm.PriorityTeam = CharacterTeamType.None
 
 gm.TraitormodSettings.LimitedSuicide = false
 
@@ -21,18 +21,6 @@ end
 
 --#region Helper functions
 
----Adds client to team members
----@param client Barotrauma.Networking.Client
----@param teams AttackDefendV2.Team[]
-local function ChooseTeam(client, teams)
-	local clientTeam = teams[client.TeamID]
-	if(clientTeam) then
-		table.insert(clientTeam.Members, client)
-	else
-		Traitormod.Error("Client " .. client.Name .. " belongs to the unknown team №".. client.TeamID)
-	end
-end
-
 ---Спавнит персонажа для клиента
 ---@param client Barotrauma.Networking.Client
 ---@param team AttackDefendV2.Team
@@ -44,6 +32,7 @@ function SpawnCharacter(client, team, class, jobId)
 
 	local characterInfo = client.characterInfo
 	characterInfo.Job = Job(JobPrefab.Get(jobId or "commoner"), true)
+	characterInfo.TeamID = team.TeamID
 
 	local character = Character.Create(characterInfo, spawnPoint.WorldPosition, client.CharacterInfo.Name, 0, true, true)
 	client.SetClientCharacter(character)
@@ -83,7 +72,7 @@ end
 
 ---@param client Barotrauma.Networking.Client
 ---@protected
-function gm:__SetNewClient(client)
+function gm._SetNewClient(client)
 	local character = client.Character
 	if character ~= nil then
 		Timer.Wait(function ()
@@ -92,7 +81,172 @@ function gm:__SetNewClient(client)
 			Traitormod.Pointshop.ShowCategory(client)
 		end, 1000)
 	end
-	self.Respawns[client] = {Timer = 0}
+end
+
+---@param newClients Barotrauma.Networking.Client[]?
+---@return { Client: Barotrauma.Networking.Client, NewTeamID: Barotrauma.CharacterTeamType }[]
+---@protected
+function gm:_BalanceTeams(newClients)
+	local priorityTeamID = self.PriorityTeam
+	if priorityTeamID == CharacterTeamType.None then
+		priorityTeamID = math.random(1, 2) == 1 and TeamID1 or TeamID2
+	end
+	local notPriorityTeamID = priorityTeamID == 1 and TeamID2 or TeamID1
+
+	-- Распределяем новых клиентов
+	if newClients ~= nil then
+		local tempTeams = {
+			[priorityTeamID] = {
+				Counter = #self.Teams[TeamID1].Members,
+				---@type Barotrauma.Networking.Client[]
+				Members = {}
+			},
+			[notPriorityTeamID] = {
+				Counter = #self.Teams[TeamID2].Members,
+				---@type Barotrauma.Networking.Client[]
+				Members = {}
+			}
+		}
+		local priorityTeam = tempTeams[priorityTeamID]
+		local priorityTeamMembers = priorityTeam.Members
+		local notPriorityTeam = tempTeams[notPriorityTeamID]
+		local notPriorityTeamMembers = notPriorityTeam.Members
+		---@type Barotrauma.Networking.Client[]
+		local freeClients = {}
+
+		-- Вначале пытаемся распеделить по предпочтениям игроков
+		for _, client in ipairs(newClients) do
+			local preferredTeam = tempTeams[client.PreferredTeam]
+			if preferredTeam ~= nil then
+				table.insert(preferredTeam.Members, client)
+				preferredTeam.Counter = preferredTeam.Counter + 1
+			else
+				table.insert(freeClients, client)
+			end
+		end
+
+		-- Назначаем неопределившихся игроков
+		for _, client in ipairs(freeClients) do
+			if notPriorityTeam.Counter < priorityTeam.Counter then
+				table.insert(notPriorityTeamMembers, client)
+				notPriorityTeam.Counter = notPriorityTeam.Counter + 1
+			else
+				table.insert(priorityTeamMembers, client)
+				priorityTeam.Counter = priorityTeam.Counter + 1
+			end
+		end
+
+		-- Балансируем за счёт новых игроков
+		while priorityTeam.Counter - notPriorityTeam.Counter < 0 and #notPriorityTeamMembers > 0 do
+			local randomPlayerIndex = math.random(#notPriorityTeamMembers)
+			local client = table.remove(notPriorityTeamMembers, randomPlayerIndex)
+			notPriorityTeam.Counter = notPriorityTeam.Counter - 1
+			table.insert(priorityTeamMembers, client)
+			priorityTeam.Counter = priorityTeam.Counter + 1
+		end
+		while priorityTeam.Counter - notPriorityTeam.Counter > 1 and #priorityTeamMembers > 0 do
+			local randomPlayerIndex = math.random(#priorityTeamMembers)
+			local client = table.remove(priorityTeamMembers, randomPlayerIndex)
+			priorityTeam.Counter = priorityTeam.Counter - 1
+			table.insert(notPriorityTeamMembers, client)
+			notPriorityTeam.Counter = notPriorityTeam.Counter + 1
+		end
+
+		-- Записываем полученные списки в комманды
+		for teamID, tempTeam in pairs(tempTeams) do
+			local team = self.Teams[teamID]
+			local teamMembers = team.Members
+			for _, client in pairs(tempTeam.Members) do
+				self:_ChangeTeam(client, team.TeamID)
+			end
+		end
+
+		print("Окончательный список команд")
+		for teamID, team in pairs(self.Teams) do
+			print("  Команда ", teamID)
+			for _, member in pairs(team.Members) do
+				print("    "..member.Name)
+			end
+		end
+	end
+
+	local priorityTeamMembers = self.Teams[priorityTeamID].Members
+	local notPriorityTeamMembers = self.Teams[notPriorityTeamID].Members
+	local autobalancedClients = {}
+	while #priorityTeamMembers - #notPriorityTeamMembers < 0 do
+		local randomPlayerIndex = math.random(#notPriorityTeamMembers)
+		local client = notPriorityTeamMembers[randomPlayerIndex]
+		self:_ChangeTeam(client, priorityTeamID, notPriorityTeamID)
+		table.insert(autobalancedClients, { Client = client, NewTeamID = priorityTeamID })
+	end
+	while #priorityTeamMembers - #notPriorityTeamMembers > 1 do
+		local randomPlayerIndex = math.random(#priorityTeamMembers)
+		local client = priorityTeamMembers[randomPlayerIndex]
+		self:_ChangeTeam(client, notPriorityTeamID, priorityTeamID)
+		table.insert(autobalancedClients, { Client = client, NewTeamID = notPriorityTeamID })
+	end
+
+	return autobalancedClients
+end
+
+---@param client Barotrauma.Networking.Client
+---@return Barotrauma.CharacterTeamType
+function gm:_AddNewClient(client)
+	local priorityTeamID = self.PriorityTeam
+	if priorityTeamID == CharacterTeamType.None then
+		priorityTeamID = math.random(1, 2) == 1 and TeamID1 or TeamID2
+	end
+	local notPriorityTeamID = priorityTeamID == 1 and TeamID2 or TeamID1
+
+	local priorityTeamMembers = self.Teams[priorityTeamID].Members
+	local notPriorityTeamMembers = self.Teams[notPriorityTeamID].Members
+
+	if #priorityTeamMembers > #notPriorityTeamMembers then
+		self:_ChangeTeam(client, notPriorityTeamID)
+		return notPriorityTeamID
+	else
+		self:_ChangeTeam(client, priorityTeamID)
+		return priorityTeamID
+	end
+end
+
+---@protected
+---@param client Barotrauma.Networking.Client
+---@param to Barotrauma.CharacterTeamType
+---@param from Barotrauma.CharacterTeamType?
+---@return boolean error в изначальной команде не нашёлся указанный участник
+function gm:_ChangeTeam(client, to, from)
+	local error = false
+	local team = self.Teams[to]
+	local id = client.AccountId
+
+	if from ~= nil then
+		local oldTeam = self.Teams[from]
+		local teamMembers = oldTeam.Members
+		local deleteId
+		for i, member in pairs(teamMembers) do
+			if member == client then
+				deleteId = i
+				break
+			end
+		end
+		if deleteId ~= nil then
+			teamMembers[deleteId] = nil
+		else
+			print(("[AttackDefenceV2] WARNING: Cannot find %s in original team"):format(client.Name))
+			error = true
+		end
+		
+		oldTeam.Respawns[id] = nil
+		team.Respawns[id] = { Timer = nil }
+	else
+		team.Respawns[id] = { Timer = 0 }
+	end
+	team.Members[id] = client
+	client.TeamID = to
+	client.PreferredTeam = to
+	print(("[AttackDefenceV2]: %s team is set to %s"):format(client.Name, to))
+	return error
 end
 
 --#endregion
@@ -102,17 +256,13 @@ function gm:PreStart()
 		if sub.Name == Game.ServerSettings.SelectedOutpostName then
 			for key, value in pairs(Traitormod.ParseSubmarineConfig(sub.Description.Value)) do
 				self[key] = value
-			end	
+			end
 		end
 	end
 	
 	Traitormod.Pointshop.Initialize(self.PointshopCategories or {})
 
-	Traitormod.DisableRespawnShuttle = true
-    Traitormod.DisableMidRoundSpawn = true
-
 	self.IsEnding = false
-	self.Respawns = {}
 	self.ClassCounters = {}
     self.DefendCountDown = self.DefendTime * 60
     self.LastDefendCountDown = self.DefendTime * 60
@@ -121,14 +271,42 @@ function gm:PreStart()
 	local teams = {}
 	self.Teams = teams
 
+	local mtMembers = {
+		---@param obj AttackDefendV2.Members
+		__len = function (obj)
+			local i = 0
+			for _ in pairs(obj) do
+				i = i + 1
+			end
+			return i
+		end,
+		---@param obj AttackDefendV2.Members
+		---@param key any
+		__index = function (obj, key)
+			if type(key) ~= "number" then
+				return nil
+			end
+			local i
+			for _, value in pairs(obj) do
+				if i == key then
+					return value
+				end
+				i = i + 1
+			end
+			return nil
+		end
+	}
+
 	---@class AttackDefendV2.Team
 	---@field Reactor Barotrauma.Item?
 	teams[TeamID1] = {
 		Name = "Defenders",
 		---@type Barotrauma.WayPoint[]
 		Spawns = {},
-		---@type Barotrauma.Networking.Client[]
-		Members = {},
+		---@type { [Barotrauma.Networking.AccountId]: Barotrauma.Networking.Client }
+		Members = setmetatable({}, mtMembers),
+		---@type { [Barotrauma.Networking.AccountId]: RespawnEntry }
+		Respawns = {},
 		TeamID = TeamID1,
 		RespawnTime = self.DefendRespawn,
 		Color = Color.Blue,
@@ -141,7 +319,8 @@ function gm:PreStart()
 	teams[TeamID2] = {
 		Name = "Attackers",
 		Spawns = {},
-		Members = {},
+		Members = setmetatable({}, mtMembers),
+		Respawns = {},
 		TeamID = TeamID2,
 		RespawnTime = self.AttackRespawn,
 		Color = Color.Red,
@@ -154,25 +333,22 @@ function gm:PreStart()
 
 	--Hook.Remove("characterCreated", "Traitormod.CharacterCreated")
 
-	---@param client Barotrauma.Networking.Client
-	Hook.Add("client.connected", "Traitormod.AttackDefendV2.ClientConnected", function (client)
-		ChooseTeam(client, teams)
-		self:__SetNewClient(client)
-	end)
-
 	---@param character Barotrauma.Character
 	---@param waypoint Barotrauma.WayPoint
 	Hook.Add("character.giveJobItems", "Traitormod.AttackDefendV2.CharacterGiveJobItems", function (character, waypoint)
 		local team = self.Teams[character.TeamID]
 		if team == nil then
 			Traitormod.Error("Created character is on undefined team №"..character.TeamID)
-		else 
+		else
 			GearUpCharacter(character, team, waypoint)
 		end
 	end)
 end
 
 function gm:Start()
+	Traitormod.DisableRespawnShuttle = true
+    -- Traitormod.DisableMidRoundSpawn = true
+	
 	for _, item in pairs(Item.ItemList) do
 		if item.GetComponentString("Reactor") and item.HasTag("deathmatchteam1reactor") then
 			self.Teams[1].Reactor = item --[[@as Barotrauma.Item]]
@@ -190,18 +366,61 @@ function gm:Start()
 		end
     end
 
+	
+	local newClients = {}
 	for client in Client.ClientList do
-		ChooseTeam(client, self.Teams)
 		---@cast client Barotrauma.Networking.Client
-		self:__SetNewClient(client)
+		if not client.SpectateOnly then
+			table.insert(newClients, client)
+		end
+	end
+	local autobalancedClients = self:_BalanceTeams(newClients)
+	for _, client in ipairs(autobalancedClients) do
+		print(("Client %s is autobalanced to team %s"):format(client.Client.Name, client.NewTeamID))
+	end
+	for _, client in ipairs(newClients) do
+		self._SetNewClient(client)
 	end
 
+	---@param client Barotrauma.Networking.Client
+	Hook.Add("client.connected", "Traitormod.AttackDefendV2.ClientConnected", function (client)
+		local teams = self.Teams
+		for _, team in pairs(teams) do
+			if team.Members[client.AccountId] ~= nil then
+				team.Members[client.AccountId] = client
+			end
+		end
+	end)
+
+	---@param msg Barotrauma.Networking.IReadMessage
+	---@param header Barotrauma.Networking.ServerPacketHeader
+	---@param client Barotrauma.Networking.Client
+	Hook.Add("netMessageReceived", "Traitormod.AttackDefendV2.ClientJoined", function (msg, header, client)
+		if header ~= ClientPacketHeader.UPDATE_INGAME or client.InGame then
+			return
+		end
+
+		for _, team in pairs(self.Teams) do
+			local teamMembers = team.Members
+			for id, member in pairs(teamMembers) do
+				if member == client then return end
+				if id == client.AccountId then
+					teamMembers[id] = client
+					return
+				end
+			end
+		end
+
+		print(("Player %s joined the game"):format(client.Name))
+		self:_AddNewClient(client)
+		self:_SetNewClient(client)
+	end)
 end
 
 function gm:End()
     Hook.Remove("client.connected", "Traitormod.AttackDefendV2.ClientConnected")
 	Hook.Remove("character.giveJobItems", "Traitormod.AttackDefendV2.CharacterGiveJobItems")
-	
+
 	-- local entry = Traitormod.DefaultHooks["Traitormod.CharacterCreated"]
 	-- Hook.Add(entry[1], "Traitormod.CharacterCreated", entry[2])
 end
@@ -219,38 +438,31 @@ function gm:Think()
         self.LastDefendCountDown = self.DefendCountDown
     end
 
-	for _, team in ipairs(self.Teams) do
-		for _, member in ipairs(team.Members) do
-            if not member.SpectateOnly and (not member.Character or member.Character.IsDead) then
-				local respawn = self.Respawns[member]
-
-                if respawn == nil then
-					self.Respawns[member] = {Timer = team.RespawnTime}
-					
-                else
-					if respawn.Timer == nil then
-						respawn.Timer = team.RespawnTime
-					end
-                    respawn.Timer = respawn.Timer - 1/60
-					if respawn.Timer <= 0 and respawn.OnSpawn ~= nil then
-
-						SpawnCharacter(member, team, respawn.OnSpawn, respawn.JobId)
-						self.Respawns[member].Timer = nil
-
-						local prevClassId = self.Respawns[member].PrevClassId
-						if prevClassId ~= nil then
-							local classCounter = self.ClassCounters[prevClassId]
-							if classCounter == nil then
-								Traitormod.Error(("Class counter '%s' was empty"):format(prevClassId))
-							else
-								self.ClassCounters[prevClassId] = classCounter - 1
-							end
+	for _, team in pairs(self.Teams) do
+		
+		for id, entry in pairs(team.Respawns) do
+			local member = team.Members[id]
+			if (member.Character == nil or member.Character.IsDead) and member.InGame then
+				if entry.Timer == nil then
+					entry.Timer = team.RespawnTime
+				end
+				entry.Timer = entry.Timer - 1/60
+				if entry.Timer <= 0 and entry.OnSpawn ~= nil and member.InGame then
+					SpawnCharacter(member, team, entry.OnSpawn, entry.JobId)
+					entry.Timer = nil
+					local prevClassId = entry.PrevClassId
+					if prevClassId ~= nil then
+						local classCounter = self.ClassCounters[prevClassId]
+						if classCounter == nil then
+							Traitormod.Error(("Class counter '%s' was empty"):format(prevClassId))
+						else
+							self.ClassCounters[prevClassId] = classCounter - 1
 						end
-
 					end
-                end
-            end
-        end
+				end
+			end
+		end
+
 		if team.CheckWinCondition() then
             self.IsEnding = true
 			Game.GameSession.WinningTeam = team.TeamID

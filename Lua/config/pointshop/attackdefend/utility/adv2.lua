@@ -4,16 +4,18 @@
 local ADV2 = {}
 
 ---@param client Barotrauma.Networking.Client
+---@param teamId Barotrauma.CharacterTeamType
 ---@param classId string
 ---@param JobId string?
 ---@return RespawnEntry?
-function ADV2.RespawnStart(client, classId, JobId)
+function ADV2.RespawnStart(client, teamId, classId, JobId)
+	local respawns = Traitormod.SelectedGamemode.Teams[teamId].Respawns
+	local clientId = client.AccountId
 	---@type RespawnEntry?
-	local respawnEntry = Traitormod.SelectedGamemode.Respawns[client]
+	local respawnEntry = respawns[clientId]
 
 	if respawnEntry == nil then
-		respawnEntry = {}
-		Traitormod.SelectedGamemode.Respawns[client] = respawnEntry
+		Traitormod.Error("Respawn entry of %s was empty", client.Name)
 	end
 
 	respawnEntry.JobId = JobId
@@ -31,7 +33,7 @@ end
 ---@param limit integer
 ---@return boolean, string?
 function ADV2.CanBuy(classId, limit)
-	local result = Traitormod.SelectedGamemode.ClassCounters[classId] or 0 < limit
+	local result = (Traitormod.SelectedGamemode.ClassCounters[classId] or 0) < limit
 	return result, not result and Traitormod.Language.ReachedClassLimit or nil
 end
 

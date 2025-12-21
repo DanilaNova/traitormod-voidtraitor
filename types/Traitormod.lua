@@ -24,14 +24,31 @@
 ---@class Pointshop.Product
 ---@field Identifier string
 ---@field Price integer
+---@field PricePerLimit integer?
 ---@field Limit integer?
 ---@field IsLimitGlobal boolean? default is false
----@field Action fun(client: Barotrauma.Networking.Client, product: Pointshop.Product, spawnedItems: Barotrauma.Item[], paidPrice: number)?
+---@field Action ?fun(client: Barotrauma.Networking.Client, product: Pointshop.Product, spawnedItems: Barotrauma.Item[]?, paidPrice: integer)
 ---@field CanBuy ?fun(client: Barotrauma.Networking.Client, product: Pointshop.Product): boolean, Pointshop.ProductBuyFailureReason?
----@field Items string[]?
+---@field Items (string | Pointshop.Item)[]?
+---@field ItemRandom boolean?
+---@field RoundPrice { PriceReduction: integer, StartTime: number, EndTime: number }?
+---@field Timeout number?
+---@field Enabled boolean?
+---@field Slots Pointshop.Slots?
 
+---@class Pointshop.Slots
+---@field Identifier string
+---@field Limit integer
+---@field Reserve boolean? Reserve slot on buying
+
+---@class Pointshop.Item
+---@field Identifier string
+---@field IsInstallation boolean?
+---@field Condition number?
+---@field MaxCondition number?
+
+---@class Pointshop.Product.Identifier : string
 ---@alias Pointshop.ProductBuyFailureReason string |  Pointshop.ProductBuyFailureReason.Enum
 
 ---@class Traitormod
 ---@field SelectedGamemode Gamemode
-

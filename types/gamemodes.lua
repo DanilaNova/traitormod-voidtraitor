@@ -24,7 +24,7 @@
 ---@field WinningPointsTeam1 integer Point given to defendenrs team on victory. From config
 ---@field WinningPointsTeam2 integer Point given to attackers team on victory. From config
 ---@field Teams AttackDefendV2.Team[]
----@field protected __SetNewClient fun(self: self, client)
+---@field protected _SetNewClient fun(self: self, client)
 
 ---@class RespawnEntry
 ---@field Timer number?
@@ -32,6 +32,9 @@
 ---@field JobId string?
 ---@field ClassId string?
 ---@field PrevClassId string?
+
+---@class AttackDefendV2.Members: { [Barotrauma.Networking.AccountId]: Barotrauma.Networking.Client }
+---@operator len: integer
 
 ---@alias GamemodeID
 ---| "pvp"

@@ -8,12 +8,14 @@ local CanBuy = ADV2.CanBuy
 local spawnItems = ADV2.SpawnItems
 ADV2 = nil
 
+local ShopTeamID = CharacterTeamType.Team2
+
 ---@type Pointshop.Category
 local category = {
 
 Identifier = "spawnRed",
 CanAccess = function (client)
-	return client.TeamID == CharacterTeamType.Team2
+	return Traitormod.SelectedGamemode.Teams[ShopTeamID].Respawns[client.AccountId] ~= nil
 end,
 
 Products = {
@@ -25,7 +27,7 @@ Products = {
 			return CanBuy(product.Identifier, 10)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
 
 			respawnEntry.OnSpawn = function (character)
 				character.info.SetSkillLevel("weapons", 100)
@@ -43,7 +45,7 @@ Products = {
 			return CanBuy(product.Identifier, 10)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
 
 			--[[]//TODO
 			Equipment
@@ -61,7 +63,7 @@ Products = {
 			return CanBuy(product.Identifier, 10)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
 
 			--[[]//TODO
 			Equipment
@@ -79,7 +81,7 @@ Products = {
 			return CanBuy(product.Identifier, 10)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
 
 			respawnEntry.OnSpawn = function (character)
 				local inventory = character.Inventory
