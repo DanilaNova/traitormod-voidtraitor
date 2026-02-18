@@ -101,6 +101,7 @@ function role:Start()
     if client then
         Traitormod.SendTraitorMessageBox(client, text, "oneofus")
         Traitormod.UpdateVanillaTraitor(client, true, text, "oneofus")
+		Game.SendDirectChatMessage("", text, nil, ChatMessageType.ServerMessageBoxInGame, client, "HuskMissionIcon")
     end
 end
 

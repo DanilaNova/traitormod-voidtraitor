@@ -95,7 +95,7 @@ end
 ----- GAMEMODE -----
 config.GamemodeConfig = {
     Secret = {
-        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "plant", "other", "ships"},
+        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "otherresources", "other", "ships"},
         EndOnComplete = true,           -- end round everyone but traitors are dead
         EnableRandomEvents = true,
         EndGameDelaySeconds = 15,
@@ -164,7 +164,7 @@ config.GamemodeConfig = {
     },
 
     PvP = {
-        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "plant", "other", "ships"},
+        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "otherresources", "other", "ships"},
         EnableRandomEvents = false, -- most events are coded to only affect the main submarine
         WinningPoints = 1000,
         WinningDeadPoints = 500,
@@ -230,10 +230,10 @@ config.GamemodeConfig = {
         DefendTime = 15,
         DefendRespawn = 60,
         AttackRespawn = 70,
-        WinningPointsTeam1 = 1000,
-        DefaultClassTeam1 = "rifleman",
+        WinningPointsTeam1 = 2000,
+        DefaultClassTeam1 = "soldier1",
         WinningPointsTeam2 = 1000,
-        DefaultClassTeam2 = "rifleman",
+        DefaultClassTeam2 = "soldier1",
     },
 }
 
@@ -246,6 +246,7 @@ config.RoleConfig = {
             ["securityofficer"] = {"KillLargeMonsters", "KillSmallMonsters"},
             ["medicaldoctor"] = {"HealCharacters", "KillSmallMonsters"},
             ["assistant"] = {"RepairElectrical", "RepairMechanical", "KillPets"},
+			["surgeon"] = {"HealCharacters", "KillSmallMonsters"},
         }
     },
 
@@ -397,7 +398,7 @@ config.PointShopConfig = {
         dofile(Traitormod.Path .. "/Lua/config/pointshop/wiring.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/ships.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/surgery.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/pointshop/plant.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/otherresources.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/clown.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/cultist.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/traitor.lua"),

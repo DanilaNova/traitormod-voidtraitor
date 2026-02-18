@@ -54,6 +54,11 @@ event.Start = function ()
     character.CanSpeak = false
     character.TeamID = CharacterTeamType.Team2
     character.GiveJobItems(false, nil)
+	
+	local orderPrefab = OrderPrefab.Prefabs["wait"]
+	local orderTarget = OrderTarget(beacon.WorldPosition, nil)
+	local order = Order(orderPrefab, orderTarget).WithManualPriority(CharacterInfo.HighestManualOrderPriority-2)
+	character.SetOrder(order, true, false, true)
 
     local idCard = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
     if idCard then
@@ -157,6 +162,8 @@ event.Start = function ()
     Traitormod.GhostRoles.Ask("Beacon Pirate", function (client)
         Traitormod.LostLivesThisRound[client.SteamID] = false
         client.SetClientCharacter(character)
+		local text = string.format(Traitormod.Language.UPCPirate, event.AmountPointsPirate)
+        Traitormod.SendMessageCharacter(character, text, "InfoFrameTabButton.Mission")
     end, character)
 
     Hook.Add("think", "BeaconPirate.Think", function ()
@@ -174,6 +181,8 @@ end
 
 event.End = function (isEndRound)
     Hook.Remove("think", "BeaconPirate.Think")
+	
+    local text = string.format(Traitormod.Language.UPCPirate, event.AmountPointsPirate)
 
     if isEndRound then
         if event.Character and not event.Character.IsDead and event.Character.Submarine == event.Beacon then

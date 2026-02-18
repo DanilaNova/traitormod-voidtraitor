@@ -31,6 +31,11 @@ event.Start = function ()
     character.CanSpeak = false
     character.TeamID = CharacterTeamType.Team2
     character.GiveJobItems(false, nil)
+	
+	local orderPrefab = OrderPrefab.Prefabs["wait"]
+	local orderTarget = OrderTarget(wreck.WorldPosition, nil)
+	local order = Order(orderPrefab, orderTarget).WithManualPriority(CharacterInfo.HighestManualOrderPriority-2)
+	character.SetOrder(order, true, false, true)
 
     local idCard = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
     if idCard then
@@ -135,6 +140,8 @@ event.Start = function ()
     Traitormod.GhostRoles.Ask("Wreck Pirate", function (client)
         Traitormod.LostLivesThisRound[client.SteamID] = false
         client.SetClientCharacter(character)
+		local text = string.format(Traitormod.Language.UPCPirate, event.AmountPointsPirate)
+        Traitormod.SendMessageCharacter(character, text, "InfoFrameTabButton.Mission")
     end, character)
 
     Hook.Add("think", "WreckPirate.Think", function ()

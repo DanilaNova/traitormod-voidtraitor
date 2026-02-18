@@ -58,7 +58,7 @@ category.Products = {
         --Limit = 5, -- Лимит
 		--IsLimitGlobal = true, -- Глобальный лимит или нет
         --PricePerLimit = 100, -- На сколько увеличивается цена с каждым новым спавном (например первый - 400, второй - 500 и т.д.)
-        --Timeout = 150, -- Время отката
+        --Timeout = 300, -- Время отката
 
         --RoundPrice = {
             --PriceReduction = 300, -- Сколько ценна отнимаеться при оконачение падение
@@ -85,7 +85,7 @@ category.Products = {
         Limit = 3,
         IsLimitGlobal = true,
         PricePerLimit = 100,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 200,
@@ -104,7 +104,7 @@ category.Products = {
         Limit = 5,
         IsLimitGlobal = true,
         PricePerLimit = 100,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 150,
@@ -123,7 +123,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1750,
@@ -142,7 +142,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1950,
@@ -161,7 +161,7 @@ category.Products = {
         Limit = 3,
         IsLimitGlobal = true,
         PricePerLimit = 250,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 750,
@@ -180,7 +180,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1000,
@@ -199,7 +199,7 @@ category.Products = {
         Limit = 3,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1500,
@@ -218,7 +218,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = false,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 250,
@@ -237,7 +237,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 3000,
@@ -256,7 +256,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 4500,
@@ -275,7 +275,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1000,
@@ -294,7 +294,7 @@ category.Products = {
         Limit = 3,
         IsLimitGlobal = true,
         PricePerLimit = 400,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 300,
@@ -313,7 +313,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 5500,
@@ -332,7 +332,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 3500,
@@ -351,7 +351,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1650,
@@ -370,7 +370,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1250,
@@ -389,7 +389,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 9500,
@@ -408,7 +408,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 3500,
@@ -427,7 +427,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 77000,
@@ -445,7 +445,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 62500,
@@ -464,7 +464,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 4500,
@@ -483,7 +483,7 @@ category.Products = {
         Limit = 3,
         IsLimitGlobal = true,
         PricePerLimit = 400,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1250,

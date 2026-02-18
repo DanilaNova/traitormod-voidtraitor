@@ -146,35 +146,7 @@ category.Products = {
         IsLimitGlobal = True,
 
         Action = function (client, product, items, paidPrice)
-			local text = Traitormod.Language.FriendPet
-			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
             SpawnCreature("Defensebot", client, product, paidPrice, true)
-        end
-    },
-		
-    {
-        Identifier = "STransformedMudraptor",
-        Price = 2500,
-        Limit = 1,
-        IsLimitGlobal = True,
-
-        Action = function (client, product, items, paidPrice)
-			local text = Traitormod.Language.FriendPet
-			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
-            SpawnCreature("STransformedMudraptor", client, product, paidPrice, true)
-        end
-    },
-
-    {
-        Identifier = "Huskmutanthunteraddict",
-        Price = 6000,
-        Limit = 1,
-        IsLimitGlobal = True,
-
-        Action = function (client, product, items, paidPrice)
-			local text = Traitormod.Language.FriendPet
-			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
-            SpawnCreature("Huskmutanthunteraddict", client, product, paidPrice, true)
         end
     },
 }

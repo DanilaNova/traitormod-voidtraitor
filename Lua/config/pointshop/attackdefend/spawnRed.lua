@@ -54,7 +54,7 @@ Products = {
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
 						Items = {
-							["adrenaline"] = 1,
+							["hyperzine"] = 1,
 						}
 					},
 					["piratebandana"] = 
@@ -79,13 +79,13 @@ Products = {
 					},
 					["medtoolbox"] = {
 						Items = {
-							["adrenaline"] = 2,
+							["deusizine"] = 2,
 							["pills6"] = 1,
 							["pills2"] = 1,
-							["ointment"] = 1,
-							["blunttraumaointment"] = 1,
+							["ointment"] = 8,
+							["skinaid"] = 8,
 							["opium"] = 4,
-							["antibleeding1"] = 6,
+							["antibleeding1"] = 8,
 							["gypsum"] = 2,
 							["antibloodloss2"] = 2,
 						}
@@ -131,7 +131,7 @@ Products = {
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
 						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 						}
 					},
 					["securityseparatistsuniform1"] = {
@@ -169,7 +169,7 @@ Products = {
 					["fraggrenade"] = 1,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 2,
+							["deusizine"] = 2,
 							["redjellymed"] = 1,
 							["bluejellymed"] = 1,
 						}
@@ -177,13 +177,13 @@ Products = {
 					["medtoolbox"] = {
 						Items = {
 							["antidama1"] = 2,
-							["needle"] = 12,
+							["needle"] = 1,
 							["tourniquet"] = 2,
 							["antibloodloss2"] = 4,
-							["blunttraumaointment"] = 1,
-							["ointment"] = 1,
+							["skinaid"] = 8,
+							["ointment"] = 8,
 							["antibleeding1"] = 4,
-							["suture"] = 8,
+							["suture"] = 12,
 							["gypsum"] = 4,
 						}
 					}
@@ -224,7 +224,7 @@ Products = {
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
 						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 						}
 					},
 					["securityseparatistsuniform1"] = {
@@ -262,7 +262,7 @@ Products = {
 					["stungrenade"] = 1,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 2,
+							["deusizine"] = 2,
 							["redjellymed"] = 1,
 							["bluejellymed"] = 1,
 						}
@@ -270,13 +270,13 @@ Products = {
 					["medtoolbox"] = {
 						Items = {
 							["antidama1"] = 2,
-							["needle"] = 12,
+							["needle"] = 1,
 							["tourniquet"] = 2,
 							["antibloodloss2"] = 4,
-							["blunttraumaointment"] = 1,
-							["ointment"] = 1,
+							["skinaid"] = 8,
+							["ointment"] = 8,
 							["antibleeding1"] = 4,
-							["suture"] = 8,
+							["suture"] = 12,
 							["gypsum"] = 4,
 						}
 					}
@@ -293,7 +293,7 @@ Products = {
 	-- ========================================================
 	-- ASSAULTS (ШТУРМОВИКИ)
 	-- ========================================================
-	{
+    {
 		Identifier = "assault1",
 		Price = 0,
 		Limit = math.huge,
@@ -320,88 +320,7 @@ Products = {
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
 						Items = {
-							["adrenaline"] = 1,
-						}
-					},
-					["securityseparatistsuniform2"] = {
-						InvSlotType = InvSlotType.InnerClothes,
-					},
-					["bodyarmor"] = {
-						InvSlotType = InvSlotType.OuterClothes,
-					},
-					["bandolier"] = {
-						InvSlotType = InvSlotType.Bag,
-						Items = {
-							["wrench"] = 1,
-							["shotgunshell"] = 12,
-							["shotgunshellblunt"] = 12,
-							["electrogunmagazine"] = 2,
-						}
-					},
-					["advancedgenesplicer"] = {
-						InvSlotType = InvSlotType.HealthInterface,
-						Items = {
-							["geneticmaterialhammerheadmatriarch"] = 1,
-							["geneticmaterialmantis"] = 1,
-						}
-					},
-					["shotgununique"] = {
-						Items = {
-							["shotgunshell"] = 2,
-						}
-					},
-					["electrogun"] = {
-						Items = {
-							["electrogunmagazine"] = 1,
-						}
-					},
-					["antibleeding1"] = 4,
-					["medkit"] = {
-						Items = {
-							["morehealthsyringe"] = 1,
-							["redjellymed"] = 1,
-							["antidama1"] = 1,
-							["adrenaline"] = 1,
-						}
-					}
-				}
-
-				for key, value in pairs(inventoryItems) do
-					spawnItems(key, inventory, value)
-				end
-			end
-			
-			Traitormod.Log(client.Name .. " has spawned as assault1")
-		end
-	},
-    {
-		Identifier = "assault2",
-		Price = 0,
-		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
-		end,
-		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
-
-			respawnEntry.JobId = "separatists_stormtrooper"
-
-			respawnEntry.OnSpawn = function (character)
-				local inventory = character.Inventory
-
-				character.info.SetSkillLevel("weapons", 100)
-				character.info.SetSkillLevel("medical", 40)
-				character.info.SetSkillLevel("surgery", 40)
-
-				---@type ItemTable
-				local inventoryItems = {
-					["ballistichelmet1"] = {
-						InvSlotType = InvSlotType.Head,
-					},
-					["autoinjectorheadset"] = {
-						InvSlotType = InvSlotType.Headset,
-						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 						}
 					},
 					["securityseparatistsuniform2"] = {
@@ -442,7 +361,7 @@ Products = {
 							["morehealthsyringe"] = 1,
 							["redjellymed"] = 1,
 							["antidama1"] = 1,
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 						}
 					}
 				}
@@ -455,7 +374,88 @@ Products = {
 			Traitormod.Log(client.Name .. " has spawned as assault2")
 		end
 	},
-       -- ========================================================
+	{
+		Identifier = "assault2",
+		Price = 0,
+		Limit = math.huge,
+		CanBuy = function (_, product)
+			return CanBuy(product.Identifier, 1)
+		end,
+		Action = function (client, product)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+
+			respawnEntry.JobId = "separatists_stormtrooper"
+
+			respawnEntry.OnSpawn = function (character)
+				local inventory = character.Inventory
+
+				character.info.SetSkillLevel("weapons", 100)
+				character.info.SetSkillLevel("medical", 40)
+				character.info.SetSkillLevel("surgery", 40)
+
+				---@type ItemTable
+				local inventoryItems = {
+					["ballistichelmet1"] = {
+						InvSlotType = InvSlotType.Head,
+					},
+					["autoinjectorheadset"] = {
+						InvSlotType = InvSlotType.Headset,
+						Items = {
+							["deusizine"] = 1,
+						}
+					},
+					["securityseparatistsuniform2"] = {
+						InvSlotType = InvSlotType.InnerClothes,
+					},
+					["bodyarmor"] = {
+						InvSlotType = InvSlotType.OuterClothes,
+					},
+					["bandolier"] = {
+						InvSlotType = InvSlotType.Bag,
+						Items = {
+							["wrench"] = 1,
+							["shotgunshell"] = 12,
+							["shotgunshellblunt"] = 12,
+							["electrogunmagazine"] = 2,
+						}
+					},
+					["advancedgenesplicer"] = {
+						InvSlotType = InvSlotType.HealthInterface,
+						Items = {
+							["geneticmaterialhammerheadmatriarch"] = 1,
+							["geneticmaterialmantis"] = 1,
+						}
+					},
+					["shotgununique"] = {
+						Items = {
+							["shotgunshell"] = 2,
+						}
+					},
+					["electrogun"] = {
+						Items = {
+							["electrogunmagazine"] = 1,
+						}
+					},
+					["antibleeding1"] = 4,
+					["medkit"] = {
+						Items = {
+							["morehealthsyringe"] = 1,
+							["redjellymed"] = 1,
+							["antidama1"] = 1,
+							["deusizine"] = 1,
+						}
+					}
+				}
+
+				for key, value in pairs(inventoryItems) do
+					spawnItems(key, inventory, value)
+				end
+			end
+			
+			Traitormod.Log(client.Name .. " has spawned as assault1")
+		end
+	},
+    -- ========================================================
 	-- SNIPERS СНАЙПЕРЫ
 	-- ========================================================
 	{
@@ -485,7 +485,7 @@ Products = {
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
 						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 						}
 					},
 					["securityseparatistsuniform3"] = {
@@ -525,10 +525,10 @@ Products = {
 							["needle"] = 1,
 							["tourniquet"] = 2,
 							["antibloodloss2"] = 2,
-							["blunttraumaointment"] = 1,
-							["ointment"] = 1,
+							["skinaid"] = 8,
+							["ointment"] = 8,
 							["antibleeding1"] = 4,
-							["suture"] = 4,
+							["suture"] = 6,
 							["gypsum"] = 4,
 						}
 					}
@@ -570,7 +570,7 @@ Products = {
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
 						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 						}
 					},
 					["securityseparatistsuniform3"] = {
@@ -609,10 +609,10 @@ Products = {
 							["needle"] = 1,
 							["tourniquet"] = 2,
 							["antibloodloss2"] = 2,
-							["blunttraumaointment"] = 1,
-							["ointment"] = 1,
+							["skinaid"] = 8,
+							["ointment"] = 8,
 							["antibleeding1"] = 4,
-							["suture"] = 4,
+							["suture"] = 6,
 							["gypsum"] = 4,
 						}
 					}
@@ -715,9 +715,9 @@ Products = {
 						Items = {
 							["thiamine"] = 4,
 							["gypsum"] = 4,
-							["ointment"] = 1,
+							["ointment"] = 8,
 							["antibleeding1"] = 16,
-							["blunttraumaointment"] = 1,
+							["skinaid"] = 8,
 							["mannitolplus"] = 4,
 							["antidama1"] = 8,
 							["antibiotics"] = 8,
@@ -807,7 +807,7 @@ Products = {
 					["clownmask"] = 1,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 							["redjellymed"] = 1,
 							["antidama1"] = 1,
 							["steroids"] = 1,
@@ -850,6 +850,9 @@ Products = {
 					},
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
+						Items = {
+							["hyperzine"] = 1,
+						}
 					},
 					["noseless_clowncostume"] = {
 						InvSlotType = InvSlotType.InnerClothes,
@@ -883,7 +886,7 @@ Products = {
 					["clownmask"] = 1,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 							["redjellymed"] = 1,
 							["antidama1"] = 1,
 							["hyperzine"] = 1,
@@ -926,6 +929,9 @@ Products = {
 					},
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
+						Items = {
+							["hyperzine"] = 1,
+						}
 					},
 					["noseless_clowncostume"] = {
 						InvSlotType = InvSlotType.InnerClothes,
@@ -962,12 +968,12 @@ Products = {
 					["artmod_bubblegun"] = 1,
 					["clowncostume"] = 1,
 					["clownmask"] = 1,
+                    ["antibleeding1"] = 8,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 							["redjellymed"] = 1,
 							["antidama1"] = 1,
-							["hyperzine"] = 1,
 						}
 					}
 				}
@@ -1156,7 +1162,7 @@ Products = {
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
 						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 						}
 					},
 					["captainseparatistsuniform2"] = {
@@ -1193,7 +1199,7 @@ Products = {
 					["rum"] = 2,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 2,
+							["deusizine"] = 2,
 							["antidama1"] = 1,
 							["steroids"] = 1,
 						}
@@ -1204,8 +1210,8 @@ Products = {
 							["needle"] = 8,
 							["tourniquet"] = 2,
 							["antibloodloss2"] = 2,
-							["blunttraumaointment"] = 1,
-							["ointment"] = 1,
+							["skinaid"] = 8,
+							["ointment"] = 8,
 							["antibleeding1"] = 8,
 							["gypsum"] = 4,
 							["combatstimulantsyringe"] = 1,
@@ -1249,7 +1255,7 @@ Products = {
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
 						Items = {
-							["adrenaline"] = 1,
+							["deusizine"] = 1,
 						}
 					},
 					["captainseparatistsuniform2"] = {
@@ -1294,8 +1300,8 @@ Products = {
 							["needle"] = 8,
 							["tourniquet"] = 2,
 							["antibloodloss2"] = 2,
-							["blunttraumaointment"] = 1,
-							["ointment"] = 1,
+							["skinaid"] = 8,
+							["ointment"] = 8,
 							["antibleeding1"] = 8,
 							["gypsum"] = 4,
 							["combatstimulantsyringe"] = 1,
@@ -1336,6 +1342,9 @@ Products = {
 
 				---@type ItemTable
 				local inventoryItems = {
+					["piratebandana"] = {
+						InvSlotType = InvSlotType.Head,
+					},
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
 					},
@@ -1375,7 +1384,7 @@ Products = {
 					["fulguriumbatterycell"] = 2,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 2,
+							["deusizine"] = 2,
 							["steroids"] = 2,
 						}
 					},
@@ -1385,8 +1394,8 @@ Products = {
 							["needle"] = 2,
 							["tourniquet"] = 2,
 							["antibloodloss2"] = 2,
-							["blunttraumaointment"] = 1,
-							["ointment"] = 1,
+							["skinaid"] = 8,
+							["ointment"] = 8,
 							["antibleeding1"] = 8,
 							["gypsum"] = 4,
 							["combatstimulantsyringe"] = 1,
@@ -1429,9 +1438,6 @@ Products = {
 					},
 					["autoinjectorheadset"] = {
 						InvSlotType = InvSlotType.Headset,
-						Items = {
-							["adrenaline"] = 1,
-						}
 					},
 					["engineerseparatistsuniform1"] = {
 						InvSlotType = InvSlotType.InnerClothes,
@@ -1469,7 +1475,7 @@ Products = {
 					["thoriumfuelrod"] = 2,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 2,
+							["deusizine"] = 2,
 							["steroids"] = 2,
 						}
 					},
@@ -1479,8 +1485,8 @@ Products = {
 							["needle"] = 2,
 							["tourniquet"] = 2,
 							["antibloodloss2"] = 2,
-							["blunttraumaointment"] = 1,
-							["ointment"] = 1,
+							["skinaid"] = 8,
+							["ointment"] = 8,
 							["antibleeding1"] = 8,
 							["gypsum"] = 4,
 						}
@@ -1566,7 +1572,7 @@ Products = {
 					["chemgrenade"] = 4,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 2,
+							["deusizine"] = 2,
 							["antidama1"] = 1,
 							["steroids"] = 1,
 						}
@@ -1643,7 +1649,7 @@ Products = {
 					["empgrenade"] = 2,
 					["medkit"] = {
 						Items = {
-							["adrenaline"] = 2,
+							["deusizine"] = 2,
 							["antidama1"] = 1,
 							["steroids"] = 1,
 						}

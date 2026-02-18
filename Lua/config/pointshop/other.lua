@@ -84,6 +84,13 @@ category.Products = {
 			end)
 		end
     },
+    
+	{
+        Identifier = "gardeningkit",
+        Price = 100,
+        Limit = 2,
+        Items = {"raptorbaneseed", "creepingorangevineseed", "saltvineseed", "tobaccovineseed", "smallplanter", "fertilizer", "wateringcan"}
+    },
 
     {
         Identifier = "clownsuit",
@@ -144,6 +151,12 @@ category.Products = {
         Price = 30,
         Limit = 5,
         Items = {"petnametag"}
+    },
+    
+    {
+        Price = 75,
+        Limit = 4,
+        Items = {"ethanol"}
     },
 
     {

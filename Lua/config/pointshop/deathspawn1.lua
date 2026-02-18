@@ -57,7 +57,7 @@ category.Products = {
         Limit = 3,
         IsLimitGlobal = true,
         PricePerLimit = 100,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 250,
@@ -76,7 +76,7 @@ category.Products = {
         Limit = 5,
         IsLimitGlobal = true,
         PricePerLimit = 30,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 175,
@@ -95,7 +95,7 @@ category.Products = {
         Limit = 3,
         IsLimitGlobal = true,
         PricePerLimit = 100,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 250,
@@ -114,7 +114,7 @@ category.Products = {
         Limit = 5,
         IsLimitGlobal = true,
         PricePerLimit = 15,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 150,
@@ -133,7 +133,7 @@ category.Products = {
         Limit = 5,
         IsLimitGlobal = true,
         PricePerLimit = 150,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 225,
@@ -152,7 +152,7 @@ category.Products = {
         Limit = 5,
         IsLimitGlobal = true,
         PricePerLimit = 250,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 400,
@@ -171,7 +171,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 700,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 700,
@@ -190,7 +190,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 1500,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1500,
@@ -209,7 +209,7 @@ category.Products = {
         Limit = 3,
         IsLimitGlobal = true,
         PricePerLimit = 200,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 450,
@@ -228,7 +228,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 400,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 800,
@@ -248,7 +248,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 500,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1000,
@@ -268,7 +268,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 500,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1500,
@@ -288,7 +288,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 500,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 		
         RoundPrice = {
             PriceReduction = 1200,
@@ -308,7 +308,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 500,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 2250,
@@ -328,7 +328,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 500,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 2850,
@@ -348,7 +348,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 75,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 		
         RoundPrice = {
             PriceReduction = 350,
@@ -368,7 +368,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 400,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 1500, 
@@ -388,7 +388,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 0,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 3250,
@@ -407,7 +407,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 1750,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 2000,
@@ -427,7 +427,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 0,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 20500,
@@ -447,7 +447,7 @@ category.Products = {
         IsLimitGlobal = true,
         PricePerLimit = 900,
         Enabled = true,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 2250,
@@ -466,7 +466,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 11250,
@@ -485,7 +485,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 		
         RoundPrice = {
             PriceReduction = 3250,
@@ -504,7 +504,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 47750,
@@ -523,7 +523,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 0,
-        Timeout = 150,
+        Timeout = 300,
 
         RoundPrice = {
             PriceReduction = 73500,
@@ -533,6 +533,50 @@ category.Products = {
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("endworm", client, product, paidPrice)
+        end
+    },
+
+    {
+        Identifier = "spawnaspeanut",
+        Price = 50,
+        Limit = 2,
+        IsLimitGlobal = false,
+
+        Action = function (client, product, items, paidPrice)
+            SpawnCreature("peanut", client, product, paidPrice, true)
+        end
+    },
+
+    {
+        Identifier = "spawnasorangeboy",
+        Price = 50,
+        Limit = 2,
+        IsLimitGlobal = false,
+
+        Action = function (client, product, items, paidPrice)
+            SpawnCreature("orangeboy", client, product, paidPrice, true)
+        end
+    },
+
+    {
+        Identifier = "spawnascthulhu",
+        Price = 50,
+        Limit = 2,
+        IsLimitGlobal = false,
+
+        Action = function (client, product, items, paidPrice)
+            SpawnCreature("balloon", client, product, paidPrice, true)
+        end
+    },
+
+    {
+        Identifier = "spawnaspsilotoad",
+        Price = 50,
+        Limit = 2,
+        IsLimitGlobal = false,
+
+        Action = function (client, product, items, paidPrice)
+            SpawnCreature("psilotoad", client, product, paidPrice, true)
         end
     },
 }

@@ -60,7 +60,6 @@ event.Start = function()
         Traitormod.GhostRoles.Ask("Emergency " .. k, function (client)
             Traitormod.LostLivesThisRound[client.SteamID] = false
             client.SetClientCharacter(character)
-
             Traitormod.SendMessageCharacter(character, Traitormod.Language.EmergencyYou, "InfoFrameTabButton.Mission")
         end, character)
     end

@@ -59,9 +59,9 @@ category.Products = {
     },
 	
     {
-        Price = 75,
+        Price = 100,
         Limit = 4,
-        Items = {"bandage", "bandage"}
+        Items = {"bandage","bandage","bandage", "bandage"}
     },
 
     {
@@ -85,34 +85,39 @@ category.Products = {
     {
         Price = 300,
         Limit = 2,
-        Items = { "suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture" }
+        Items = {"suture", "suture", "suture", "suture", "suture", "suture", "suture", "suture"}
     },
-	
-	
-	{
-        Price = 100,
-        Limit = 5,
-        Items = {"ointment"}
-    },
-
-    {
-        Price = 100,
-        Limit = 5,
-        Items = {"blunttraumaointment"}
-    },
-
+    
     {
         Price = 125,
         Limit = 4,
         Items = {"antibloodloss1"}
     },
+	
+    {
+        Price = 150,
+        Limit = 4,
+        Items = {"needle"}
+    },
+    
+	{
+        Price = 75 ,
+        Limit = 4,
+        Items = {"ointment", "ointment", "ointment", "ointment"}
+    },
 
     {
         Price = 75,
         Limit = 4,
-        Items = {"ethanol"}
+        Items = {"skinaid", "skinaid", "skinaid", "skinaid"}
     },
-
+    
+    {
+        Price = 75,
+        Limit = 8,
+        Items = {"meth"}
+    },
+    
     {
         Price = 70,
         Limit = 4,
@@ -124,41 +129,29 @@ category.Products = {
         Limit = 4,
         Items = {"sulphuricacid"}
     },
-
+    
     {
         Price = 100,
-        Limit = 4,
-        Items = {"alienblood"}
-    },
-
-    {
-        Price = 75,
-        Limit = 8,
-        Items = {"meth"}
-    },
-
-    {
-        Price = 60,
         Limit = 5,
-        Items = {"adrenalinegland"}
+        Items = {"bodybag"}
     },
 	
     {
-        Price = 250,
-        Limit = 5,
-        Items = {"swimbladder"}
+        Price = 400,
+        Limit = 2,
+        Items = {"stasisbag"}
     },
-
-    {
-        Price = 1500,
-        Limit = 1,
-        Items = {"advancedgenesplicer"}
-    },
-	
+    
 	{
         Price = 1000,
         Limit = 2,
         Items = {"genesplicer"}
+    },
+    
+    {
+        Price = 1500,
+        Limit = 1,
+        Items = {"advancedgenesplicer"}
     },
 
     {
@@ -166,7 +159,7 @@ category.Products = {
         Limit = 10,
         ItemRandom = true,
         Items = geneticMaterials
-    },
+    }
 }
 
 return category

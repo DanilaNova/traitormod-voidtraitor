@@ -70,6 +70,19 @@ function GearUpCharacter(character, team, waypoint, class)
 	if class then class(character) end
 end
 
+-- Функция очистки вещмешки
+local function CleanRemove(char)
+	if not char or char.Removed then return end
+	local pos = char.WorldPosition
+	if char.Inventory then for item in char.Inventory.AllItems do Entity.Spawner.AddItemToRemoveQueue(item) end end
+	char.DespawnNow()
+	for _, item in pairs(Item.ItemList) do
+		if item.Prefab.Identifier.Value == "duffelbag" and Vector2.Distance(item.WorldPosition, pos) < 10 then
+			Entity.Spawner.AddItemToRemoveQueue(item)
+		end
+	end
+end
+
 ---@param client Barotrauma.Networking.Client
 ---@protected
 function gm._SetNewClient(client)
@@ -77,8 +90,10 @@ function gm._SetNewClient(client)
 	if character ~= nil then
 		Timer.Wait(function ()
 			client.SetClientCharacter(nil)
-			character.DespawnNow()
-			Traitormod.Pointshop.ShowCategory(client)
+			CleanRemove(char)
+			Timer.Wait(function ()
+				Traitormod.Pointshop.ShowCategory(client)
+			end, 4000)
 		end, 1000)
 	end
 end

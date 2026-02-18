@@ -22,24 +22,6 @@ end
 
 category.Products = {
     {
-        Price = 100,
-        Limit = 5,
-        Items = {"bodybag"}
-    },
-	
-    {
-        Price = 400,
-        Limit = 2,
-        Items = {"stasisbag"}
-    },
-	
-    {
-        Price = 200,
-        Limit = 4,
-        Items = {"needle"}
-    },
-	
-    {
         Price = 300,
         Limit = 5,
         Items = {"osteosynthesisimplants"}
