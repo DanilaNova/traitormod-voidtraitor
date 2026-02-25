@@ -70,7 +70,7 @@ function GearUpCharacter(character, team, waypoint, class)
 	if class then class(character) end
 end
 
--- Функция очистки вещмешки
+-- Функция очистки (оставляем, она работает отлично)
 local function CleanRemove(char)
 	if not char or char.Removed then return end
 	local pos = char.WorldPosition
@@ -86,16 +86,16 @@ end
 ---@param client Barotrauma.Networking.Client
 ---@protected
 function gm._SetNewClient(client)
-	local character = client.Character
-	if character ~= nil then
-		Timer.Wait(function ()
-			client.SetClientCharacter(nil)
-			CleanRemove(char)
-			Timer.Wait(function ()
-				Traitormod.Pointshop.ShowCategory(client)
-			end, 4000)
-		end, 1000)
-	end
+	local char = client.Character
+	Timer.Wait(function()
+		if not client or not client.Connection then return end
+		client.SetClientCharacter(nil)
+		CleanRemove(char)
+		Timer.Wait(function() 
+			if not client or not client.Connection then return end
+			Traitormod.Pointshop.ShowCategory(client)
+		end, 8000)
+	end, 1000)
 end
 
 ---@param newClients Barotrauma.Networking.Client[]?
@@ -380,7 +380,6 @@ function gm:Start()
         	end
 		end
     end
-
 	
 	local newClients = {}
 	for client in Client.ClientList do

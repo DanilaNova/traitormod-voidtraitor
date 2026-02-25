@@ -129,19 +129,8 @@ category.Products = {
     },
 	
     {
-        Identifier = "spawnasMudraptorpet",
-        Price = 1250,
-        Limit = 2,
-        IsLimitGlobal = True,
-
-        Action = function (client, product, items, paidPrice)
-            SpawnCreature("Mudraptor_pet", client, product, paidPrice, true)
-        end
-    },
-	
-    {
         Identifier = "spawnasDefensebot",
-        Price = 1250,
+        Price = 900,
         Limit = 2,
         IsLimitGlobal = True,
 
@@ -149,6 +138,19 @@ category.Products = {
 			local text = Traitormod.Language.FriendPet
 			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
             SpawnCreature("Defensebot", client, product, paidPrice, true)
+        end
+    },
+	
+    {
+        Identifier = "spawnasMudraptorpet",
+        Price = 1250,
+        Limit = 2,
+        IsLimitGlobal = True,
+
+        Action = function (client, product, items, paidPrice)
+			local text = Traitormod.Language.FriendPet
+			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
+            SpawnCreature("Mudraptor_pet", client, product, paidPrice, true)
         end
     },
 		
@@ -167,7 +169,7 @@ category.Products = {
 
     {
         Identifier = "Huskmutanthunteraddict",
-        Price = 6000,
+        Price = 4000,
         Limit = 1,
         IsLimitGlobal = True,
 

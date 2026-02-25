@@ -42,6 +42,9 @@ Products = {
 				character.info.SetSkillLevel("surgery", 30)
 				character.GiveTalent("lightningwizard")
 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
+
 				---@type ItemTable
 				local inventoryItems = {
 					["advancedgenesplicer"] = {
@@ -123,6 +126,9 @@ Products = {
 				character.info.SetSkillLevel("medical", 60)
 				character.info.SetSkillLevel("surgery", 45)
 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
+
 				---@type ItemTable
 				local inventoryItems = {
 					["ballistichelmet1"] = {
@@ -143,7 +149,7 @@ Products = {
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag, 
 						Items = {
-							["clown_smgmagazine"] = 2,
+							["smgmagazine"] = 2,
 							["revolverround"] = 12,
 							["wrench"] = 1,
 							["aed"] = 1,
@@ -215,6 +221,9 @@ Products = {
 				character.info.SetSkillLevel("weapons", 85)
 				character.info.SetSkillLevel("medical", 60)
 				character.info.SetSkillLevel("surgery", 45)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -312,6 +321,9 @@ Products = {
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 40)
 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
+
 				---@type ItemTable
 				local inventoryItems = {
 					["ballistichelmet1"] = {
@@ -392,6 +404,9 @@ Products = {
 				character.info.SetSkillLevel("weapons", 100)
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 40)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -476,6 +491,9 @@ Products = {
 				character.info.SetSkillLevel("weapons", 90)
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 30)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -562,6 +580,9 @@ Products = {
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 30)
 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
+
 				---@type ItemTable
 				local inventoryItems = {
 					["ballistichelmet1"] = {
@@ -647,6 +668,9 @@ Products = {
 				character.info.SetSkillLevel("medical", 90)
 				character.info.SetSkillLevel("surgery", 80)
 				character.info.SetSkillLevel("weapons", 45)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -757,10 +781,12 @@ Products = {
 			respawnEntry.OnSpawn = function (character)
 				local inventory = character.Inventory
 
-
 				character.info.SetSkillLevel("weapons", 25)
 				character.info.SetSkillLevel("medical", 50)
 				character.info.SetSkillLevel("surgery", 30)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -838,10 +864,12 @@ Products = {
 			respawnEntry.OnSpawn = function (character)
 				local inventory = character.Inventory
 
-
 				character.info.SetSkillLevel("weapons", 25)
 				character.info.SetSkillLevel("medical", 50)
 				character.info.SetSkillLevel("surgery", 30)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -917,10 +945,12 @@ Products = {
 			respawnEntry.OnSpawn = function (character)
 				local inventory = character.Inventory
 
-
 				character.info.SetSkillLevel("weapons", 25)
 				character.info.SetSkillLevel("medical", 50)
 				character.info.SetSkillLevel("surgery", 30)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -1008,6 +1038,9 @@ Products = {
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 25)
 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
+
 				---@type ItemTable
 				local inventoryItems = {
 					["piratehelmet"] = {
@@ -1047,9 +1080,9 @@ Products = {
 							["hyperzine"] = 1,
 							["redjellymedS"] = 1,
 							["bluejellymedS"] = 1,
-					["antibleeding1"] = 8,
 						}
-					}
+					},
+					["antibleeding1"] = 8,
 				}
 
 				for key, value in pairs(inventoryItems) do
@@ -1078,6 +1111,9 @@ Products = {
 				character.info.SetSkillLevel("weapons", 100)
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 25)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -1118,9 +1154,9 @@ Products = {
 							["hyperzine"] = 1,
 							["redjellymedS"] = 1,
 							["bluejellymedS"] = 1,
-					["antibleeding1"] = 8,
 						}
-					}
+					},
+					["antibleeding1"] = 8,
 				}
 
 				for key, value in pairs(inventoryItems) do
@@ -1153,6 +1189,9 @@ Products = {
 				character.info.SetSkillLevel("weapons", 70)
 				character.info.SetSkillLevel("medical", 65)
 				character.info.SetSkillLevel("surgery", 45)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -1247,6 +1286,9 @@ Products = {
 				character.info.SetSkillLevel("medical", 65)
 				character.info.SetSkillLevel("surgery", 45)
 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
+
 				---@type ItemTable
 				local inventoryItems = {
 					["captainscap1"] = {
@@ -1340,6 +1382,9 @@ Products = {
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 25)
 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
+
 				---@type ItemTable
 				local inventoryItems = {
 					["piratebandana"] = {
@@ -1430,6 +1475,9 @@ Products = {
 				character.info.SetSkillLevel("weapons", 60)
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 25)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -1523,6 +1571,9 @@ Products = {
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 25)
 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
+
 				---@type ItemTable
 				local inventoryItems = {
 					["ironhelmet"] = {
@@ -1605,6 +1656,9 @@ Products = {
 				character.info.SetSkillLevel("weapons", 70)
 				character.info.SetSkillLevel("medical", 40)
 				character.info.SetSkillLevel("surgery", 25)
+
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23)) 
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2)) 
 
 				---@type ItemTable
 				local inventoryItems = {
