@@ -574,7 +574,8 @@ ps.ShowCategoryItems = function(client, category)
 end
 
 ---@param client Barotrauma.Networking.Client
-ps.ShowCategory = function(client)
+---@param resend boolean?
+ps.ShowCategory = function(client, resend)
     local options = {}
     local categoryLookup = {}
 
@@ -598,6 +599,11 @@ ps.ShowCategory = function(client)
 
     -- note: we have two different client variables here to prevent cheating
     textPromptUtils.Prompt(string.format(Traitormod.Language.PointshopWishCategory, math.floor(points)), options, client, function (id, client2)
+        if id == 256 and resend then
+            Timer.Wait(function ()
+                ps.ShowCategory(client2, resend)
+            end, 1000)
+        end
         if categoryLookup[id] == nil then return end
 
         ps.ShowCategoryItems(client2, categoryLookup[id])

@@ -85,16 +85,25 @@ end
 
 ---@param client Barotrauma.Networking.Client
 ---@protected
-function gm._SetNewClient(client)
+function gm:_SetNewClient(client)
 	local char = client.Character
 	Timer.Wait(function()
 		if not client or not client.Connection then return end
 		client.SetClientCharacter(nil)
 		CleanRemove(char)
-		Timer.Wait(function() 
-			if not client or not client.Connection then return end
-			Traitormod.Pointshop.ShowCategory(client)
-		end, 8000)
+
+		local function loop()
+			if not client.InGame then
+				Timer.Wait(function ()
+					loop()
+				end, 1000)
+			else
+				if not client.Connection then return end
+				Traitormod.Pointshop.ShowCategory(client, true)
+			end
+		end
+		
+		loop()
 	end, 1000)
 end
 
@@ -393,7 +402,7 @@ function gm:Start()
 		print(("Client %s is autobalanced to team %s"):format(client.Client.Name, client.NewTeamID))
 	end
 	for _, client in ipairs(newClients) do
-		self._SetNewClient(client)
+		self:_SetNewClient(client)
 	end
 
 	---@param client Barotrauma.Networking.Client
