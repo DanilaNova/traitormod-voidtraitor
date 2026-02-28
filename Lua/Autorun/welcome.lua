@@ -5,7 +5,6 @@ LuaUserData.RegisterType("Barotrauma.Networking.FileSender")
 local luaConfirmed = {}
 local clientTrackers = {}
 
--- УВЕЛИЧИЛИ ДО 20 СЕКУНД (чтобы точно успеть при медленной загрузке)
 local WAIT_AFTER_DOWNLOAD = 20 
 
 local welcomemessage = [[

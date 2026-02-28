@@ -62,6 +62,13 @@ category.Products = {
         Items = {"skillbooksurgery"}
     },
 
+    {
+		Identifier = "maidfit",
+        Price = 500,
+        Limit = 1,
+        Items = {"arak_maidbonnet", "arak_maidoutfit",}
+    },
+
 	{
 		Identifier = "firstaidkit",
 		Price = 750,

@@ -129,6 +129,18 @@ category.Products = {
     },
 	
     {
+        Identifier = "spawnasDefensebot",
+        Price = 900,
+        Limit = 2,
+        IsLimitGlobal = True,
+
+        Action = function (client, product, items, paidPrice)
+            SpawnCreature("Defensebot", client, product, paidPrice, true)
+			Traitormod.SendMessage(client, Traitormod.Language.FriendPet, "GameModeIcon.sandbox")
+        end
+    },
+	
+    {
         Identifier = "spawnasMudraptorpet",
         Price = 1250,
         Limit = 2,
@@ -136,19 +148,7 @@ category.Products = {
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Mudraptor_pet", client, product, paidPrice, true)
-        end
-    },
-	
-    {
-        Identifier = "spawnasDefensebot",
-        Price = 1250,
-        Limit = 2,
-        IsLimitGlobal = True,
-
-        Action = function (client, product, items, paidPrice)
-			local text = Traitormod.Language.FriendPet
-			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
-            SpawnCreature("Defensebot", client, product, paidPrice, true)
+            Traitormod.SendMessage(client, Traitormod.Language.FriendPet, "GameModeIcon.sandbox")
         end
     },
 		
@@ -159,22 +159,20 @@ category.Products = {
         IsLimitGlobal = True,
 
         Action = function (client, product, items, paidPrice)
-			local text = Traitormod.Language.FriendPet
-			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
             SpawnCreature("STransformedMudraptor", client, product, paidPrice, true)
+            Traitormod.SendMessage(client, Traitormod.Language.FriendPet, "GameModeIcon.sandbox")
         end
     },
 
     {
         Identifier = "Huskmutanthunteraddict",
-        Price = 6000,
+        Price = 4000,
         Limit = 1,
         IsLimitGlobal = True,
 
         Action = function (client, product, items, paidPrice)
-			local text = Traitormod.Language.FriendPet
-			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
             SpawnCreature("Huskmutanthunteraddict", client, product, paidPrice, true)
+            Traitormod.SendMessage(client, Traitormod.Language.FriendPet, "GameModeIcon.sandbox")
         end
     },
 }
