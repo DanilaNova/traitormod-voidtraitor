@@ -139,7 +139,7 @@ category.Products = {
 			Traitormod.SendMessage(client, Traitormod.Language.FriendPet, "GameModeIcon.sandbox")
         end
     },
-	
+    
     {
         Identifier = "spawnasMudraptorpet",
         Price = 1250,
@@ -147,8 +147,9 @@ category.Products = {
         IsLimitGlobal = True,
 
         Action = function (client, product, items, paidPrice)
+			local text = Traitormod.Language.FriendPet
+			Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox")
             SpawnCreature("Mudraptor_pet", client, product, paidPrice, true)
-            Traitormod.SendMessage(client, Traitormod.Language.FriendPet, "GameModeIcon.sandbox")
         end
     },
 		

@@ -70,7 +70,7 @@ function GearUpCharacter(character, team, waypoint, class)
 	if class then class(character) end
 end
 
--- Функция очистки вещмешки
+-- Функция очистки (оставляем, она работает отлично)
 local function CleanRemove(char)
 	if not char or char.Removed then return end
 	local pos = char.WorldPosition
