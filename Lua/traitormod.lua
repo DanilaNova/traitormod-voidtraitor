@@ -444,6 +444,7 @@ Traitormod.Voting = dofile(Traitormod.Path .. "/Lua/voting.lua")
 ---@module "Lua.rolemanager"
 Traitormod.RoleManager = dofile(Traitormod.Path .. "/Lua/rolemanager.lua")
 ---@module "Lua.pointshop"
+---@class Pointshop.Ref: Pointshop
 Traitormod.Pointshop = dofile(Traitormod.Path .. "/Lua/pointshop.lua")
 ---@module "Lua.roundevents"
 Traitormod.RoundEvents = dofile(Traitormod.Path .. "/Lua/roundevents.lua")

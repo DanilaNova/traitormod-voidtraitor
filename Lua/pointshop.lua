@@ -257,7 +257,7 @@ end
 ---@param name string
 ---@return Pointshop.Product
 ps.FindProductByName = function (client, name)
-    for i, category in pairs(config.PointShopConfig.ItemCategories) do
+    for i, category in pairs(ps.ActiveCategories) do
         if ps.CanClientAccessCategory(client, category) then
             for k, product in pairs(category.Products) do
                 if product.Identifier == name or ps.GetProductName(product) == name then
