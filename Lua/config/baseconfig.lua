@@ -95,11 +95,10 @@ end
 ----- GAMEMODE -----
 config.GamemodeConfig = {
     Secret = {
-        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "otherresources", "other", "ships"},
+        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "otherresources", "other", "randomize", "ships"},
         EndOnComplete = true,           -- end round everyone but traitors are dead
         EnableRandomEvents = true,
         EndGameDelaySeconds = 15,
-
         TraitorSelectDelayMin = 120,
         TraitorSelectDelayMax = 150,
 
@@ -399,6 +398,7 @@ config.PointShopConfig = {
         dofile(Traitormod.Path .. "/Lua/config/pointshop/ships.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/surgery.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/otherresources.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/randomize.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/clown.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/cultist.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/traitor.lua"),

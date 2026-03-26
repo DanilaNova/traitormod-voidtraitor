@@ -23,16 +23,6 @@ end
 
 category.Products = {
     {
-        Identifier = "randomitem",
-        Price = 100,
-        Limit = 15,
-        Action = function (client, product, items)
-            local item = randomItems[math.random(1, #randomItems)]
-            Entity.Spawner.AddItemToSpawnQueue(item, client.Character.WorldPosition, nil, nil, function () end)
-        end
-    },
-
-    {
         Price = 300,
         Limit = 5,
         Items = {"skillbooksubmarinewarfare"}

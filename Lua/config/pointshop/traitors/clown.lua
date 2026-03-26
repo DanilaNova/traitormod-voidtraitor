@@ -63,16 +63,22 @@ end
 
 category.Products = {
     {
+        Price = 40,
+        Limit = 20,
+        Items = {"bananapeel", "bananapeel", "bananapeel", "bananapeel"}
+    },
+
+    {
+        Price = 100,
+        Limit = 10,
+        Items = {"smallmudraptoregg", "antibloodloss1", "antibloodloss1"}
+    },
+	
+    {
         Price = 250,
         Limit = 4,
         IsLimitGlobal = false,
         Items = {"badcreepingorange"},
-    },
-
-    {
-        Price = 40,
-        Limit = 20,
-        Items = {"bananapeel", "bananapeel", "bananapeel", "bananapeel"}
     },
 
     {
@@ -194,12 +200,6 @@ category.Products = {
         Price = 100,
         Limit = 5,
         Items = {"rum"}
-    },
-
-    {
-        Price = 100,
-        Limit = 10,
-        Items = {"smallmudraptoregg", "antibloodloss1", "antibloodloss1"}
     },
 
     {

@@ -64,6 +64,12 @@ category.Products = {
         Items = {"bandage","bandage","bandage", "bandage"}
     },
 
+	{
+        Price = 100,
+        Limit = 5,
+        Items = {"gypsum"}
+    },
+
     {
         Price = 150,
         Limit = 5,
@@ -74,12 +80,6 @@ category.Products = {
         Price = 250,
         Limit = 3,
         Items = {"antidama2"}
-    },
-	
-	{
-        Price = 100,
-        Limit = 5,
-        Items = {"gypsum"}
     },
 	
     {

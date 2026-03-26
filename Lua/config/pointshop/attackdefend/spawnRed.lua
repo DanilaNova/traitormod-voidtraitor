@@ -23,7 +23,7 @@ Products = {
 	-- SCOUTS (СКАУТЫ)
 	-- ========================================================
 	{
-		Identifier = "scout",
+		Identifier = "separatists_scout",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -79,7 +79,6 @@ Products = {
 						InvSlotType = InvSlotType.Bag,
 						Items = {
 							["smgmagazine"] = 4,
-							["hyperzine"] = 2,
 							["wrench"] = 1,
 						}
 					},
@@ -116,7 +115,7 @@ Products = {
 	-- SOLDIERS (СОЛДАТЫ)
 	-- ========================================================
 	{
-        Identifier = "soldier1",
+        Identifier = "separatists_soldier_1",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -136,7 +135,6 @@ Products = {
 
 				character.GiveTalent("implacable")
 				character.GiveTalent("inordinatexsanguination")
-				character.GiveTalent("stonewall")
 				character.GiveTalent("swole")
 				character.GiveTalent("commando")
 				character.GiveTalent("ntsp_captainresist")
@@ -220,7 +218,7 @@ Products = {
 		end
 	},
     {
-		Identifier = "soldier2",
+		Identifier = "separatists_soldier_2",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -240,7 +238,6 @@ Products = {
 
 				character.GiveTalent("implacable")
 				character.GiveTalent("inordinatexsanguination")
-				character.GiveTalent("stonewall")
 				character.GiveTalent("swole")
 				character.GiveTalent("commando")
 				character.GiveTalent("ntsp_captainresist")
@@ -324,10 +321,10 @@ Products = {
 		end
 	},
 	-- ========================================================
-	-- ASSAULTS (ШТУРМОВИКИ)
+	-- STORMTROOPER (ШТУРМОВИКИ)
 	-- ========================================================
     {
-		Identifier = "assault1",
+		Identifier = "separatists_stormtrooper_1",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -418,7 +415,7 @@ Products = {
 		end
 	},
 	{
-		Identifier = "assault2",
+		Identifier = "separatists_stormtrooper_2",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -512,7 +509,7 @@ Products = {
 	-- SNIPERS СНАЙПЕРЫ
 	-- ========================================================
 	{
-		Identifier = "sniper1",
+		Identifier = "separatists_sniper_1",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -608,7 +605,7 @@ Products = {
 		end
 	},
 	{
-		Identifier = "sniper2",
+		Identifier = "separatists_sniper_2",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -706,7 +703,7 @@ Products = {
 	-- MEDICS МЕДИКИ
 	-- ========================================================
 	{
-		Identifier = "medic1",
+		Identifier = "separatists_medic",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -728,7 +725,6 @@ Products = {
 				character.GiveTalent("ntsp_therapisttintraining")
 				character.GiveTalent("ntsp_captainresist")
 				character.GiveTalent("ntsp_fallandcantgetapp")
-				character.GiveTalent("ntsp_unspecialisedspecialist")
 				character.GiveTalent("ntsp_underpressure")
 				character.GiveTalent("ntsp_bedsidemanner")
 				character.GiveTalent("ntsp_preventativepermit")
@@ -806,7 +802,7 @@ Products = {
 					},
 					["medtoolbox"] = {
 						Items = {
-							["thiamine"] = 4,
+							["tourniquet"] = 4,
 							["gypsum"] = 4,
 							["ointment"] = 8,
 							["antibleeding1"] = 8,
@@ -819,8 +815,7 @@ Products = {
 					},
 					["medkit"] = {
 						Items = {
-							["combatstimulantsyringe"] = 2,
-							["hyperzine"] = 2,
+							["combatstimulantsyringe"] = 4,
 						}
 					}
 				}
@@ -837,7 +832,7 @@ Products = {
 	-- CLOWNS КЛОУНЫ
 	-- ========================================================
 	{
-		Identifier = "clown1",
+		Identifier = "separatists_clown_1",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -857,7 +852,6 @@ Products = {
 
 				character.GiveTalent("enrollintoclowncollege")
 				character.GiveTalent("truepotential")
-				character.GiveTalent("slapstickexpert")
 				character.GiveTalent("revengesquad")
 				character.GiveTalent("psychoclown")
 				character.GiveTalent("iamthatguy")
@@ -929,7 +923,7 @@ Products = {
 		end
 	},
 	{
-		Identifier = "clown2",
+		Identifier = "separatists_clown_2",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -949,9 +943,9 @@ Products = {
 
 				character.GiveTalent("enrollintoclowncollege")
 				character.GiveTalent("truepotential")
-				character.GiveTalent("slapstickexpert")
 				character.GiveTalent("revengesquad")
 				character.GiveTalent("psychoclown")
+				character.GiveTalent("iamthatguy")
 
 				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23))
 				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2))
@@ -1003,7 +997,6 @@ Products = {
 							["deusizine"] = 1,
 							["redjellymed"] = 1,
 							["antidama1"] = 1,
-							["hyperzine"] = 1,
 						}
 					}
 				}
@@ -1017,7 +1010,7 @@ Products = {
 		end
 	},
 	{
-		Identifier = "clown3",
+		Identifier = "separatists_clown_3",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -1037,9 +1030,9 @@ Products = {
 
 				character.GiveTalent("enrollintoclowncollege")
 				character.GiveTalent("truepotential")
-				character.GiveTalent("slapstickexpert")
 				character.GiveTalent("revengesquad")
 				character.GiveTalent("psychoclown")
+				character.GiveTalent("iamthatguy")
 
 				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23))
 				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2))
@@ -1114,7 +1107,7 @@ Products = {
 	-- JUGGERNAUTS ДЖАГЕРНАУТЫ
 	-- ========================================================
 	{
-		Identifier = "juggernaut1",
+		Identifier = "separatists_juggernaut_1",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -1136,7 +1129,6 @@ Products = {
 				character.GiveTalent("truepotential")
 				character.GiveTalent("stonewall")
 				character.GiveTalent("swole")
-				character.GiveTalent("implacable")
 				character.GiveTalent("exampleofhealth")
 				character.GiveTalent("crustyseaman")
 				character.GiveTalent("ntsp_therapisttintraining")
@@ -1146,7 +1138,7 @@ Products = {
 
 				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23))
 				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2))
-				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["morevigor"].Instantiate(100))
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["morevigor"].Instantiate(800))
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -1183,10 +1175,8 @@ Products = {
                     ["wrench"] = 1,
 					["medkit"] = {
 						Items = {
-							["moremorehealthsyringe"] = 1,
-							["hyperzine"] = 1,
 							["redjellymedS"] = 1,
-							["bluejellymedS"] = 1,
+							["bluejellymed"] = 1,
 						}
 					},
 					["antibleeding1"] = 8,
@@ -1201,7 +1191,7 @@ Products = {
 		end
 	},
 	{
-		Identifier = "juggernaut2",
+		Identifier = "separatists_juggernaut_2",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -1223,7 +1213,6 @@ Products = {
 				character.GiveTalent("truepotential")
 				character.GiveTalent("stonewall")
 				character.GiveTalent("swole")
-				character.GiveTalent("implacable")
 				character.GiveTalent("exampleofhealth")
 				character.GiveTalent("crustyseaman")
 				character.GiveTalent("ntsp_therapisttintraining")
@@ -1233,7 +1222,7 @@ Products = {
 
 				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["precursor"].Instantiate(23))
 				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["deepfixnanite"].Instantiate(2))
-				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["morevigor"].Instantiate(100))
+				character.CharacterHealth.ApplyAffliction(nil, AfflictionPrefab.Prefabs["morevigor"].Instantiate(800))
 
 				---@type ItemTable
 				local inventoryItems = {
@@ -1270,10 +1259,8 @@ Products = {
                     ["wrench"] = 1,
 					["medkit"] = {
 						Items = {
-							["moremorehealthsyringe"] = 1,
-							["hyperzine"] = 1,
 							["redjellymedS"] = 1,
-							["bluejellymedS"] = 1,
+							["bluejellymed"] = 1,
 						}
 					},
 					["antibleeding1"] = 8,
@@ -1291,7 +1278,7 @@ Products = {
 	-- CAPTAINS КАПИТАНЫ
 	-- ========================================================
 	{
-		Identifier = "captain1",
+		Identifier = "separatists_captain_1",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -1395,7 +1382,7 @@ Products = {
 		end
 	},
 	{
-		Identifier = "captain2",
+		Identifier = "separatists_captain_2",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -1499,7 +1486,7 @@ Products = {
 	-- ENGINEERS ИНЖИНЕРЫ
 	-- ========================================================
 	{
-		Identifier = "engineer1",
+		Identifier = "separatists_engineer_1",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -1603,7 +1590,7 @@ Products = {
 		end
 	},
 	{
-		Identifier = "engineer2",
+		Identifier = "separatists_engineer_2",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -1710,7 +1697,7 @@ Products = {
 	-- GUNNERS АРТЕЛЕРИСТ 
 	-- ========================================================
 	{
-		Identifier = "gunner1",
+		Identifier = "separatists_gunner_1",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)
@@ -1802,7 +1789,7 @@ Products = {
 		end
 	},
 	{
-		Identifier = "gunner2",
+		Identifier = "separatists_gunner_2",
 		Price = 0,
 		Limit = math.huge,
 		CanBuy = function (_, product)

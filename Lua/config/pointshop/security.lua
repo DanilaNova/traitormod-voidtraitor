@@ -87,7 +87,7 @@ category.Products = {
     },
 	
     {
-        Price = 4000,
+        Price = 2250,
         Limit = 1,
         IsLimitGlobal = true,
         Items = {"hmg", "hmgmagazine"},

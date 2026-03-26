@@ -22,13 +22,13 @@ local categories = {
 local btest = bit32.btest
 
 -- Создание нового списка
-randomizer.CreateList("Weapons", function (prefab)
-	return
-		btest(prefab.Category, categories.Weapon)
-		and not btest(prefab.Category, categories.Machine)
-		and (prefab.CanBeBought or prefab.CanBeSold)
-		and (prefab.ConfigElement.GetAttributeBool('NonInteractable', false))
-end)
+-- randomizer.CreateList("Weapons", function (prefab)
+-- 	return
+-- 		btest(prefab.Category, categories.Weapon)
+-- 		and not btest(prefab.Category, categories.Machine)
+-- 		and (prefab.CanBeBought or prefab.CanBeSold)
+-- 		and not prefab.ConfigElement.GetAttributeBool('NonInteractable', false)
+-- end)
 
 -- Создание списка на основе имеющегося
 randomizer.CreateFrom("Weapons", "CanBeBoughtOrSold", function (prefab)
@@ -51,13 +51,17 @@ randomizer.Filter(function (prefab)
 	return false
 end, "Weapons")
 
-randomizer.CreateList("Materials", function (prefab)
+randomizer.CreateList("Material", function (prefab)
 	return btest(prefab.Category, categories.Material)
 end)
 
-randomizer.CreateList("All")
+randomizer.CreateList("All", function (prefab)
+	return not prefab.ConfigElement.GetAttributeBool('NonInteractable', false)
+end)
 
-randomizer.GetRandom("Materials")
+randomizer.CreateList("Medical", function (prefab)
+	return btest(prefab.Category, categories.Medical)
+end)
 
 ---@type Pointshop.Category
 local category = {
@@ -70,18 +74,45 @@ end,
 
 Products = {
 	{
-		Identifier = "randomizeall",
-		Price = 1,
-		Limit = math.huge,
+		Identifier = "randomize_crazy_all",
+		Price = 150,
+		Limit = 10,
 
 		Action = function (client)
-			Entity.Spawner.AddItemToSpawnQueue(randomizer.GetRandom("CanBeBoughtOrSold"), client.Character.Inventory)
+			Entity.Spawner.AddItemToSpawnQueue(randomizer.GetRandom("All"), client.Character.Inventory)
 		end,
 	},
 	{
-		Identifier = "randomizeweapons",
-		Price = 1,
-		Limit = math.huge,
+		Identifier = "randomize_normal_all",
+		Price = 75,
+		Limit = 15,
+		
+		Action = function (client)
+			Entity.Spawner.AddItemToSpawnQueue(randomizer.GetRandom("CanBeBoughtOrSold"), client.Character.Inventory)
+		end
+	},
+	{
+		Identifier = "randomize_materials",
+		Price = 25,
+		Limit = 20,
+		
+		Action = function (client)
+			Entity.Spawner.AddItemToSpawnQueue(randomizer.GetRandom("Material"), client.Character.Inventory)
+		end
+	},
+	{
+		Identifier = "randomize_medical",
+		Price = 50,
+		Limit = 10,
+		
+		Action = function (client)
+			Entity.Spawner.AddItemToSpawnQueue(randomizer.GetRandom("Medical"), client.Character.Inventory)
+		end
+	},
+	{
+		Identifier = "randomize_weapons",
+		Price = 750,
+		Limit = 5,
 		
 		Action = function (client)
 			Entity.Spawner.AddItemToSpawnQueue(randomizer.GetRandom("Weapons"), client.Character.Inventory)
