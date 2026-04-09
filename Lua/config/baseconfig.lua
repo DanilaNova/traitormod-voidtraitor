@@ -14,16 +14,129 @@ config.SendWelcomeMessage = true
 config.ChatMessageType = ChatMessageType.Private    -- Error = red | Private = green | Dead = blue | Radio = yellow
 
 config.Extensions = {
+    dofile(Traitormod.Path .. "/Lua/extensions/attackdefendreactorblastfix.lua"),
     --dofile(Traitormod.Path .. "/Lua/extensions/weaponnerfs.lua"),
     --dofile(Traitormod.Path .. "/Lua/extensions/paralysisnerf.lua"),
     --dofile(Traitormod.Path .. "/Lua/extensions/pressuremidjoin.lua"),
 }
 
 config.ExtensionConfig = {
+    attackdefendreactorblastfix = {
+        BlockedExplosives = {"fraggrenade", "40mmgrenade", "uex", "c4block_vipbombing", "ic4block", "40mmnuke", "alienartifactpiece", "arak_cinderblock3"},
+        ProtectedGamemodes = {"AttackDefend", "AttackDefendV2", "AttackDefendWatter", "DefendsBomb"},
+        ReactorTag = "deathmatchteam1reactor",
+        ProtectTaggedReactorsOnly = true,
+        Debug = false,
+    }
+}
 
+----- DISCORD -----
+
+config.Discord = {
+    Enabled = true,
+    DebugResponses = false,
+    RoundCounterFile = Traitormod.Path .. "/Lua/roundcounter.json",
+    StateFile = Traitormod.Path .. "/Lua/discordstate.json",
+
+    Presence = {
+        Enabled = true,
+        Webhook = "",
+        Username = "VoidTraitor Server",
+    },
+
+    Round = {
+        Enabled = true,
+        Webhook = "",
+        Username = "VoidTraitor Round Logger",
+    },
+
+    Status = {
+        Enabled = true,
+        Webhook = "",
+        MessageId = "",
+        Username = "VoidTraitor Status",
+        UpdateInterval = 15,
+        AutoCreateMessageIfMissing = true,
+        AutoSaveMessageId = true,
+        EmbedColor = 16753920,
+        FooterText = "VoidTraitor",
+        ShowNextRoundInLobby = true,
+        ShowModeField = true,
+        ShowMapField = true,
+        ShowSubmarineField = true,
+    },
+
+    Logs = {
+        Enabled = false,
+        Webhook = "",
+        Username = "Server Logs",
+        FlushInterval = 1,
+        MaxMessagesPerBatch = 15,
+        MaxPayloadLength = 1800,
+    },
+}
+
+config.DiscordWebhookConfig = nil -- legacy compatibility for old webhook-only configs
+
+----- GAMEVOTE -----
+
+config.GameVote = {
+    DurationSeconds = 60,
+
+    Modes = {
+        {
+            Name = "Secret",
+            LanguageKey = "GameVoteOptionSecret",
+            Apply = "Secret"
+        },
+        {
+            Name = "AttackDefend",
+            LanguageKey = "GameVoteOptionAttackDefend",
+            Apply = "AttackDefend"
+        },
+        {
+            Name = "HideAndSeek",
+            LanguageKey = "GameVoteOptionHideAndSeek",
+            Apply = "HideAndSeek"
+        }
+    },
+
+    SecretModeIdentifier = "mission",
+    SecretTraitorProbability = 1,
+    SecretDifficulty = 50,
+    SecretMissionTypes = {
+        "Pirate",
+        "Nest",
+        "Salvage",
+        "SalvageWreck",
+        "SalvageCave",
+        "SalvageRuin",
+        "Mineral",
+        "ClearAlienRuins",
+        "Beacon",
+        "ScanAlienRuins",
+        "EliminateThalamus",
+        "Monster"
+    },
+    SecretBlockedPrefixes = {"РЇ-", "#Hide and seek", "Attack&Defend"},
+    SecretBlockedTags = {"Shuttle", "HideInMenus"},
+
+    AttackDefendModeIdentifier = "pvp",
+    AttackDefendMissionTypes = {"AttackDefenceV2"},
+    AttackDefendKeepSecretMissionTypes = true,
+    AttackDefendOutpostName = "Random",
+    AttackDefendTraitorProbability = 0,
+
+    HideModeIdentifier = "mission",
+    HideTraitorProbability = 0,
+    HideMaps = {
+        "#Hide and seek I Big station",
+        "#Hide and seek I in Residence"
+    }
 }
 
 ----- GAMEPLAY -----
+
 config.Codewords = {
     "hull", "tabacco", "nonsense", "fish", "clown", "quartermaster", "fast", "possibility",
 	"thalamus", "hungry", "water", "looks", "renegade", "angry", "green", "sink", "rubber",
@@ -59,6 +172,7 @@ config.StartPoints = 5000 -- new players start with this amount of points
 config.PermanentPoints = true      -- sets if points and lives will be stored in and loaded from a file
 config.RemotePoints = nil
 config.RemoteServerAuth = {}
+
 config.PermanentStatistics = true  -- sets if statistics be stored in and loaded from a file
 config.MaxLives = 5
 config.MinRoundTimeToLooseLives = 180
@@ -66,7 +180,27 @@ config.RespawnedPlayersDontLooseLives = true
 config.MaxExperienceFromPoints = 500000     -- if not nil, this amount is the maximum experience players gain from stored points (30k = lvl 10 | 38400 = lvl 12)
 
 config.FreeExperience = 250         -- temporary experience given every ExperienceTimer seconds
-config.ExperienceTimer = 120
+config.ExperienceTimer = 120 -- passive round skill gain interval in seconds
+config.RoundSkillGain = {
+    Enabled = true,
+    Timer = 240, 
+    SecretOnly = true,
+    AliveTeam1Only = true,
+    AliveRoleMin = 1,
+    AliveRoleMax = 10,
+    MissingRoleMin = 5,
+    MissingRoleMax = 15,
+    AliveRoleCap = 40,
+    MissingRoleCap = 70,
+    Roles = {
+        { Job = "captain", Skill = "helm" },
+        { Job = "securityofficer", Skill = "weapons" },
+        { Job = "mechanic", Skill = "mechanical" },
+        { Job = "engineer", Skill = "electrical" },
+        { Job = "medicaldoctor", Skill = "medical" },
+        { Job = "surgeon", Skill = "surgery" },
+    }
+}
 
 config.PointsGainedFromSkill = {
     medical = 3,
@@ -95,7 +229,7 @@ end
 ----- GAMEMODE -----
 config.GamemodeConfig = {
     Secret = {
-        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "otherresources", "other", "randomize", "ships"},
+        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "deathtrigereventrandom", "abilities", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "otherresources", "other", "randomize", "ships"},
         EndOnComplete = true,           -- end round everyone but traitors are dead
         EnableRandomEvents = true,
         EndGameDelaySeconds = 15,
@@ -107,18 +241,31 @@ config.GamemodeConfig = {
 
         MissionPoints = {
             Salvage = 1100,
+            SalvageWreck = 1250,
+            SalvageCave = 1350,
+            SalvageRuin = 1500,
             Monster = 1050,
+            EliminateThalamus = 2200,
             Cargo = 1000,
             Beacon = 1200,
             Nest = 1700,
             Mineral = 1000,
             Combat = 1400,
-            AbandonedOutpost = 500,
             Escort = 1200,
             Pirate = 1300,
             GoTo = 1000,
+            OutpostDestroy = 1500,
+            OutpostRescue = 1400,
+            AbandonedOutpost = 1200,
+            AbandonedOutpostMonsters = 1300,
+            AbandonedOutpostAssassinate = 1500,
+            ["jailbreak"] = 1600,
             ScanAlienRuins = 1600,
             ClearAlienRuins = 2000,
+            End = 3500,
+            SubVsSubCombat = 1400,
+            OutpostCombat = 1400,
+            KingOfTheHull = 1500,
             Default = 1000,
         },
         PointsGainedFromCrewMissionsCompleted = 1000,
@@ -163,7 +310,7 @@ config.GamemodeConfig = {
     },
 
     PvP = {
-        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "otherresources", "other", "ships"},
+        PointshopCategories = {"clown", "traitor", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "deathtrigereventrandom", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "otherresources", "other", "ships"},
         EnableRandomEvents = false, -- most events are coded to only affect the main submarine
         WinningPoints = 1000,
         WinningDeadPoints = 500,
@@ -230,9 +377,9 @@ config.GamemodeConfig = {
         DefendRespawn = 60,
         AttackRespawn = 70,
         WinningPointsTeam1 = 2000,
-        DefaultClassTeam1 = "soldier1",
+        DefaultClassTeam1 = "coalition_soldier_1",
         WinningPointsTeam2 = 1000,
-        DefaultClassTeam2 = "soldier1",
+        DefaultClassTeam2 = "separatists_soldier_1",
     },
 }
 
@@ -294,7 +441,7 @@ config.RoleConfig = {
     },
 
     Clown = {
-        SubObjectives = {"BananaSlip", "SuffocateCrew", "AssassinateDrunk", "GrowMudraptors", "Survive"},
+        SubObjectives = {"BananaSlip", "SuffocateCrew", "AssassinateDrunk", "GrowMudraptors", "DetonateLocation", "Survive"},
         MinSubObjectives = 3,
         MaxSubObjectives = 3,
 
@@ -346,8 +493,34 @@ config.ObjectiveConfig = {
         AmountLives = 1,
     },
 
+    SuffocateCrew = {
+        AmountPoints = 900,
+        RequiredLowOxygenSeconds = 4,
+        SuffocationKillWindowSeconds = 20,
+        SevereOxygenThreshold = 15,
+        LowOxygenAfflictionThreshold = 35,
+        AdditionalLowOxygenAfflictions = {"oxygenlow", "hypoxemia", "cerebralhypoxia", "asphyxia"},
+    },
+
+    HealCharacters = {
+        AmountPoints = 400,
+        Amount = 500,
+        RecentTreatmentAttributionSeconds = 12,
+        DedupWindowSeconds = 0.05,
+        MinimumReportedHeal = 0.5,
+    },
+
     DestroyCaly = {
+
         AmountPoints = 500,
+    },
+
+    DetonateLocation = {
+        AmountPoints = 1200,
+        AmountPointsWithVictim = 1800,
+        RequireVictimChance = 0.5,
+        MaxVictimDistance = 500,
+        DetonatorIdentifiers = {"detonator", "timeddetonator", "artmod_detonator"},
     },
 }
 
@@ -359,27 +532,55 @@ config.RandomEventConfig = {
         dofile(Traitormod.Path .. "/Lua/config/randomevents/maintenancetoolsdelivery.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/medicaldelivery.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/ammodelivery.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/hiddenpirate.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/electricalfixdischarge.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/wreckpirate.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/beaconpirate.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/pirate/hiddenpirate.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/pirate/wreckpirate.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/pirate/beaconpirate.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/abysshelp.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/lightsoff.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/emergencyteam.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/outpostpirateattack.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/pirate/outpostpirateattack.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/pirate/piratecrew.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/shadymission.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/oxygengenpoison.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/oxygengenhusk.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/prisoner.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/randomlights.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/clownmagic.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/fixhull.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/fullfixshull.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/fullelectricalfixdischarge.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/breackelectrical.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/breackhull.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/killelectrical.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/randomevents/killhull.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/ventcreatures.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/clowncratesurprise.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/weakballastflora.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/wreckrescue.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/beaconrescue.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/traitor/lightsoff.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/cultist/oxygengenhusk.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/clown/randomlights.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/clown/clownmagic.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/traitor/reactorshutdown.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/traitor/supercapacitorfailure.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/traitor/junctionboxoverload.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/traitor/oxygengenpoison.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/traitor/oxygensufforin.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/traitor/oxygenparalyzant.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/traitor/oxygenmorbusine.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/sabotage/traitor/oxygencyanide.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/captainhelmboost.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/securitymindsense.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/securityturretcoilgun.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/securityturretchaingun.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/securityturretflakcannon.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/securityturretpulselaser.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/securityturretdoublecoilgun.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/securityturretrailgun.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/mechanicmechanicalrepair.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/mechanichullrepair.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/mechanicskillboost.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/engineerelectricalrepair.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/engineerskillboost.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/medicskillboost.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/abilities/surgeonskillboost.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/repair/electricalfixdischarge.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/repair/fixhull.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/repair/fullfixshull.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/repair/fullelectricalfixdischarge.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/break/breackelectrical.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/break/breackhull.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/break/killelectrical.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/break/killhull.lua"),
     }
 }
 
@@ -399,6 +600,7 @@ config.PointShopConfig = {
         dofile(Traitormod.Path .. "/Lua/config/pointshop/surgery.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/otherresources.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/randomize.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/abilities.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/clown.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/cultist.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/traitors/traitor.lua"),
@@ -406,20 +608,47 @@ config.PointShopConfig = {
         dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/spawnRed.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamBlue.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamRed.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamRedDB.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamBlueDB.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamRedWatter.lua"),
-        dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/teamBlueWatter.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/deathspawns/deathspawn.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/deathspawns/deathspawnhusk.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/deathspawns/deathspawnfriend.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/events/deathtrigerevent.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/events/deathtrigereventevil.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/events/deathtrigereventrandom.lua"),
+    }
+}
+
+config.UPCPirateConfig = {
+    EliminateCrewReward = 2500,
+    CaptureReward = 1500,
+    CaptureDurationSeconds = 60,
+    EndRoundDelaySeconds = 5,
+}
+
+config.MonsterBeaconConfig = {
+    Enabled = true,
+    ActivationTime = 30,
+    GhostRoleChance = 0.3,
+    SpawnWallDistance = 250,
+    SpawnJitter = 150,
+    UseOptionalHuskPools = true,
+    Pools = {
+        {Name = "MudraptorPack", Creatures = {"mudraptor", "mudraptor", "mudraptor", "mudraptor", "mudraptor"}},
+        {Name = "TigerthresherPack", Creatures = {"Tigerthresher", "Tigerthresher", "Tigerthresher", "mudraptor"}},
+        {Name = "VeteranMudraptorPack", Creatures = {"Mudraptor_veteran", "Mudraptor_veteran", "mudraptor"}},
+        {Name = "CrawlerPack", Creatures = {"crawler", "crawler", "crawler", "crawler", "crawler", "crawler"}},
+        {Name = "BonethresherPack", Creatures = {"Bonethresher", "Tigerthresher", "Tigerthresher"}},
+    },
+    OptionalHuskPools = {
+        {Name = "CrawlerHuskPack", Creatures = {"Crawlerhusk", "Crawlerhusk", "Crawlerhusk", "Crawlerhusk", "Crawlerhusk", "Crawlerhusk"}},
+        {Name = "MudraptorHuskPack", Creatures = {"Mudraptormispawnhusk", "Mudraptormispawnhusk", "Mudraptormispawnhusk", "Mudraptormispawnhusk", "Mudraptormispawnhusk"}},
+        {Name = "TigerthresherHuskPack", Creatures = {"Tigerthresherhusk", "Tigerthresherhusk", "Tigerthresherhusk", "Mudraptormispawnhusk"}},
+        {Name = "BonethresherHuskPack", Creatures = {"Bonethresherhusk", "Tigerthresherhusk", "Tigerthresherhusk"}},
     }
 }
 
 config.GhostRoleConfig = {
     Enabled = true,
+    PirateMissionGhostRoles = true,
     MiscGhostRoles = {
         ["Mudraptor_hatchling"] = true,
         ["Crawler_hatchling"] = true,

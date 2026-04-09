@@ -16,10 +16,6 @@ ps.ProductBuyFailureReason = {
 ps.GlobalProductLimits = {}
 ---@type table<string, integer>
 ps.LocalProductLimits = {}
----@type table<Barotrauma.Networking.Client[], string>
-ps.SlotReserve = {}
----@type table<string, Barotrauma.Character[]>
-ps.TakenSlots = {}
 ps.Timeouts = {}
 ps.Refunds = {}
 ps.ActiveCategories = {}
@@ -27,9 +23,14 @@ ps.AllCategories = {} -- It has config categories parsed as a table
 
 ---@param categories Pointshop.Category[]
 ps.Initialize = function(categories)
+    ps.ActiveCategories = {}
+
     -- Adds required categories to a list so it can be used by the gamemode
     for _, category in pairs(categories) do
-        table.insert(ps.ActiveCategories, ps.AllCategories[category])
+        local resolvedCategory = ps.AllCategories[category]
+        if resolvedCategory ~= nil then
+            table.insert(ps.ActiveCategories, resolvedCategory)
+        end
     end
 end
 
@@ -58,8 +59,6 @@ end
 ps.ResetProductLimits = function()
     ps.GlobalProductLimits = {}
     ps.LocalProductLimits = {}
-    ps.SlotReserve = {}
-    ps.TakenSlots = {}
 end
 
 ---@param product Pointshop.Product
@@ -101,93 +100,12 @@ ps.GetProductLimit = function (client, product)
     end
 end
 
----@param product Pointshop.Product
----@return Barotrauma.Character[]
-ps.GetTakenSlots = function (product)
-    local takenSlots = ps.TakenSlots[product.Identifier]
-    if takenSlots == nil then
-        takenSlots = {}
-        ps.TakenSlots[product.Identifier] = takenSlots
-    end
-
-    return takenSlots
-end
-
----@param product Pointshop.Product
----@return Barotrauma.Networking.Client[]
-ps.GetReservedSlots = function (product)
-    local slots = {}
-    local indentifier = product.Identifier
-    for client, slot in pairs(ps.SlotReserve) do
-        if slot == indentifier then
-            table.insert(slots, client)
-        end
-    end
-    return slots
-end
-
-ps.FreeReservedSlot = function ()
-    
-end
-
----@param client Barotrauma.Networking.Client
----@param character Barotrauma.Character
----@return boolean
-ps.TakeReservedSlot = function (client, character)
-    for indentifier, reservedSlots in pairs(ps.ReservedSlots) do
-        for index, slot in ipairs(reservedSlots) do
-            if slot == client then
-                table.insert(ps.TakenSlots[indentifier], character)
-                return true
-            end
-        end
-    end
-
-    return false
-end
-
----@param product Pointshop.Product
----@return integer
-ps.CountAllSlots = function (product)
-    local reservedSlots = ps.GetReservedSlots(product.Identifier)
-    local takenSlots = ps.GetTakenSlots(product.Identifier)
-
-    local slotLookup = {}
-    local counter = 0
-    for _, slot in ipairs(reservedSlots) do
-        slotLookup[slot.AccountId] = true
-        counter = counter + 1
-    end
-    for _, slot in ipairs(takenSlots) do
-        if not slotLookup[slot.ownerClientAccountId] then
-            counter = counter + 1
-        end
-    end
-
-    return counter
-end
-
 ---@param client Barotrauma.Networking.Client
 ---@param product Pointshop.Product
 ---@param amount integer?
 ---@return boolean
 ps.UseProductLimit = function (client, product, amount)
     amount = amount or 1
-
-    local productSlots = product.Slots
-    if productSlots ~= nil then
-        if productSlots - ps.CountAllSlots(product) > 0 then
-            local chosenSlots
-            if product.ReserveSlots then
-                
-            else
-                chosenSlots = ps.GetTakenSlots(product)
-            end
-
-        else
-            return false
-        end
-    end
 
     if product.IsLimitGlobal then
         if ps.GlobalProductLimits[product.Identifier] == nil then
@@ -253,6 +171,172 @@ ps.GetCategoryName = function (category)
     return category.Identifier
 end
 
+---@param subcategory string|table
+---@return table
+ps.NormalizeSubcategory = function (subcategory)
+    if type(subcategory) == "string" then
+        return { Identifier = subcategory }
+    end
+
+    return subcategory or {}
+end
+
+---@param product Pointshop.Product
+---@return table[]
+ps.GetProductSubcategoryPath = function (product)
+    local subcategory = product.Subcategory
+    if subcategory == nil then return {} end
+
+    if type(subcategory) == "string" then
+        return { ps.NormalizeSubcategory(subcategory) }
+    end
+
+    if subcategory.Identifier ~= nil or subcategory.Name ~= nil then
+        return { ps.NormalizeSubcategory(subcategory) }
+    end
+
+    local result = {}
+    for _, entry in ipairs(subcategory) do
+        table.insert(result, ps.NormalizeSubcategory(entry))
+    end
+
+    return result
+end
+
+---@param subcategory table
+---@return string
+ps.GetSubcategoryName = function (subcategory)
+    if subcategory == nil then
+        error("GetSubcategoryName: argument #1 was nil", 2)
+    end
+
+    if subcategory.Name ~= nil then return subcategory.Name end
+
+    local identifier = subcategory.Identifier
+    if identifier == nil then return "invalid_subcategory" end
+
+    local name = Traitormod.Language.Pointshop[identifier]
+    if name then return name end
+
+    return identifier
+end
+
+---@param path table[]
+---@return string
+ps.GetSubcategoryBreadcrumb = function (path)
+    local names = {}
+    for _, entry in ipairs(path) do
+        table.insert(names, ps.GetSubcategoryName(entry))
+    end
+    return table.concat(names, " > ")
+end
+
+---@param productPath table[]
+---@param currentPath table[]
+---@return boolean
+ps.IsPathInside = function (productPath, currentPath)
+    if #currentPath > #productPath then return false end
+
+    for index, entry in ipairs(currentPath) do
+        local currentIdentifier = entry.Identifier or entry.Name
+        local productEntry = productPath[index]
+        if productEntry == nil then return false end
+
+        local productIdentifier = productEntry.Identifier or productEntry.Name
+        if productIdentifier ~= currentIdentifier then
+            return false
+        end
+    end
+
+    return true
+end
+
+---@param category Pointshop.Category
+---@param currentPath table[]
+---@return table[], Pointshop.Product[]
+ps.GetCategoryMenuEntries = function (client, category, currentPath)
+    local subcategories = {}
+    local subcategoryLookup = {}
+    local products = {}
+
+    for _, product in ipairs(category.Products) do
+        if ps.CanClientSeeProduct(client, product) then
+            local productPath = ps.GetProductSubcategoryPath(product)
+            if ps.IsPathInside(productPath, currentPath) then
+                if #productPath == #currentPath then
+                    table.insert(products, product)
+                else
+                    local child = productPath[#currentPath + 1]
+                    local childKey = child.Identifier or child.Name or tostring(#subcategories + 1)
+                    if subcategoryLookup[childKey] == nil then
+                        subcategoryLookup[childKey] = child
+                        table.insert(subcategories, child)
+                    end
+                end
+            end
+        end
+    end
+
+    return subcategories, products
+end
+
+---@param subcategory table
+---@return string?
+ps.GetSubcategoryInfo = function (subcategory)
+    if subcategory.CounterType == "ClassGroup" and subcategory.Limit ~= nil then
+        local selectedGamemode = Traitormod.SelectedGamemode
+        local counters = selectedGamemode and selectedGamemode.ClassGroupCounters
+        local counterId = subcategory.CounterId or subcategory.Identifier
+        local taken = counters and counters[counterId] or 0
+        local remaining = math.max(subcategory.Limit - taken, 0)
+        local formatString = Traitormod.Language.PointshopSubcategorySlots or "%d/%d"
+        return string.format(formatString, remaining, subcategory.Limit)
+    end
+
+    return nil
+end
+
+---@param subcategory table
+---@return string
+ps.GetSubcategoryDisplayText = function (subcategory)
+    local text = "[" .. ps.GetSubcategoryName(subcategory) .. "]"
+    local info = ps.GetSubcategoryInfo(subcategory)
+    if info ~= nil then
+        text = text .. " - " .. info
+    end
+    return text
+end
+
+---@param product Pointshop.Product
+---@return boolean
+ps.IsAttackDefendClassProduct = function (product)
+    if product == nil then return false end
+
+    local productPath = ps.GetProductSubcategoryPath(product)
+    for i = #productPath, 1, -1 do
+        local entry = productPath[i]
+        if type(entry) == "table" and entry.CounterType == "ClassGroup" then
+            return true
+        end
+    end
+
+    return false
+end
+
+---@param client Barotrauma.Networking.Client
+---@param category Pointshop.Category
+---@param path table[]
+---@param message string
+ps.ShowCategoryMessageAndReturn = function (client, category, path, message)
+    textPromptUtils.Prompt(message, {Traitormod.Language.PointshopGoBack}, client, function (_, client2)
+        if not ps.ValidateClient(client2) or not ps.CanClientAccessCategory(client2, category) then
+            return
+        end
+
+        ps.ShowCategoryItems(client2, category, path)
+    end, category.Decoration or "gambler", category.FadeToBlack)
+end
+
 ---@param client Barotrauma.Networking.Client
 ---@param name string
 ---@return Pointshop.Product
@@ -260,7 +344,7 @@ ps.FindProductByName = function (client, name)
     for i, category in pairs(ps.ActiveCategories) do
         if ps.CanClientAccessCategory(client, category) then
             for k, product in pairs(category.Products) do
-                if product.Identifier == name or ps.GetProductName(product) == name then
+                if ps.CanClientSeeProduct(client, product) and (product.Identifier == name or ps.GetProductName(product) == name) then
                     return product
                 end
             end
@@ -275,6 +359,32 @@ ps.CanClientAccessCategory = function(client, category)
     if category.CanAccess ~= nil then
         return category.CanAccess(client)
     elseif client.Character == nil or client.Character.IsDead or not client.Character.IsHuman then
+        return false
+    end
+
+    return true
+end
+
+---@param client Barotrauma.Networking.Client
+---@param product Pointshop.Product
+---@return boolean
+ps.CanClientSeeProduct = function(client, product)
+    if product == nil or product.Enabled == false then
+        return false
+    end
+
+    if product.VisibleJobs ~= nil then
+        local character = client ~= nil and client.Character or nil
+        if character == nil or character.IsDead or not character.IsHuman then
+            return false
+        end
+
+        for _, job in ipairs(product.VisibleJobs) do
+            if character.HasJob(job) then
+                return true
+            end
+        end
+
         return false
     end
 
@@ -380,8 +490,13 @@ ps.ActivateProduct = function (client, product, paidPrice)
     end
 
     if (product.Items == nil or #product.Items == 0) and product.Action then
-        product.Action(client, product, nil, paidPrice)
+        local success, result = product.Action(client, product, nil, paidPrice)
+        if success == false then
+            return false, result
+        end
     end
+
+    return true
 end
 
 ---@param client Barotrauma.Networking.Client
@@ -406,8 +521,15 @@ end
 ---@return Pointshop.ProductBuyFailureReason?
 ps.BuyProduct = function(client, product)
     local price = 0
+    local points = nil
+    local previousTimeout = nil
+
+    if not ps.CanClientSeeProduct(client, product) then
+        return Traitormod.Language.PointshopCannotBeUsed
+    end
+
     if not Traitormod.Config.TestMode then
-        local points = Traitormod.GetData(client, "Points") or 0
+        points = Traitormod.GetData(client, "Points") or 0
         price = ps.GetProductPrice(client, product)
 
         if product.CanBuy then
@@ -422,6 +544,7 @@ ps.BuyProduct = function(client, product)
         end
 
         if product.Timeout ~= nil then
+            previousTimeout = ps.Timeouts[client.SteamID]
             if ps.Timeouts[client.SteamID] ~= nil and Timer.GetTime() < ps.Timeouts[client.SteamID] then
                 local time = math.ceil(ps.Timeouts[client.SteamID] - Timer.GetTime())
                 return string.format(Traitormod.Language.PointshopWait, time)
@@ -434,15 +557,29 @@ ps.BuyProduct = function(client, product)
             return ps.ProductBuyFailureReason.NoStock
         end
 
-        Traitormod.Log(string.format("PointShop: %s bought \"%s\".", Traitormod.ClientLogName(client), product.Identifier))
         Traitormod.SetData(client, "Points", points - price)
-
-        Traitormod.Stats.AddClientStat("CrewBoughtItem", client, 1)
-        Traitormod.Stats.AddListStat("ItemsBought", ps.GetProductName(product), 1)
     end
 
     -- Activate the product
-    ps.ActivateProduct(client, product, price)
+    local success, result = ps.ActivateProduct(client, product, price)
+    if success == false then
+        if not Traitormod.Config.TestMode then
+            Traitormod.SetData(client, "Points", points)
+            ps.UseProductLimit(client, product, -1)
+
+            if product.Timeout ~= nil then
+                ps.Timeouts[client.SteamID] = previousTimeout
+            end
+        end
+
+        return result or Traitormod.Language.PointshopCannotBeUsed
+    end
+
+    if not Traitormod.Config.TestMode then
+        Traitormod.Log(string.format("PointShop: %s bought \"%s\".", Traitormod.ClientLogName(client), product.Identifier))
+        Traitormod.Stats.AddClientStat("CrewBoughtItem", client, 1)
+        Traitormod.Stats.AddListStat("ItemsBought", ps.GetProductName(product), 1)
+    end
 end
 
 ---@param client Barotrauma.Networking.Client
@@ -456,42 +593,18 @@ ps.HandleProductBuy = function (client, product, result, quantity)
     elseif result == ps.ProductBuyFailureReason.NoStock then
         textPromptUtils.Prompt(Traitormod.Language.PointshopNoStock, {}, client, function (id, client) end, "gambler")
     elseif result == nil then
-        textPromptUtils.Prompt(string.format(Traitormod.Language.PointshopPurchased, ps.GetProductName(product), ps.GetProductPrice(client, product), math.floor(Traitormod.GetData(client, "Points") or 0)), {}, client, function (id, client) end, "gambler")
-
-        if true then return end
-        -- Don't let the player rebuy products that need installation or have timelimit
-        if ps.GetProductHasInstallation(product) or product.Timeout ~= nil or ps.GetProductLimit(client, product) < 2 then
-            textPromptUtils.Prompt(string.format(Traitormod.Language.PointshopPurchased, ps.GetProductName(product), ps.GetProductPrice(client, product), math.floor(Traitormod.GetData(client, "Points") or 0)), {}, client, function (id, client) end, "gambler")
-            return
-        end
-        -- Buy again menu
-        local options = {}
-        table.insert(options, Traitormod.Language.PointshopCancel)
-        for i = 1, ps.GetProductLimit(client, product), 1 do
-            table.insert(options, " - " .. tostring(i))
-        end
-        -- Handle rebuying multiple times
-        textPromptUtils.Prompt(string.format("Purchased %sx \"%s\" for %s points\n\nNew point balance is: %s points.\nIf you want to buy again enter the amount:", quantity, ps.GetProductName(product), ps.GetProductPrice(client, product) * quantity, math.floor(Traitormod.GetData(client, "Points") or 0)), options, client, function (id, client)
-            -- id-1 is the quantity that player chose
-            if id > 1 then
-                local successCount = 0 -- If you select more than product has in stock it will handle it
-                local result = nil
-
-                for i = 1, id-1, 1 do
-                    result = ps.BuyProduct(client, product)
-                    -- Exit the loop if the product isn't available when rebuying
-                    if result ~= nil then
-                        break
-                    end
-                    successCount = successCount + 1
-                end
-                if successCount > 0 then
-                    ps.HandleProductBuy(client, product, nil, successCount)
-                else
-                    ps.HandleProductBuy(client, product, result)
-                end
-            end
-        end, "gambler")
+        textPromptUtils.Prompt(
+            string.format(
+                Traitormod.Language.PointshopPurchased,
+                ps.GetProductName(product),
+                ps.GetProductPrice(client, product),
+                math.floor(Traitormod.GetData(client, "Points") or 0)
+            ),
+            {},
+            client,
+            function () end,
+            "gambler"
+        )
     else
         textPromptUtils.Prompt(result, {}, client, function (id, client) end, "gambler")
     end
@@ -499,36 +612,40 @@ end
 
 ---@param client Barotrauma.Networking.Client
 ---@param category Pointshop.Category
-ps.ShowCategoryItems = function(client, category)
+---@param path table[]?
+ps.ShowCategoryItems = function(client, category, path)
+    path = path or {}
+
     local options = {}
     local productsLookup = {}
+    local subcategoriesLookup = {}
+    local subcategories, products = ps.GetCategoryMenuEntries(client, category, path)
 
     table.insert(options, Traitormod.Language.PointshopGoBack)
     table.insert(options, Traitormod.Language.PointshopCancel)
 
-    for key, product in pairs(category.Products) do
-        if product.Enabled ~= false then
-            local limit = product.Limit or defaultLimit
-            local playerLimit = product.Slots
-            local price = ps.GetProductPrice(client, product)
-            local productInfo = {}
+    for _, subcategory in ipairs(subcategories) do
+        table.insert(options, ps.GetSubcategoryDisplayText(subcategory))
+        subcategoriesLookup[#options] = subcategory
+    end
 
-            if price ~= 0 then
-                table.insert(productInfo, ("%spt"):format(price))
-            end
-            if limit ~= math.huge then
-                table.insert(productInfo, ("%s/%s products"):format(ps.GetProductLimit(client, product), limit))
-            end
-            if playerLimit ~= nil then
-                table.insert(productInfo, ("%s/%s slots taken"):format(ps.CountAllSlots(product), playerLimit))
-            end
+    for _, product in ipairs(products) do
+        local limit = product.Limit or defaultLimit
+        local price = ps.GetProductPrice(client, product)
+        local productInfo = {}
 
-            local text = ps.GetProductName(product)
-            if #productInfo > 0 then text = text .. " - " .. table.concat(productInfo, " ") end
-
-            table.insert(options, text)
-            productsLookup[#options] = product
+        if price ~= 0 then
+            table.insert(productInfo, ("%spt"):format(price))
         end
+        if limit ~= math.huge then
+            table.insert(productInfo, ("%s/%s products"):format(ps.GetProductLimit(client, product), limit))
+        end
+
+        local text = ps.GetProductName(product)
+        if #productInfo > 0 then text = text .. " - " .. table.concat(productInfo, " ") end
+
+        table.insert(options, text)
+        productsLookup[#options] = product
     end
 
     local emptyLines = math.floor(#options / 4)
@@ -537,12 +654,36 @@ ps.ShowCategoryItems = function(client, category)
     end
 
     local points = Traitormod.GetData(client, "Points") or 0
+    local promptText = string.format(Traitormod.Language.PointshopWishBuy, math.floor(points))
+    if #path > 0 then
+        promptText = promptText .. "\n" .. ps.GetSubcategoryBreadcrumb(path)
+    end
 
     textPromptUtils.Prompt(
-        string.format(Traitormod.Language.PointshopWishBuy, math.floor(points)), 
+        promptText,
         options, client, function (id, client2)
         if id == 1 then
-            ps.ShowCategory(client2)
+            if #path > 0 then
+                local parentPath = {}
+                for index = 1, #path - 1 do
+                    parentPath[index] = path[index]
+                end
+                ps.ShowCategoryItems(client2, category, parentPath)
+            else
+                ps.ShowCategory(client2)
+            end
+            return
+        end
+
+        local subcategory = subcategoriesLookup[id]
+        if subcategory ~= nil then
+            local nextPath = {}
+            for index, entry in ipairs(path) do
+                nextPath[index] = entry
+            end
+            table.insert(nextPath, subcategory)
+            ps.ShowCategoryItems(client2, category, nextPath)
+            return
         end
 
         local product = productsLookup[id]
@@ -559,7 +700,11 @@ ps.ShowCategoryItems = function(client, category)
                     end
 
                     local result = ps.BuyProduct(client3, product)
-                    ps.HandleProductBuy(client3, product, result)
+                    if result ~= nil and ps.IsAttackDefendClassProduct(product) then
+                        ps.ShowCategoryMessageAndReturn(client3, category, path, result)
+                    else
+                        ps.HandleProductBuy(client3, product, result)
+                    end
                 end
             end, category.Decoration or "gambler", category.FadeToBlack)
         else
@@ -568,7 +713,11 @@ ps.ShowCategoryItems = function(client, category)
             end
 
             local result = ps.BuyProduct(client2, product)
-            ps.HandleProductBuy(client2, product, result)
+            if result ~= nil and ps.IsAttackDefendClassProduct(product) then
+                ps.ShowCategoryMessageAndReturn(client2, category, path, result)
+            else
+                ps.HandleProductBuy(client2, product, result)
+            end
         end
     end, category.Decoration or "gambler", category.FadeToBlack)
 end
@@ -582,8 +731,11 @@ ps.ShowCategory = function(client, resend)
     table.insert(options, Traitormod.Language.PointshopCancel)
     for key, value in pairs(ps.ActiveCategories) do
         if ps.CanClientAccessCategory(client, value) then
-            table.insert(options, ps.GetCategoryName(value))
-            categoryLookup[#options] = value
+            local subcategories, products = ps.GetCategoryMenuEntries(client, value, {})
+            if #subcategories > 0 or #products > 0 then
+                table.insert(options, ps.GetCategoryName(value))
+                categoryLookup[#options] = value
+            end
         end
     end
 
@@ -694,18 +846,6 @@ end)
 
 ---@param character Barotrauma.Character
 Hook.Add("characterDeath", "Traitormod.Pointshop.Death", function (character)
-    for _, takenSlots in pairs(ps.TakenSlots) do
-        local removeList = {}
-        for index, slot in ipairs(takenSlots) do
-            if slot == character then table.insert(removeList, index) end
-        end
-
-        -- Удаляем в обратном порядке
-        for i = #removeList, 1, -1 do
-            table.remove(takenSlots, removeList[i])
-        end
-    end
-
     if character.IsPet then return end
     local client = Traitormod.FindClientCharacter(character)
     if client == nil then return end
@@ -724,20 +864,6 @@ Hook.Add("characterDeath", "Traitormod.Pointshop.Death", function (character)
     ps.Refunds[client] = nil
 end)
 
----@param client Barotrauma.Networking.Client
--- Hook.Add("client.disconnected", "Traitormod.Pointshop.Disconnect", function (client)
---     for _, reservedSlots in pairs(ps.ReservedSlots) do
---         local removeList = {}
---         for index, slot in ipairs(reservedSlots) do
---             if slot == client then table.insert(removeList, index) end
---         end
-
---         -- Удаляем в обратном порядке
---         for i = #removeList, 1, -1 do
---             table.remove(reservedSlots, removeList[i])
---         end
---     end
--- end)
 
 for _, category in pairs(config.PointShopConfig.ItemCategories) do
     if category.Init then category.Init() end

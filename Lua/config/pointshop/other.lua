@@ -25,30 +25,35 @@ category.Products = {
     {
         Price = 300,
         Limit = 5,
+        Subcategory = "skillbooks",
         Items = {"skillbooksubmarinewarfare"}
     },
 
     {
         Price = 300,
         Limit = 5,
+        Subcategory = "skillbooks",
         Items = {"skillbookeuropanmedicine"}
     },
 
     {
         Price = 300,
         Limit = 5,
+        Subcategory = "skillbooks",
         Items = {"skillbookhandyseaman"}
     },
 
     {
         Price = 300,
         Limit = 5,
+        Subcategory = "skillbooks",
         Items = {"skillbooksailorsguide"}
     },
 	
     {
         Price = 300,
         Limit = 5,
+        Subcategory = "skillbooks",
         Items = {"skillbooksurgery"}
     },
 

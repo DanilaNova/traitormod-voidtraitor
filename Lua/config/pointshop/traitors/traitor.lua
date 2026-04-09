@@ -236,17 +236,201 @@ category.Products = {
     },
 
     {
-        Identifier = "poisonoxygensupply",
-        Price = 1300,
+        Identifier = "monsterattractorbeacon",
+        Price = 3000,
         Limit = 1,
         IsLimitGlobal = true,
+        Action = function (client)
+            Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("sonarbeacon"), client.Character.Inventory, nil, nil, function (item)
+                item.Description = Traitormod.Language.MonsterBeaconDescription
+                item.set_InventoryIconColor(Color(196, 90, 32, 255))
+                item.SpriteColor = Color(196, 90, 32, 255)
 
-        CanBuy = function (client, product)
-            return not Traitormod.RoundEvents.IsEventActive("OxygenGeneratorPoison")
+                local color = item.SerializableProperties[Identifier("SpriteColor")]
+                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(color, item))
+                local invColor = item.SerializableProperties[Identifier("InventoryIconColor")]
+                Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(invColor, item))
+
+                Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("batterycell"), item.OwnInventory, nil, nil, function (batteryCell)
+                    batteryCell.NonPlayerTeamInteractable = true
+                    local prop = batteryCell.SerializableProperties[Identifier("NonPlayerTeamInteractable")]
+                    Networking.CreateEntityEvent(batteryCell, Item.ChangePropertyEventData(prop, batteryCell))
+                end)
+
+                local interface = item.GetComponentString("CustomInterface")
+                interface.customInterfaceElementList[2].Signal = "Monster Beacon"
+                item.CreateServerEvent(interface, interface)
+
+                Traitormod.AddMonsterBeacon(item, client.Character)
+            end)
+        end
+    },
+
+    {
+        Identifier = "ReactorShutdown",
+        Price = 500,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Timeout = 60,
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+            { Identifier = "traitor_sabotage_criticalsystems" },
+        },
+
+        CanBuy = function ()
+            return not Traitormod.RoundEvents.IsEventActive("ReactorShutdown")
         end,
 
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("OxygenGeneratorPoison")
+            if Traitormod.RoundEvents.TriggerEvent("ReactorShutdown") then
+                return true
+            end
+
+            return false, Traitormod.Language.PointshopCannotBeUsed
+        end
+    },
+
+    {
+        Identifier = "SupercapacitorFailure",
+        Price = 1250,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Timeout = 90,
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+            { Identifier = "traitor_sabotage_criticalsystems" },
+        },
+
+        CanBuy = function ()
+            return not Traitormod.RoundEvents.IsEventActive("SupercapacitorFailure")
+        end,
+
+        Action = function ()
+            if Traitormod.RoundEvents.TriggerEvent("SupercapacitorFailure") then
+                return true
+            end
+
+            return false, Traitormod.Language.PointshopCannotBeUsed
+        end
+    },
+
+    {
+        Identifier = "JunctionBoxOverload",
+        Price = 3500,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Timeout = 120,
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+            { Identifier = "traitor_sabotage_criticalsystems" },
+        },
+
+        CanBuy = function ()
+            return not Traitormod.RoundEvents.IsEventActive("JunctionBoxOverload")
+        end,
+
+        Action = function ()
+            if Traitormod.RoundEvents.TriggerEvent("JunctionBoxOverload") then
+                return true
+            end
+
+            return false, Traitormod.Language.PointshopCannotBeUsed
+        end
+    },
+
+    {
+        Identifier = "OxygenSufforin",
+        Price = 1300,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Timeout = 120,
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+            { Identifier = "traitor_sabotage_oxygensabotage" },
+        },
+
+        CanBuy = function ()
+            return not Traitormod.RoundEvents.IsEventActive("OxygenSufforin")
+        end,
+
+        Action = function ()
+            if Traitormod.RoundEvents.TriggerEvent("OxygenSufforin") then
+                return true
+            end
+
+            return false, Traitormod.Language.PointshopCannotBeUsed
+        end
+    },
+
+    {
+        Identifier = "OxygenParalyzant",
+        Price = 1800,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Timeout = 120,
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+            { Identifier = "traitor_sabotage_oxygensabotage" },
+        },
+
+        CanBuy = function ()
+            return not Traitormod.RoundEvents.IsEventActive("OxygenParalyzant")
+        end,
+
+        Action = function ()
+            if Traitormod.RoundEvents.TriggerEvent("OxygenParalyzant") then
+                return true
+            end
+
+            return false, Traitormod.Language.PointshopCannotBeUsed
+        end
+    },
+
+    {
+        Identifier = "OxygenMorbusine",
+        Price = 2500,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Timeout = 120,
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+            { Identifier = "traitor_sabotage_oxygensabotage" },
+        },
+
+        CanBuy = function ()
+            return not Traitormod.RoundEvents.IsEventActive("OxygenMorbusine")
+        end,
+
+        Action = function ()
+            if Traitormod.RoundEvents.TriggerEvent("OxygenMorbusine") then
+                return true
+            end
+
+            return false, Traitormod.Language.PointshopCannotBeUsed
+        end
+    },
+
+    {
+        Identifier = "OxygenCyanide",
+        Price = 3200,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Timeout = 120,
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+            { Identifier = "traitor_sabotage_oxygensabotage" },
+        },
+
+        CanBuy = function ()
+            return not Traitormod.RoundEvents.IsEventActive("OxygenCyanide")
+        end,
+
+        Action = function ()
+            if Traitormod.RoundEvents.TriggerEvent("OxygenCyanide") then
+                return true
+            end
+
+            return false, Traitormod.Language.PointshopCannotBeUsed
         end
     },
 
@@ -255,13 +439,20 @@ category.Products = {
         Price = 425,
         Limit = 1,
         IsLimitGlobal = true,
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+        },
 
         CanBuy = function (client, product)
             return not Traitormod.RoundEvents.IsEventActive("LightsOff")
         end,
 
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("LightsOff")
+            if Traitormod.RoundEvents.TriggerEvent("LightsOff") then
+                return true
+            end
+
+            return false, Traitormod.Language.PointshopCannotBeUsed
         end
     },
 
@@ -270,13 +461,20 @@ category.Products = {
         Price = 740,
         Limit = 1,
         IsLimitGlobal = true,
-
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+        },
+        
         CanBuy = function (client, product)
             return not Traitormod.RoundEvents.IsEventActive("CommunicationsOffline")
         end,
 
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("CommunicationsOffline")
+            if Traitormod.RoundEvents.TriggerEvent("CommunicationsOffline") then
+                return true
+            end
+
+            return false, Traitormod.Language.PointshopCannotBeUsed
         end
     },
 }

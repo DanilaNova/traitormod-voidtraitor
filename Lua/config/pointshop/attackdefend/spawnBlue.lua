@@ -4,8 +4,10 @@
 ---@module "adv2"
 local ADV2 = dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/utility/adv2.lua")
 local respawnStart = ADV2.RespawnStart
-local CanBuy = ADV2.CanBuy
+local CanBuyGroup = ADV2.CanBuyGroup
+local CreateClassSubcategory = ADV2.CreateClassSubcategory
 local spawnItems = ADV2.SpawnItems
+local applyDefaultClassLocks = ADV2.ApplyDefaultClassLocks
 ADV2 = nil
 
 local ShopTeamID = CharacterTeamType.Team1
@@ -26,11 +28,11 @@ Products = {
 		Identifier = "coalition_scout",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 2)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 			
 			respawnEntry.JobId = "coalition_scout"
 			
@@ -58,6 +60,7 @@ Products = {
 				local inventoryItems = {
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialskitter"] = 1,
 							["geneticmaterialmantis"] = 1,
@@ -104,6 +107,7 @@ Products = {
 					["artmod_scrapclub"] = 1,
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -119,11 +123,11 @@ Products = {
         Identifier = "coalition_soldier_1",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 2)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_soldier"
 
@@ -160,6 +164,7 @@ Products = {
                     },
 					["bodyarmor"] = {
                         InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
                     },
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag, 
@@ -172,6 +177,7 @@ Products = {
 					},
 					["genesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmoloch"] = 1,
 						}
@@ -210,6 +216,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -222,11 +229,11 @@ Products = {
 		Identifier = "coalition_soldier_2",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 2)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_soldier"
 
@@ -263,6 +270,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -275,6 +283,7 @@ Products = {
 					},
 					["genesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmoloch"] = 1,
 						}
@@ -313,6 +322,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -328,11 +338,11 @@ Products = {
 		Identifier = "coalition_stormtrooper_1",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_stormtrooper"
 
@@ -369,6 +379,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -381,6 +392,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialhammerheadmatriarch"] = 1,
 							["geneticmaterialmantis"] = 1,
@@ -407,6 +419,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -419,11 +432,11 @@ Products = {
 		Identifier = "coalition_stormtrooper_2",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_stormtrooper"
 
@@ -460,6 +473,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -472,6 +486,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialhammerheadmatriarch"] = 1,
 							["geneticmaterialmantis"] = 1,
@@ -498,6 +513,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -513,11 +529,11 @@ Products = {
 		Identifier = "coalition_sniper_1",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_sniper"
 
@@ -556,6 +572,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -568,6 +585,7 @@ Products = {
 					},
 					["genesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmudraptor"] = 1,
 						}
@@ -597,6 +615,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -609,11 +628,11 @@ Products = {
 		Identifier = "coalition_sniper_2",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_sniper"
 
@@ -652,6 +671,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -663,6 +683,7 @@ Products = {
 					},
 					["genesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmudraptor"] = 1,
 						}
@@ -692,6 +713,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -707,11 +729,11 @@ Products = {
 		Identifier = "coalition_medic",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 2)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_medic"
 
@@ -755,6 +777,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["artmod_toolbelt"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -773,6 +796,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialskitter"] = 1,
 							["geneticmaterialmantis"] = 1,
@@ -821,6 +845,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -836,11 +861,11 @@ Products = {
 		Identifier = "coalition_clown_1",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_clown"
 
@@ -878,6 +903,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -890,6 +916,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmantis"] = 1,
 							["geneticmaterialhammerhead"] = 1,
@@ -915,6 +942,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -927,11 +955,11 @@ Products = {
 		Identifier = "coalition_clown_2",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_clown"
 
@@ -968,6 +996,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -980,6 +1009,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmantis"] = 1,
 							["geneticmaterialhammerheadmatriarch"] = 1,
@@ -1002,6 +1032,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1014,11 +1045,11 @@ Products = {
 		Identifier = "coalition_clown_3",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_clown"
 
@@ -1055,6 +1086,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -1067,6 +1099,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmantis"] = 1,
 							["geneticmaterialhammerheadmatriarch"] = 1,
@@ -1096,6 +1129,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1111,11 +1145,11 @@ Products = {
 		Identifier = "coalition_juggernaut_1",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_juggernaut"
 
@@ -1157,6 +1191,7 @@ Products = {
 					},
 					["piratebodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["backpack_slow"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -1166,6 +1201,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialhammerhead"] = 1,
 							["geneticmaterialmoloch"] = 1,
@@ -1183,6 +1219,7 @@ Products = {
 					["antibleeding1"] = 8,
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1195,11 +1232,11 @@ Products = {
 		Identifier = "coalition_juggernaut_2",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_juggernaut"
 
@@ -1241,6 +1278,7 @@ Products = {
 					},
 					["piratebodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["backpack_slow"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -1250,6 +1288,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialhammerhead"] = 1,
 							["geneticmaterialmoloch"] = 1,
@@ -1267,6 +1306,7 @@ Products = {
 					["antibleeding1"] = 8,
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1282,11 +1322,11 @@ Products = {
 		Identifier = "coalition_captain_1",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_captain"
 
@@ -1325,6 +1365,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -1335,6 +1376,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialskitter"] = 1,
 							["geneticmaterialmantis"] = 1,
@@ -1374,6 +1416,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1386,11 +1429,11 @@ Products = {
 		Identifier = "coalition_captain_2",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_captain"
 
@@ -1429,6 +1472,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -1440,6 +1484,7 @@ Products = {
 					},
 					["genesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmoloch"] = 1,
 						}
@@ -1475,6 +1520,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1490,11 +1536,11 @@ Products = {
 		Identifier = "coalition_engineer_1",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_engineer"
 
@@ -1532,6 +1578,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["artmod_toolbelt"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -1549,6 +1596,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialskitter"] = 1,
 							["geneticmaterialhunter"] = 1,
@@ -1582,6 +1630,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1594,11 +1643,11 @@ Products = {
 		Identifier = "coalition_engineer_2",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_engineer"
 
@@ -1636,6 +1685,7 @@ Products = {
 					},
 					["bodyarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["artmod_toolbelt"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -1653,6 +1703,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialskitter"] = 1,
 							["geneticmaterialhunter"] = 1,
@@ -1685,6 +1736,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1700,11 +1752,11 @@ Products = {
 		Identifier = "coalition_gunner_1",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_gunner"
 
@@ -1737,6 +1789,7 @@ Products = {
 					},
 					["makeshiftarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -1749,6 +1802,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmantis"] = 1,
 							["geneticmaterialskitter"] = 1,
@@ -1780,6 +1834,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1792,11 +1847,11 @@ Products = {
 		Identifier = "coalition_gunner_2",
 		Price = 0,
 		Limit = math.huge,
-		CanBuy = function (_, product)
-			return CanBuy(product.Identifier, 1)
+		CanBuy = function (client, product)
+			return CanBuyGroup(client, product)
 		end,
 		Action = function (client, product)
-			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier)
+			local respawnEntry = respawnStart(client, ShopTeamID, product.Identifier, nil, product)
 
 			respawnEntry.JobId = "coalition_gunner"
 
@@ -1829,6 +1884,7 @@ Products = {
 					},
 					["makeshiftarmor"] = {
 						InvSlotType = InvSlotType.OuterClothes,
+					Locked = true,
 					},
 					["bandolier"] = {
 						InvSlotType = InvSlotType.Bag,
@@ -1841,6 +1897,7 @@ Products = {
 					},
 					["advancedgenesplicer"] = {
 						InvSlotType = InvSlotType.HealthInterface,
+					Locked = true,
 						Items = {
 							["geneticmaterialmantis"] = 1,
 							["geneticmaterialskitter"] = 1,
@@ -1866,6 +1923,7 @@ Products = {
 					}
 				}
 
+				applyDefaultClassLocks(inventoryItems)
 				for key, value in pairs(inventoryItems) do
 					spawnItems(key, inventory, value)
 				end
@@ -1877,5 +1935,31 @@ Products = {
 }
 
 }
+
+
+local classGroups = {
+    scout = { Subcategory = CreateClassSubcategory("attackdefend_scouts", 2, "coalition_scout") },
+    soldier = { Subcategory = CreateClassSubcategory("attackdefend_soldiers", 3, "coalition_soldier") },
+    stormtrooper = { Subcategory = CreateClassSubcategory("attackdefend_stormtroopers", 2, "coalition_stormtrooper") },
+    sniper = { Subcategory = CreateClassSubcategory("attackdefend_snipers", 2, "coalition_sniper") },
+    medic = { Subcategory = CreateClassSubcategory("attackdefend_medics", 1, "coalition_medic") },
+    clown = { Subcategory = CreateClassSubcategory("attackdefend_clowns", 3, "coalition_clown") },
+    juggernaut = { Subcategory = CreateClassSubcategory("attackdefend_juggernauts", 2, "coalition_juggernaut") },
+    captain = { Subcategory = CreateClassSubcategory("attackdefend_captains", 2, "coalition_captain") },
+    engineer = { Subcategory = CreateClassSubcategory("attackdefend_engineers", 2, "coalition_engineer") },
+    gunner = { Subcategory = CreateClassSubcategory("attackdefend_gunners", 2, "coalition_gunner") },
+}
+
+for _, product in ipairs(category.Products) do
+    local groupId = product.Identifier
+        :gsub("^coalition_", "")
+        :gsub("_%d+$", "")
+
+    local classGroup = classGroups[groupId]
+    if classGroup ~= nil then
+        product.Subcategory = classGroup.Subcategory
+    end
+end
+
 
 return category

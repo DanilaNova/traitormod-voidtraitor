@@ -1,33 +1,285 @@
 ---@module 'Lua.config.baseconfig'
 Traitormod.Config = dofile(Traitormod.Path .. "/Lua/config/baseconfig.lua")
 
-if not File.Exists(Traitormod.Path .. "/Lua/config/config.lua") then
-    File.Write(Traitormod.Path .. "/Lua/config/config.lua", File.Read(Traitormod.Path .. "/Lua/config/config.lua.example"))
+local function ensureUserConfigExists()
+    local configPath = Traitormod.Path .. "/Lua/config/config.lua"
+    if File.Exists(configPath) then
+        return configPath
+    end
+
+    File.Write(configPath, File.Read(Traitormod.Path .. "/Lua/config/config.lua.example"))
+    return configPath
 end
 
--- user config
-loadfile(Traitormod.Path .. "/Lua/config/config.lua")(Traitormod.Config)
+local function runConfigOverride(path, config)
+    local chunk, err = loadfile(path)
+    if chunk == nil then
+        error("Failed to load config override: " .. tostring(err))
+    end
+
+    return chunk(config)
+end
+
+runConfigOverride(ensureUserConfigExists(), Traitormod.Config)
+
+local function isSequentialArray(value)
+    if type(value) ~= "table" then return false end
+
+    local count = 0
+    for key in pairs(value) do
+        if type(key) ~= "number" then
+            return false
+        end
+        count = count + 1
+    end
+
+    for index = 1, count do
+        if value[index] == nil then
+            return false
+        end
+    end
+
+    return count > 0
+end
+
+local function deepCopy(value)
+    if type(value) ~= "table" then
+        return value
+    end
+
+    local copy = {}
+    for key, nestedValue in pairs(value) do
+        copy[key] = deepCopy(nestedValue)
+    end
+    return copy
+end
+
+local function mergeConfig(defaults, overrides)
+    if type(defaults) ~= "table" then
+        if overrides ~= nil then
+            return overrides
+        end
+        return defaults
+    end
+
+    if type(overrides) ~= "table" then
+        return deepCopy(defaults)
+    end
+
+    if isSequentialArray(defaults) or isSequentialArray(overrides) then
+        return deepCopy(overrides)
+    end
+
+    local result = deepCopy(defaults)
+    for key, value in pairs(overrides) do
+        result[key] = mergeConfig(result[key], value)
+    end
+    return result
+end
+
+local function copyPresentKeys(source, keys)
+    if type(source) ~= "table" then
+        return {}
+    end
+
+    local result = {}
+    for _, key in ipairs(keys) do
+        local value = source[key]
+        if value ~= nil then
+            result[key] = value
+        end
+    end
+
+    return result
+end
+
+local function copyMappedKeys(source, mapping)
+    if type(source) ~= "table" then
+        return {}
+    end
+
+    local result = {}
+    for targetKey, sourceKey in pairs(mapping) do
+        local value = source[sourceKey]
+        if value ~= nil then
+            result[targetKey] = value
+        end
+    end
+
+    return result
+end
+
+local function hasEntries(value)
+    return type(value) == "table" and next(value) ~= nil
+end
+
+local function loadOptionalLuaTable(path)
+    if not File.Exists(path) then
+        return {}
+    end
+
+    local ok, result = pcall(dofile, path)
+    if ok and type(result) == "table" then
+        return result
+    end
+
+    error("Failed to load optional config table: " .. tostring(path))
+end
+
+local GAME_VOTE_LEGACY_KEYS = {
+    "DurationSeconds",
+    "Modes",
+    "SecretModeIdentifier",
+    "SecretTraitorProbability",
+    "SecretDifficulty",
+    "SecretMissionTypes",
+    "SecretBlockedPrefixes",
+    "SecretBlockedTags",
+    "AttackDefendModeIdentifier",
+    "AttackDefendMissionTypes",
+    "AttackDefendKeepSecretMissionTypes",
+    "AttackDefendOutpostName",
+    "AttackDefendTraitorProbability",
+    "HideModeIdentifier",
+    "HideTraitorProbability",
+    "HideMaps",
+}
+
+local DISCORD_INLINE_KEYS = {
+    "Enabled",
+    "DebugResponses",
+    "RoundCounterFile",
+    "StateFile",
+    "ModeNames",
+}
+
+local DISCORD_INLINE_SECTION_KEYS = {
+    "Presence",
+    "Round",
+    "Status",
+    "Logs",
+}
+
+local function normalizeLegacyInlineGameVoteConfig(source)
+    return copyPresentKeys(source, GAME_VOTE_LEGACY_KEYS)
+end
+
+local function normalizeLegacyDiscordWebhookConfig(value)
+    if type(value) ~= "table" then
+        return {}
+    end
+
+    local result = copyMappedKeys(value, {
+        DebugResponses = "DebugResponses",
+        RoundCounterFile = "CounterFile",
+    })
+
+    local presence = copyMappedKeys(value, {
+        Webhook = "PresenceWebhook",
+        Username = "PresenceUsername",
+    })
+    if hasEntries(presence) then
+        result.Presence = presence
+    end
+
+    local round = copyMappedKeys(value, {
+        Webhook = "RoundWebhook",
+        Username = "RoundUsername",
+    })
+    if hasEntries(round) then
+        result.Round = round
+    end
+
+    return result
+end
+
+local function normalizeLegacyInlineDiscordConfig(source)
+    if type(source) ~= "table" then
+        return {}
+    end
+
+    local result = copyPresentKeys(source, DISCORD_INLINE_KEYS)
+
+    for _, key in ipairs(DISCORD_INLINE_SECTION_KEYS) do
+        if type(source[key]) == "table" then
+            result[key] = source[key]
+        end
+    end
+
+    return result
+end
+
+local function applyNamedConfig(defaultConfig, optionalFilePath, inlineOverrides)
+    return mergeConfig(
+        mergeConfig(defaultConfig, loadOptionalLuaTable(optionalFilePath)),
+        inlineOverrides
+    )
+end
+
+Traitormod.Config.GameVote = applyNamedConfig(
+    Traitormod.Config.GameVote or {},
+    Traitormod.Path .. "/Lua/config/gamevote.lua",
+    normalizeLegacyInlineGameVoteConfig(Traitormod.Config)
+)
+
+Traitormod.Config.Discord = mergeConfig(
+    Traitormod.Config.Discord or {},
+    mergeConfig(
+        normalizeLegacyInlineDiscordConfig(Traitormod.Config),
+        normalizeLegacyDiscordWebhookConfig(Traitormod.Config.DiscordWebhookConfig)
+    )
+)
 
 Traitormod.Patching = loadfile(Traitormod.Path .. "/Lua/xmlpatching.lua")(Traitormod.Path)
 
 Traitormod.Languages = Traitormod.Config.Languages
-
 Traitormod.DefaultLanguage = Traitormod.Languages[1]
 ---@module "language.english"
 Traitormod.Language = Traitormod.DefaultLanguage
 
-for key, value in pairs(Traitormod.Languages) do
-    if Traitormod.Config.Language == value.Name then
-        Traitormod.Language = value
+for _, language in pairs(Traitormod.Languages) do
+    if Traitormod.Config.Language == language.Name then
+        Traitormod.Language = language
 
         for key, value in pairs(Traitormod.DefaultLanguage) do
-            if Traitormod.Language[key] == nil then -- in case the language being loaded doesnt have a specific localization for a key, use the default language
+            if Traitormod.Language[key] == nil then
                 Traitormod.Language[key] = value
             end
         end
 
         break
     end
+end
+
+Traitormod.GetText = function(key)
+    if key == nil then
+        return ""
+    end
+
+    local language = Traitormod.Language or Traitormod.DefaultLanguage
+    if language ~= nil and language[key] ~= nil then
+        return tostring(language[key])
+    end
+
+    if Traitormod.DefaultLanguage ~= nil and Traitormod.DefaultLanguage[key] ~= nil then
+        return tostring(Traitormod.DefaultLanguage[key])
+    end
+
+    return tostring(key)
+end
+
+Traitormod.FormatText = function(key, ...)
+    local text = Traitormod.GetText(key)
+    if select("#", ...) == 0 then
+        return text
+    end
+
+    local ok, formatted = pcall(string.format, text, ...)
+    if ok then
+        return formatted
+    end
+
+    return text
 end
 
 local json = dofile(Traitormod.Path .. "/Lua/json.lua")

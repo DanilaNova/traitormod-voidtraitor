@@ -122,6 +122,49 @@ Traitormod.AddCommand("!info", function (client, args)
     return true
 end)
 
+Traitormod.AddCommand("!startgamevote", function (client, args)
+    return Traitormod.Voting.StartGameVote(client)
+end)
+
+Traitormod.AddCommand("!startmapvote", function (client, args)
+    return Traitormod.Voting.StartMapVote(client)
+end)
+
+Traitormod.AddCommand("!vote", function (client, args)
+    if Traitormod.Voting.TryHandleGameVoteCommand(client, args) then
+        return true
+    end
+
+    if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
+    if not client.InGame then
+        Traitormod.SendMessage(client, "You must be in game to use this command.")
+        return true
+    end
+
+    if #args < 3 then
+        Traitormod.SendMessage(client, 'Usage: !vote "Text Here" "Option 1" "Option 2" ... "Option N"')
+        return true
+    end
+
+    local text = table.remove(args, 1)
+
+    Traitormod.Voting.StartVote(text, args, 25, function(results)
+        local message = Traitormod.StringBuilder:new()
+        message("Vote results: %s\n\n", text)
+        for key, value in pairs(results) do
+            message("%s: %s Votes\n", args[key], value)
+        end
+
+        for _, target in pairs(Client.ClientList) do
+            local chatMessage = ChatMessage.Create("", message:concat(), ChatMessageType.Default, nil, nil)
+            chatMessage.Color = Color(255, 255, 255, 255)
+            Game.SendDirectChatMessage(chatMessage, target)
+        end
+    end)
+
+    return true
+end)
+
 Traitormod.AddCommand({"!suicide", "!kill", "!death"}, function (client, args)
     
     if client.Character == nil or client.Character.IsDead then

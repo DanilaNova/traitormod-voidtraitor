@@ -33,12 +33,26 @@ re.EventExists = function (eventName)
     return event ~= nil
 end
 
+local function canStartEvent(event)
+    if event == nil or event.CanStart == nil then
+        return true
+    end
+
+    local ok, result = pcall(event.CanStart, event)
+    if not ok then
+        Traitormod.Error("Event " .. tostring(event.Name) .. " CanStart failed: " .. tostring(result))
+        return false
+    end
+
+    return result ~= false
+end
+
 ---Triggers event
 ---@param eventName string event.Name field
 re.TriggerEvent = function (eventName)
     if not Game.RoundStarted then
         Traitormod.Error("Tried to trigger event " .. eventName .. ", but round is not started.")
-        return
+        return false
     end
 
     if re.OnGoingEvents[eventName] then
@@ -56,7 +70,12 @@ re.TriggerEvent = function (eventName)
 
     if event == nil then
         Traitormod.Error("Tried to trigger event " .. eventName .. " but it doesnt exist or is disabled.")
-        return
+        return false
+    end
+
+    if not canStartEvent(event) then
+        Traitormod.Log("Event " .. eventName .. " can not start right now.")
+        return false
     end
 
     local originalEnd = event.End
@@ -76,6 +95,7 @@ re.TriggerEvent = function (eventName)
     re.ThisRoundEvents[eventName] = re.ThisRoundEvents[eventName] + 1
 
     Traitormod.Log("Event " .. eventName .. " triggered.")
+    return true
 end
 
 ---Randomly triggers an event if conditions are met
@@ -96,6 +116,10 @@ re.CheckRandomEvent = function (event)
     end
 
     if event.MaxIntensity ~= nil and intensity > event.MaxIntensity then
+        return
+    end
+
+    if not canStartEvent(event) then
         return
     end
 

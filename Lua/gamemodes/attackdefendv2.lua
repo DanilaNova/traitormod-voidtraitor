@@ -288,6 +288,7 @@ function gm:PreStart()
 
 	self.IsEnding = false
 	self.ClassCounters = {}
+	self.ClassGroupCounters = {}
     self.DefendCountDown = self.DefendTime * 60
     self.LastDefendCountDown = self.DefendTime * 60
 
@@ -310,12 +311,13 @@ function gm:PreStart()
 			if type(key) ~= "number" then
 				return nil
 			end
-			local i
+
+			local index = 1
 			for _, value in pairs(obj) do
-				if i == key then
+				if index == key then
 					return value
 				end
-				i = i + 1
+				index = index + 1
 			end
 			return nil
 		end
@@ -473,15 +475,6 @@ function gm:Think()
 				if entry.Timer <= 0 and entry.OnSpawn ~= nil and member.InGame then
 					SpawnCharacter(member, team, entry.OnSpawn, entry.JobId)
 					entry.Timer = nil
-					local prevClassId = entry.PrevClassId
-					if prevClassId ~= nil then
-						local classCounter = self.ClassCounters[prevClassId]
-						if classCounter == nil then
-							Traitormod.Error(("Class counter '%s' was empty"):format(prevClassId))
-						else
-							self.ClassCounters[prevClassId] = classCounter - 1
-						end
-					end
 				end
 			end
 		end

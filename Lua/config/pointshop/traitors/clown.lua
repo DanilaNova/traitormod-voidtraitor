@@ -295,7 +295,10 @@ category.Products = {
         Price = 600,
         Limit = 4,
         IsLimitGlobal = true,
-
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+        },
+        
         CanBuy = function (client, product)
             return not Traitormod.RoundEvents.IsEventActive("ClownMagic")
         end,
@@ -310,6 +313,9 @@ category.Products = {
         Price = 200,
         Limit = 5,
         IsLimitGlobal = true,
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+        },
 
         CanBuy = function (client, product)
             return not Traitormod.RoundEvents.IsEventActive("RandomLights")

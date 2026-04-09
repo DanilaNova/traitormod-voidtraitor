@@ -3,4 +3,20 @@ local config = ...
 -- Lets say we want to change the respawn text in baseconfig.lua, we just do:
 -- config.RespawnText = "New text %s"
 
+-- Discord override examples (put webhooks and message ids here, this file is gitignored):
+-- config.Discord.Presence.Webhook = ""
+-- config.Discord.Round.Webhook = ""
+-- config.Discord.Status.Webhook = ""
+-- config.Discord.Status.MessageId = ""
+-- config.Discord.Logs.Enabled = false
+-- config.Discord.Logs.Webhook = ""
+
+-- GameVote override examples:
+-- config.GameVote.DurationSeconds = 60
+-- config.GameVote.AttackDefendOutpostName = "Random"
+-- config.GameVote.HideMaps = {
+--     "#Hide and seek I Big station",
+--     "#Hide and seek I in Residence"
+-- }
+
 return config

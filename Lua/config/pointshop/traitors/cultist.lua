@@ -288,7 +288,10 @@ category.Products = {
         Price = 1300,
         Limit = 1,
         IsLimitGlobal = true,
-
+        Subcategory = {
+            { Identifier = "traitor_sabotage" },
+        },
+        
         CanBuy = function (client, product)
             return not Traitormod.RoundEvents.IsEventActive("OxygenGeneratorHusk")
         end,

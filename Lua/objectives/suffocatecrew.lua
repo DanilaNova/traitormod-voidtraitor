@@ -2,8 +2,50 @@ local objective = Traitormod.RoleManager.Objectives.Objective:new()
 
 objective.Name = "SuffocateCrew"
 objective.AmountPoints = 900
+objective.RequiredLowOxygenSeconds = 4
+objective.SuffocationKillWindowSeconds = 20
+objective.SevereOxygenThreshold = 15
+objective.LowOxygenAfflictionThreshold = 35
+objective.AdditionalLowOxygenAfflictions = {"oxygenlow", "hypoxemia", "cerebralhypoxia", "asphyxia"}
+
+local function getAfflictionStrength(character, identifier)
+    if character == nil or identifier == nil then return 0 end
+    if character.CharacterHealth == nil then return 0 end
+
+    local success, strength = pcall(function()
+        return character.CharacterHealth.GetAfflictionStrengthByIdentifier(identifier)
+    end)
+
+    if not success or strength == nil then return 0 end
+    return strength
+end
+
+local function hasSevereLowOxygen(objectiveInstance, character)
+    if character == nil or character.Removed then return false end
+
+    local oxygen = nil
+    local success = pcall(function()
+        oxygen = character.Oxygen
+    end)
+
+    if success and oxygen ~= nil and oxygen <= objectiveInstance.SevereOxygenThreshold then
+        return true
+    end
+
+    for _, identifier in pairs(objectiveInstance.AdditionalLowOxygenAfflictions or {}) do
+        if getAfflictionStrength(character, identifier) >= objectiveInstance.LowOxygenAfflictionThreshold then
+            return true
+        end
+    end
+
+    return false
+end
+
 function objective:Start(target)
     self.Target = target
+    self.LowOxygenStartedAt = nil
+    self.LastSevereLowOxygenAt = nil
+    self.ObservedSevereLowOxygen = false
 
     if self.Target == nil then return false end
 
@@ -12,39 +54,46 @@ function objective:Start(target)
     return true
 end
 
-function objective:IsCompleted()
-    if not self.Target.IsDead then return false end
+function objective:UpdateSuffocationState()
+    if self.Target == nil or self.Target.Removed then return end
 
-    local causeOfDeath = self.Target.CauseOfDeath
+    local now = Timer.GetTime()
+    local severeLowOxygen = hasSevereLowOxygen(self, self.Target)
 
-    if causeOfDeath == nil then return false end
+    if severeLowOxygen then
+        if self.LowOxygenStartedAt == nil then
+            self.LowOxygenStartedAt = now
+        end
 
-    if causeOfDeath.Type == CauseOfDeathType.Affliction then
-        return causeOfDeath.Affliction.Identifier == "oxygenlow"
-    end
-
-    if causeOfDeath.Type == CauseOfDeathType.Suffocation or causeOfDeath.Type == CauseOfDeathType.Drowning then
-        return true
+        if now - self.LowOxygenStartedAt >= self.RequiredLowOxygenSeconds then
+            self.ObservedSevereLowOxygen = true
+            self.LastSevereLowOxygenAt = now
+        end
+    else
+        self.LowOxygenStartedAt = nil
     end
 end
 
+function objective:IsCompleted()
+    self:UpdateSuffocationState()
+
+    if self.Target == nil or not self.Target.IsDead then return false end
+    if not self.ObservedSevereLowOxygen then return false end
+    if self.LastSevereLowOxygenAt == nil then return false end
+
+    return (Timer.GetTime() - self.LastSevereLowOxygenAt) <= self.SuffocationKillWindowSeconds
+end
+
 function objective:IsFailed()
-    if not self.Target.IsDead then return false end
+    self:UpdateSuffocationState()
 
-    local causeOfDeath = self.Target.CauseOfDeath
+    if self.Target == nil or not self.Target.IsDead then return false end
 
-    if causeOfDeath == nil then return false end
-
-    local conditionsMet = false
-    if causeOfDeath.Type == CauseOfDeathType.Affliction and causeOfDeath.Affliction.Identifier == "oxygenlow" then
-        conditionsMet = true
+    if not self.ObservedSevereLowOxygen or self.LastSevereLowOxygenAt == nil then
+        return true
     end
 
-    if causeOfDeath.Type == CauseOfDeathType.Suffocation or causeOfDeath.Type == CauseOfDeathType.Drowning then
-        conditionsMet = true
-    end
-
-    return not conditionsMet
+    return (Timer.GetTime() - self.LastSevereLowOxygenAt) > self.SuffocationKillWindowSeconds
 end
 
 return objective
