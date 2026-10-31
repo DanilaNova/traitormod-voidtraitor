@@ -24,10 +24,6 @@ local voteNet = {
     Cast = "VoidTraitor_LobbyVoteCast",
 }
 
-local function parseInput(input)
-    return Traitormod.ParseCommand(tostring(input or ""))
-end
-
 local function runCommand(commandName, client, input)
     local command = Traitormod.Commands[commandName]
     if command == nil or command.Callback == nil then
@@ -35,7 +31,7 @@ local function runCommand(commandName, client, input)
         return true
     end
 
-    local args = type(input) == "table" and input or parseInput(input)
+    local args = type(input) == "table" and input or Traitormod.ParseCommand(tostring(input or ""))
     return command.Callback(client, args)
 end
 
@@ -47,15 +43,6 @@ local function sendOClock(value)
     local oClock = math.floor(value / 30)
     if oClock == 0 then oClock = 12 end
     return Traitormod.FormatText("CMDOClock", oClock)
-end
-
-local function getGamemodeName()
-    if Traitormod.SelectedGamemode == nil then return "" end
-    return string.lower(tostring(Traitormod.SelectedGamemode.Name or ""))
-end
-
-local function isGamemode(name)
-    return getGamemodeName() == string.lower(tostring(name or ""))
 end
 
 local function isAdmin(client)
@@ -107,7 +94,8 @@ local function canUseFakeHandcuffs(client)
 end
 
 local function canLocatePlayers(client)
-    if not isGamemode("SubmarineRoyale") then
+    local selected = Traitormod.SelectedGamemode
+    if selected == nil or string.lower(tostring(selected.Name or "")) ~= "submarineroyale" then
         return false, Traitormod.GetText("CMDPlayersSubmarineRoyaleOnly")
     end
     if not isAlive(client) or not client.InGame then
@@ -237,6 +225,7 @@ addAdminAction("traitoralive", "!traitoralive", 12)
 addAdminAction("allpoints", "!allpoints", 13)
 addAdminAction("ongoingevents", "!ongoingevents", 14)
 addAdminAction("endroundnow", "!endroundnow", 15)
+addAdminAction("aghost", "!aghost", 16)
 addAdminAction("revive", "!revive", 20, "player")
 addAdminAction("void", "!void", 21, "player")
 addAdminAction("unvoid", "!unvoid", 22, "player")
@@ -293,6 +282,8 @@ function cm.SendSnapshot(client)
         netMessage.WriteString(entry.DisabledReason)
         netMessage.WriteString(entry.Action.InputType)
     end
+
+    netMessage.WriteBoolean(Traitormod.Pointshop.CanUseShop(client))
 
     Networking.Send(netMessage, client.Connection)
     return true
@@ -490,6 +481,7 @@ local function writeVoteSnapshot(netMessage, client)
 
     netMessage.WriteInt32(math.max(0, math.floor(tonumber(snapshot.GameCooldownRemaining or 0) or 0)))
     netMessage.WriteInt32(math.max(0, math.floor(tonumber(snapshot.MapCooldownRemaining or 0) or 0)))
+    netMessage.WriteBoolean(snapshot.StationMap == true)
 end
 
 function cm.SendVoteSnapshot(client)
@@ -528,7 +520,7 @@ Networking.Receive(voteNet.Cast, function(message, client)
     if Traitormod.Voting ~= nil and Traitormod.Voting.CastGuiVote ~= nil then
         Traitormod.Voting.CastGuiVote(client, optionId)
     end
-    -- An accepted vote already reaches everyone through Voting's change notification.
+    -- everyone else already gets the vote through Voting's change notification
     return cm.SendVoteSnapshot(client)
 end)
 

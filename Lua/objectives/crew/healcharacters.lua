@@ -65,6 +65,11 @@ function objective:OnAwarded()
     objective.ActiveObjectives[self] = nil
 end
 
+function objective:Transfer(character)
+    self.Character = character
+    if not self.Awarded and not self.Failed then objective.ActiveObjectives[self] = true end
+end
+
 function objective:IsCompleted()
     if Traitormod.RoundStats ~= nil then
         Traitormod.RoundStats.FlushHealing()

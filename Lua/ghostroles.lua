@@ -12,6 +12,7 @@ local guiNet = {
 
 gr.Roles = {}
 gr.Characters = {}
+gr.ExcludedCharacters = setmetatable({}, { __mode = "k" })
 gr.Configs = {}
 gr.ConfigsBySpecies = {}
 gr.AutoRegisterBySpecies = {}
@@ -299,7 +300,7 @@ end
 
 function gr.Create(configIdentifier, character, options)
     if not config.Enabled or character == nil then return false end
-    if character.Removed or character.IsDead then return false end
+    if character.Removed or character.IsDead or gr.ExcludedCharacters[character] then return false end
 
     local roleConfig = gr.GetConfig(configIdentifier)
     if roleConfig == nil then
@@ -408,7 +409,7 @@ function gr.TryTake(client, reference)
     role.Taken = true
 
     local paid = false
-    if price > 0 and not Traitormod.Config.TestMode and not Traitormod.IsSecretEnding() then
+    if price > 0 and not Traitormod.Config.TestMode and not Traitormod.IsRoundFinalizing() then
         local points = math.floor(Traitormod.GetData(client, "Points") or 0)
         Traitormod.SetData(client, "Points", points - price)
         paid = true
@@ -664,6 +665,154 @@ local function removeExpiredDeadRoles(now)
     return true
 end
 
+local abandonedCharacterUpdateInterval = 0.25
+local abandonedCharacterUpdateTimer = abandonedCharacterUpdateInterval
+
+local function getDisconnectedCharacterGhostRoleDelay()
+    local ghostRoleConfig = Traitormod.Config.GhostRoleConfig or {}
+    local delaySeconds = tonumber(ghostRoleConfig.DisconnectedCharacterDelaySeconds)
+
+    if delaySeconds == nil then
+        return 180
+    end
+
+    return math.max(0, delaySeconds)
+end
+
+local function sendDisconnectedGhostRoleInfo(client, character)
+    if client == nil or character == nil or character.IsDead then
+        return
+    end
+
+    local role = Traitormod.RoleManager.GetRole(character)
+    if role == nil or role.Greet == nil then
+        return
+    end
+
+    Timer.Wait(function ()
+        if client == nil or client.Character ~= character or not client.InGame then
+            return
+        end
+
+        local message = role:Greet()
+        if type(message) == "string" and message ~= "" then
+            Traitormod.SendMessage(client, message)
+        end
+    end, 500)
+end
+
+local function clearAbandonedCharacter(accountKey)
+    local abandonedCharacter = Traitormod.AbandonedCharacters[accountKey]
+    if abandonedCharacter == nil then
+        return nil
+    end
+
+    if abandonedCharacter.GhostRoleId and Traitormod.GhostRoles then
+        Traitormod.GhostRoles.Remove(abandonedCharacter.GhostRoleId)
+    end
+
+    Traitormod.AbandonedCharacters[accountKey] = nil
+    return abandonedCharacter
+end
+
+local function createDisconnectedGhostRole(abandonedCharacter)
+    if abandonedCharacter == nil or abandonedCharacter.GhostRoleCreated or Traitormod.GhostRoles == nil then
+        return false
+    end
+
+    local character = abandonedCharacter.Character
+    if character == nil or character.IsDead or not character.ClientDisconnected then
+        return false
+    end
+
+    local role = Traitormod.GhostRoles.Create("system.disconnected", character, {
+        Name = character.Name,
+        OnAssigned = function (ghostClient, assignedCharacter)
+            Traitormod.AbandonedCharacters[abandonedCharacter.AccountKey] = nil
+            sendDisconnectedGhostRoleInfo(ghostClient, assignedCharacter)
+        end
+    })
+
+    if not role then
+        return false
+    end
+
+    abandonedCharacter.GhostRoleCreated = true
+    abandonedCharacter.GhostRoleId = role.Id
+    return true
+end
+
+local function updateAbandonedCharacters()
+    if not Game.RoundStarted then
+        return
+    end
+
+    local ghostRoleConfig = Traitormod.Config.GhostRoleConfig
+    if ghostRoleConfig == nil or not ghostRoleConfig.Enabled or next(Traitormod.AbandonedCharacters) == nil then
+        return
+    end
+
+    local connectedAccountKeys = {}
+    for _, connectedClient in pairs(Client.ClientList) do
+        local accountKey = Traitormod.GetClientAccountKey(connectedClient)
+        if accountKey ~= nil then
+            connectedAccountKeys[accountKey] = true
+        end
+    end
+
+    local now = Timer.GetTime()
+    local toRemove = {}
+    local toCreate = {}
+
+    for accountKey, abandonedCharacter in pairs(Traitormod.AbandonedCharacters) do
+        local character = abandonedCharacter.Character
+
+        if character == nil or character.IsDead then
+            table.insert(toRemove, accountKey)
+        elseif connectedAccountKeys[accountKey] then
+            table.insert(toRemove, accountKey)
+        elseif not abandonedCharacter.GhostRoleCreated and now >= abandonedCharacter.AvailableAt then
+            table.insert(toCreate, abandonedCharacter)
+        end
+    end
+
+    for _, accountKey in ipairs(toRemove) do
+        clearAbandonedCharacter(accountKey)
+    end
+
+    for _, abandonedCharacter in ipairs(toCreate) do
+        createDisconnectedGhostRole(abandonedCharacter)
+    end
+end
+
+function gr.HandleReconnect(client)
+    local accountKey = Traitormod.GetClientAccountKey(client)
+    local abandonedCharacter = Traitormod.AbandonedCharacters[accountKey]
+    if abandonedCharacter then
+        if abandonedCharacter.Character and abandonedCharacter.Character.IsDead then
+            -- client left while char was alive -> but char is dead
+            Traitormod.Debug(string.format("%s connected, but his character died in the meantime...", Traitormod.ClientLogName(client)))
+        end
+
+        clearAbandonedCharacter(accountKey)
+    end
+end
+
+function gr.HandleDisconnect(client)
+    -- if character was alive while disconnecting, make sure player looses live if he rejoins the round
+    if client.Character and not client.Character.IsDead and client.Character.IsHuman then
+        Traitormod.Debug(string.format("%s disconnected with an alive character. Remembering for rejoin...", Traitormod.ClientLogName(client)))
+        local accountKey = Traitormod.GetClientAccountKey(client)
+        Traitormod.AbandonedCharacters[accountKey] = {
+            AccountKey = accountKey,
+            Character = client.Character,
+            AvailableAt = Timer.GetTime() + getDisconnectedCharacterGhostRoleDelay(),
+            GhostRoleCreated = false,
+            GhostRoleId = nil,
+        }
+    end
+end
+
 initializeConfigs()
 
 Networking.Receive(guiNet.Ready, function(message, client)
@@ -681,8 +830,14 @@ Networking.Receive(guiNet.Take, function(message, client)
     return gr.SendGuiSnapshot(client, not success and canUseGhostRoles(client))
 end)
 
-Hook.Add("think", "Traitormod.GhostRoles.Think", function()
+Hook.Add("think", "Traitormod.GhostRoles.Think", function(deltaTime)
     if not config.Enabled or not Game.RoundStarted then return end
+
+    abandonedCharacterUpdateTimer = abandonedCharacterUpdateTimer + deltaTime
+    if abandonedCharacterUpdateTimer >= abandonedCharacterUpdateInterval then
+        abandonedCharacterUpdateTimer = 0
+        updateAbandonedCharacters()
+    end
 
     local now = Timer.GetTime()
 
@@ -730,6 +885,7 @@ end)
 Hook.Add("roundEnd", "TraitorMod.GhostRoles.RoundEnd", function()
     gr.Roles = {}
     gr.Characters = {}
+    gr.ExcludedCharacters = setmetatable({}, { __mode = "k" })
     gr.NextRoleId = 1
     lastStateSignature = ""
     broadcastGuiSnapshots()

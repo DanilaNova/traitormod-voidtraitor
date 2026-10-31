@@ -32,7 +32,7 @@ local function isTrackedMode()
     if not Game.RoundStarted or Traitormod.SelectedGamemode == nil then return false end
 
     local name = Traitormod.SelectedGamemode.Name
-    return name == "Secret" or name == "AttackDefendV2"
+    return Traitormod.SelectedGamemode.UsesSecretRules == true or name == "AttackDefendV2"
 end
 
 local function isGhostRole(character)
@@ -136,8 +136,8 @@ local function getRole(character)
     return Traitormod.RoleManager.GetRole(character)
 end
 
-local function isSecretAntagonistAgainstCrew(attacker, target)
-    if Traitormod.SelectedGamemode == nil or Traitormod.SelectedGamemode.Name ~= "Secret" then return false end
+local function isAntagonistAgainstCrew(attacker, target)
+    if Traitormod.SelectedGamemode == nil or not Traitormod.SelectedGamemode.UsesSecretRules then return false end
     if target == nil or not target.IsHuman or target.TeamID ~= CharacterTeamType.Team1 then return false end
 
     local attackerRole = getRole(attacker)
@@ -149,7 +149,7 @@ end
 local function isValidEnemy(attacker, target)
     if attacker == nil or target == nil or attacker == target then return false end
 
-    if Traitormod.SelectedGamemode ~= nil and Traitormod.SelectedGamemode.Name == "Secret" then
+    if Traitormod.SelectedGamemode ~= nil and Traitormod.SelectedGamemode.UsesSecretRules then
         local attackerRole = getRole(attacker)
         if attackerRole ~= nil and attackerRole.IsAntagonist then
             return false
@@ -440,7 +440,7 @@ function roundStats.FlushHealing()
 end
 
 function roundStats.BuildSecretSummary()
-    if Traitormod.SelectedGamemode == nil or Traitormod.SelectedGamemode.Name ~= "Secret" then return "" end
+    if Traitormod.SelectedGamemode == nil or not Traitormod.SelectedGamemode.UsesSecretRules then return "" end
 
     roundStats.FlushHealing()
 
@@ -613,7 +613,7 @@ Hook.Add("traitormod.healingTracked", "Traitormod.RoundStats.HealingTracked", fu
 end)
 
 Hook.Patch("Traitormod.RoundStats.HullRepaired", "Barotrauma.HumanAIController", "StructureDamaged", function(instance, ptable)
-    local character = ptable["character"]
+    local character = ptable["attacker"]
     local structure = ptable["structure"]
     local damage = tonumber(ptable["damageAmount"]) or 0
     if damage >= 0 or not isOwnSubmarine(structure ~= nil and structure.Submarine or nil, character) then return end
@@ -710,7 +710,7 @@ Hook.Patch("Traitormod.RoundStats.DamageLimb.After", "Barotrauma.Character", "Da
     local accountKey = context.AccountKey
     if damage <= 0 or accountKey == nil or attacker == nil or attacker == character then return end
 
-    if isSecretAntagonistAgainstCrew(attacker, character) then
+    if isAntagonistAgainstCrew(attacker, character) then
         addAccount(accountKey, "CrewDamage", damage)
     elseif isValidEnemy(attacker, character) then
         if isTurretDamageSource(context.Source) then
@@ -730,7 +730,7 @@ Hook.Add("characterDeath", "Traitormod.RoundStats.CharacterDeath", function(char
     local accountKey = getCharacterAccount(attacker)
     if accountKey == nil then return end
 
-    if isSecretAntagonistAgainstCrew(attacker, character) then
+    if isAntagonistAgainstCrew(attacker, character) then
         addAccount(accountKey, "CrewKills", 1)
     elseif isValidEnemy(attacker, character) then
         addAccount(accountKey, "Kills", 1)

@@ -77,393 +77,12 @@ Traitormod.Commands = {}
 ---Players who respawned with their character as key
 ---@type table<Barotrauma.Character, Barotrauma.Networking.Client>
 Traitormod.RespawnedCharacters = {}
-Traitormod.SkillBuffStates = {}
-Traitormod.NextSkillBuffId = 0
 
 local pointsGiveTimer = -1
-local roundSkillGiveTimer = -1
-local skillBuffUpdateInterval = 1
-local skillBuffUpdateTimer = skillBuffUpdateInterval
 local gamemodeThinkInterval = 0.25
 local gamemodeThinkTimer
 
-local function isValidBuffCharacter(character)
-    return character ~= nil and character.IsHuman and not character.IsDead and character.Info ~= nil and character.Info.Job ~= nil
-end
-
-local function getSkillBuffState(character, create)
-    local state = Traitormod.SkillBuffStates[character]
-    if state == nil and create then
-        state = {
-            Effects = {},
-            Skills = {},
-        }
-        Traitormod.SkillBuffStates[character] = state
-    end
-
-    return state
-end
-
-local function getJobSkill(character, skill)
-    if character == nil or character.Info == nil or character.Info.Job == nil or skill == nil then
-        return nil
-    end
-
-    local identifier = Identifier(tostring(skill))
-    return character.Info.Job.GetSkill(identifier)
-end
-
-local function getJobSkillLevel(character, skill)
-    if character == nil or character.Info == nil or character.Info.Job == nil or skill == nil then
-        return 0
-    end
-
-    local identifier = Identifier(tostring(skill))
-    return math.max(0, tonumber(character.Info.Job.GetSkillLevel(identifier)) or 0)
-end
-
-local function setJobSkillLevelSilent(character, skill, level)
-    if character == nil or character.Info == nil or character.Info.Job == nil or skill == nil then
-        return false
-    end
-
-    local identifier = Identifier(tostring(skill))
-    level = math.max(0, tonumber(level) or 0)
-
-    local jobSkill = getJobSkill(character, skill)
-    if jobSkill == nil then
-        character.Info.Job.IncreaseSkillLevel(identifier, level, true)
-        jobSkill = getJobSkill(character, skill)
-        if jobSkill == nil then
-            return false
-        end
-    end
-
-    jobSkill.Level = level
-    return true
-end
-
-local function getSkillStateBonus(skillState)
-    local totalBonus = 0
-    for _, bonus in pairs(skillState.Bonuses or {}) do
-        totalBonus = totalBonus + (tonumber(bonus) or 0)
-    end
-
-    return math.max(0, totalBonus)
-end
-
-function Traitormod.GetTrackedSkillBonus(character, skill)
-    local state = getSkillBuffState(character, false)
-    if state == nil then
-        return 0
-    end
-
-    local skillState = state.Skills[tostring(skill)]
-    if skillState == nil then
-        return 0
-    end
-
-    return getSkillStateBonus(skillState)
-end
-
-function Traitormod.GetBaseSkillLevel(character, skill)
-    local state = getSkillBuffState(character, false)
-    if state ~= nil then
-        local skillState = state.Skills[tostring(skill)]
-        if skillState ~= nil then
-            return math.max(0, tonumber(skillState.Baseline) or 0)
-        end
-    end
-
-    return getJobSkillLevel(character, skill)
-end
-
-local statusSkills = {
-    { Identifier = "weapons", LanguageKey = "StatusSkillWeapons" },
-    { Identifier = "mechanical", LanguageKey = "StatusSkillMechanical" },
-    { Identifier = "electrical", LanguageKey = "StatusSkillElectrical" },
-    { Identifier = "medical", LanguageKey = "StatusSkillMedical" },
-    { Identifier = "surgery", LanguageKey = "StatusSkillSurgery" },
-    { Identifier = "helm", LanguageKey = "StatusSkillHelm" },
-}
-
-local function getStatusSkillName(skillInfo)
-    local languageKey = skillInfo.LanguageKey
-    if Traitormod.Language ~= nil and Traitormod.Language[languageKey] ~= nil then
-        return Traitormod.Language[languageKey]
-    end
-
-    return skillInfo.Identifier
-end
-
-local function formatStatusTime(seconds)
-    seconds = math.max(0, math.ceil(tonumber(seconds) or 0))
-    local minutes = math.floor(seconds / 60)
-    local remainingSeconds = seconds % 60
-    return string.format("%02d:%02d", minutes, remainingSeconds)
-end
-
-local function formatSkillEffectBonuses(skillMap)
-    local parts = {}
-
-    for _, skillInfo in ipairs(statusSkills) do
-        local bonus = tonumber(skillMap[skillInfo.Identifier]) or 0
-        if bonus > 0 then
-            table.insert(parts, string.format("+%d %s", math.floor(bonus), getStatusSkillName(skillInfo)))
-        end
-    end
-
-    for skill, bonus in pairs(skillMap) do
-        local known = false
-        for _, skillInfo in ipairs(statusSkills) do
-            if skillInfo.Identifier == tostring(skill) then
-                known = true
-                break
-            end
-        end
-
-        bonus = tonumber(bonus) or 0
-        if not known and bonus > 0 then
-            table.insert(parts, string.format("+%d %s", math.floor(bonus), tostring(skill)))
-        end
-    end
-
-    if #parts == 0 then
-        return Traitormod.GetText("StatusUnknownEffect")
-    end
-
-    return table.concat(parts, ", ")
-end
-
-function Traitormod.GetStatusMessage(character)
-    if not isValidBuffCharacter(character) then
-        return Traitormod.GetText("StatusAliveRequired")
-    end
-
-    local lines = {}
-    table.insert(lines, Traitormod.GetText("StatusTitle"))
-    table.insert(lines, "")
-    table.insert(lines, Traitormod.GetText("StatusSkillsHeader"))
-
-    for _, skillInfo in ipairs(statusSkills) do
-        local base = math.floor(Traitormod.GetBaseSkillLevel(character, skillInfo.Identifier))
-        local bonus = math.floor(Traitormod.GetTrackedSkillBonus(character, skillInfo.Identifier))
-        local current = math.floor(getJobSkillLevel(character, skillInfo.Identifier))
-        local skillName = getStatusSkillName(skillInfo)
-
-        if bonus > 0 then
-            table.insert(lines, string.format(Traitormod.GetText("StatusSkillLineWithBonus"), skillName, base, bonus, current))
-        else
-            table.insert(lines, string.format(Traitormod.GetText("StatusSkillLine"), skillName, current))
-        end
-    end
-
-    table.insert(lines, "")
-    table.insert(lines, Traitormod.GetText("StatusEffectsHeader"))
-
-    local effects = {}
-    local state = getSkillBuffState(character, false)
-    if state ~= nil then
-        local now = Timer.GetTime()
-        for _, effect in pairs(state.Effects or {}) do
-            if effect.ExpiresAt ~= nil then
-                table.insert(effects, {
-                    Text = formatSkillEffectBonuses(effect.Skills or {}),
-                    Remaining = math.max(0, effect.ExpiresAt - now),
-                })
-            end
-        end
-    end
-
-    table.sort(effects, function(a, b) return a.Remaining < b.Remaining end)
-
-    if #effects == 0 then
-        table.insert(lines, Traitormod.GetText("StatusNoEffects"))
-    else
-        for _, effect in ipairs(effects) do
-            table.insert(lines, string.format(Traitormod.GetText("StatusEffectLine"), effect.Text, formatStatusTime(effect.Remaining)))
-        end
-    end
-
-    return table.concat(lines, "\n")
-end
-
-function Traitormod.OnTrackedSkillIncrease(character, skill, amount, gainedFromAbility)
-    if gainedFromAbility or character == nil or skill == nil then
-        return
-    end
-
-    local state = getSkillBuffState(character, false)
-    if state == nil then
-        return
-    end
-
-    local skillState = state.Skills[tostring(skill)]
-    if skillState == nil then
-        return
-    end
-
-    local totalBonus = getSkillStateBonus(skillState)
-    local current = getJobSkillLevel(character, skill)
-    skillState.Baseline = math.max(0, current - totalBonus)
-end
-
-function Traitormod.ApplyTemporarySkillBuff(character, skillMap, durationSeconds)
-    if not isValidBuffCharacter(character) then
-        return false
-    end
-
-    durationSeconds = tonumber(durationSeconds)
-    if durationSeconds == nil then
-        durationSeconds = 300
-    end
-
-    local state = getSkillBuffState(character, true)
-    local effect = {
-        Character = character,
-        ExpiresAt = durationSeconds > 0 and (Timer.GetTime() + durationSeconds) or nil,
-        Skills = {},
-    }
-
-    Traitormod.NextSkillBuffId = Traitormod.NextSkillBuffId + 1
-    effect.Id = Traitormod.NextSkillBuffId
-
-    for skill, bonus in pairs(skillMap or {}) do
-        skill = tostring(skill)
-        bonus = tonumber(bonus) or 0
-
-        if bonus > 0 then
-            local current = getJobSkillLevel(character, skill)
-            local skillState = state.Skills[skill]
-
-            if skillState == nil then
-                skillState = {
-                    Baseline = current,
-                    Bonuses = {},
-                }
-                state.Skills[skill] = skillState
-            else
-                local totalBonus = getSkillStateBonus(skillState)
-                if current > (skillState.Baseline or 0) + totalBonus then
-                    skillState.Baseline = current - totalBonus
-                end
-            end
-
-            effect.Skills[skill] = bonus
-            skillState.Bonuses[effect.Id] = bonus
-
-            local targetLevel = (skillState.Baseline or 0) + getSkillStateBonus(skillState)
-            if not setJobSkillLevelSilent(character, skill, targetLevel) then
-                skillState.Bonuses[effect.Id] = nil
-                effect.Skills[skill] = nil
-            end
-        end
-    end
-
-    if next(effect.Skills) == nil then
-        return false
-    end
-
-    state.Effects[effect.Id] = effect
-    return true
-end
-
-function Traitormod.RemoveTemporarySkillBuff(character, effectId)
-    local state = getSkillBuffState(character, false)
-    if state == nil then
-        return false
-    end
-
-    local effect = state.Effects[effectId]
-    if effect == nil then
-        return false
-    end
-
-    state.Effects[effectId] = nil
-
-    for skill in pairs(effect.Skills) do
-        local skillState = state.Skills[skill]
-        if skillState ~= nil then
-            local totalBonus = getSkillStateBonus(skillState)
-            local current = getJobSkillLevel(character, skill)
-            if current > (skillState.Baseline or 0) + totalBonus then
-                skillState.Baseline = current - totalBonus
-            end
-
-            skillState.Bonuses[effectId] = nil
-
-            local remainingBonus = getSkillStateBonus(skillState)
-            if remainingBonus <= 0 then
-                setJobSkillLevelSilent(character, skill, skillState.Baseline or 0)
-                state.Skills[skill] = nil
-            else
-                setJobSkillLevelSilent(character, skill, (skillState.Baseline or 0) + remainingBonus)
-            end
-        end
-    end
-
-    if next(state.Effects) == nil and next(state.Skills) == nil then
-        Traitormod.SkillBuffStates[character] = nil
-    end
-
-    return true
-end
-
-function Traitormod.ClearTemporarySkillBuffs()
-    for character, state in pairs(Traitormod.SkillBuffStates) do
-        if character ~= nil and character.Info ~= nil and character.Info.Job ~= nil then
-            for skill, skillState in pairs(state.Skills or {}) do
-                setJobSkillLevelSilent(character, skill, skillState.Baseline or 0)
-            end
-        end
-    end
-
-    Traitormod.SkillBuffStates = {}
-    Traitormod.NextSkillBuffId = 0
-end
-
-local function hasAliveTeam1Job(jobIdentifier)
-    for _, character in pairs(Character.CharacterList) do
-        if character ~= nil and character.IsHuman and not character.IsDead and character.TeamID == CharacterTeamType.Team1 and character.HasJob(jobIdentifier) then
-            return true
-        end
-    end
-
-    return false
-end
-
-local function applyRoundSkillGain()
-    local config = Traitormod.Config.RoundSkillGain
-    if config == nil or not config.Enabled then
-        return
-    end
-
-    if config.SecretOnly and (Traitormod.SelectedGamemode == nil or Traitormod.SelectedGamemode.Name ~= "Secret") then
-        return
-    end
-
-    for _, roleConfig in pairs(config.Roles or {}) do
-        local hasAliveRole = hasAliveTeam1Job(roleConfig.Job)
-        local minGain = hasAliveRole and config.AliveRoleMin or config.MissingRoleMin
-        local maxGain = hasAliveRole and config.AliveRoleMax or config.MissingRoleMax
-        local cap = hasAliveRole and config.AliveRoleCap or config.MissingRoleCap
-
-        for _, character in pairs(Character.CharacterList) do
-            if character ~= nil and character.IsHuman and not character.IsDead then
-                if (not config.AliveTeam1Only) or character.TeamID == CharacterTeamType.Team1 then
-                    local baseSkill = Traitormod.GetBaseSkillLevel(character, roleConfig.Skill)
-                    if baseSkill < cap then
-                        local amount = math.random(minGain, maxGain)
-                        amount = math.min(amount, cap - baseSkill)
-                        if amount > 0 then
-                            Traitormod.ApplyTemporarySkillBuff(character, { [roleConfig.Skill] = amount }, -1)
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
+Traitormod.SkillBuffs = dofile(Traitormod.Path .. "/Lua/features/skillbuffs.lua")
 
 Traitormod.LoadData()
 
@@ -476,12 +95,13 @@ end
 LuaUserData.RegisterType("Barotrauma.GameModePreset")
 LuaUserData.RegisterType("Barotrauma.Voting")
 
-Voting = LuaUserData.CreateStatic("Barotrauma.Voting") --[[@as Barotrauma.Voting]]
 ---//TODO
 ---@param submarineInfo Barotrauma.SubmarineInfo
 ---@param chooseGamemode unknown
 Traitormod.PreRoundStart = function (submarineInfo, chooseGamemode)
     Traitormod.SelectedGamemode = nil
+    Traitormod.Config.TestMode = false
+    Traitormod.TestModeOverride = nil
 
     local description = submarineInfo.Description.Value
     local subConfig = Traitormod.ParseSubmarineConfig(description)
@@ -535,11 +155,7 @@ end
 Traitormod.RoundStart = function()
     Traitormod.Log("Starting traitor round - Traitor Mod v" .. Traitormod.VERSION)
     pointsGiveTimer = Timer.GetTime() + Traitormod.Config.ExperienceTimer
-    if Traitormod.Config.RoundSkillGain ~= nil and Traitormod.Config.RoundSkillGain.Enabled then
-        roundSkillGiveTimer = Timer.GetTime() + (tonumber(Traitormod.Config.RoundSkillGain.Timer) or Traitormod.Config.ExperienceTimer)
-    else
-        roundSkillGiveTimer = -1
-    end
+    Traitormod.SkillBuffs.RoundStart()
 
     Traitormod.CodeWords = Traitormod.SelectCodeWords()
 
@@ -559,7 +175,8 @@ Traitormod.RoundStart = function()
         Traitormod.SendWelcome(value)
     end
 
-    if Traitormod.Config.HideCrewList then
+    if Traitormod.Config.HideCrewList
+        and (Traitormod.SelectedGamemode == nil or not Traitormod.SelectedGamemode.HandlesCrewListHiding) then
         for key, value in pairs(Character.CharacterList) do
             Networking.CreateEntityEvent(value, Character.RemoveFromCrewEventData.__new(value.TeamID, {}))
         end
@@ -630,7 +247,7 @@ Hook.Add("missionsEnded", "Traitormod.MissionsEnded", function(missions)
     if Traitormod.SelectedGamemode then
         endMessage = Traitormod.SelectedGamemode:RoundSummary()
 
-        if Traitormod.SelectedGamemode.Name ~= "Secret" or Traitormod.SelectedGamemode.FinalSummary == nil then
+        if not Traitormod.SelectedGamemode.UsesSecretRules or Traitormod.SelectedGamemode.FinalSummary == nil then
             Traitormod.SendMessageEveryone(Traitormod.HighlightClientNames(endMessage, Color.Red))
         end
     end
@@ -658,7 +275,7 @@ end)
 Hook.Add("roundEnd", "Traitormod.RoundEnd", function()
     Traitormod.ClearTemporarySkillBuffs()
     pointsGiveTimer = -1
-    roundSkillGiveTimer = -1
+    Traitormod.SkillBuffs.RoundEnd()
 
     if Traitormod.OriginalGamemode then
         Game.NetLobbyScreen.SelectedModeIdentifier = Traitormod.OriginalGamemode
@@ -698,70 +315,13 @@ Hook.Add("characterCreated", "Traitormod.CharacterCreated", function(character)
 end)
 
 local tipDelay = 0
-local updateAbandonedCharacters
-local abandonedCharacterUpdateInterval = 0.25
-local abandonedCharacterUpdateTimer = abandonedCharacterUpdateInterval
 
 Hook.Add("think", "Traitormod.Think", function(deltaTime)
-    skillBuffUpdateTimer = skillBuffUpdateTimer + deltaTime
-    if skillBuffUpdateTimer >= skillBuffUpdateInterval then
-        skillBuffUpdateTimer = 0
-        local now = Timer.GetTime()
-
-        for character, state in pairs(Traitormod.SkillBuffStates) do
-            if not isValidBuffCharacter(character) then
-                if character ~= nil and character.Info ~= nil and character.Info.Job ~= nil then
-                    for skill, skillState in pairs(state.Skills or {}) do
-                        setJobSkillLevelSilent(character, skill, skillState.Baseline or 0)
-                    end
-                end
-                Traitormod.SkillBuffStates[character] = nil
-            else
-                for effectId, effect in pairs(state.Effects) do
-                    if effect.ExpiresAt ~= nil and now >= effect.ExpiresAt then
-                        Traitormod.RemoveTemporarySkillBuff(character, effectId)
-                    end
-                end
-
-                state = Traitormod.SkillBuffStates[character]
-                if state ~= nil then
-                    for skill, skillState in pairs(state.Skills) do
-                        local totalBonus = 0
-                        for _, bonus in pairs(skillState.Bonuses or {}) do
-                            totalBonus = totalBonus + (tonumber(bonus) or 0)
-                        end
-                        local expected = (skillState.Baseline or 0) + totalBonus
-
-                        local current = getJobSkillLevel(character, skill)
-                        if current > expected then
-                            skillState.Baseline = current - totalBonus
-                            expected = current
-                        elseif current < expected then
-                            setJobSkillLevelSilent(character, skill, expected)
-                        end
-
-                        if next(skillState.Bonuses or {}) == nil then
-                            state.Skills[skill] = nil
-                        end
-                    end
-
-                    if next(state.Effects) == nil and next(state.Skills) == nil then
-                        Traitormod.SkillBuffStates[character] = nil
-                    end
-                end
-            end
-        end
-    end
+    Traitormod.SkillBuffs.Think(deltaTime)
 
     if Timer.GetTime() > tipDelay then
         tipDelay = Timer.GetTime() + 500
         Traitormod.SendTip()
-    end
-
-    abandonedCharacterUpdateTimer = abandonedCharacterUpdateTimer + deltaTime
-    if abandonedCharacterUpdateTimer >= abandonedCharacterUpdateInterval then
-        abandonedCharacterUpdateTimer = 0
-        updateAbandonedCharacters()
     end
 
     if not Game.RoundStarted or Traitormod.SelectedGamemode == nil then
@@ -769,7 +329,7 @@ Hook.Add("think", "Traitormod.Think", function(deltaTime)
         return
     end
 
-    if not Traitormod.IsSecretEnding() then
+    if not Traitormod.IsRoundFinalizing() then
         Traitormod.RoundTime = Traitormod.RoundTime + deltaTime
     end
 
@@ -789,7 +349,7 @@ Hook.Add("think", "Traitormod.Think", function(deltaTime)
         Traitormod.SelectedGamemode:Think(gamemodeDeltaTime)
     end
 
-    if Traitormod.IsSecretEnding() then return end
+    if Traitormod.IsRoundFinalizing() then return end
 
     -- give points/xp on the configured experience timer
     if pointsGiveTimer and Timer.GetTime() > pointsGiveTimer then
@@ -816,16 +376,13 @@ Hook.Add("think", "Traitormod.Think", function(deltaTime)
         pointsGiveTimer = Timer.GetTime() + Traitormod.Config.ExperienceTimer
     end
 
-    if roundSkillGiveTimer and roundSkillGiveTimer > 0 and Timer.GetTime() > roundSkillGiveTimer then
-        applyRoundSkillGain()
-        roundSkillGiveTimer = Timer.GetTime() + (tonumber(Traitormod.Config.RoundSkillGain.Timer) or Traitormod.Config.ExperienceTimer)
-    end
+    Traitormod.SkillBuffs.UpdateRoundSkillGain()
 end)
 
 -- when a character gains skill level, add PointsToBeGiven according to config
 Traitormod.PointsToBeGiven = {}
 Hook.HookMethod("Barotrauma.CharacterInfo", "IncreaseSkillLevel", function(instance, ptable)
-    if Traitormod.IsSecretEnding() then return end
+    if Traitormod.IsRoundFinalizing() then return end
     if not ptable or ptable.gainedFromAbility or instance.Character == nil or instance.Character.IsDead then return end
 
     Traitormod.OnTrackedSkillIncrease(instance.Character, tostring(ptable.skillIdentifier), ptable.increase, ptable.gainedFromAbility)
@@ -845,123 +402,6 @@ end)
 
 Traitormod.AbandonedCharacters = {}
 
-local function getDisconnectedCharacterGhostRoleDelay()
-    local ghostRoleConfig = Traitormod.Config.GhostRoleConfig or {}
-    local delaySeconds = tonumber(ghostRoleConfig.DisconnectedCharacterDelaySeconds)
-
-    if delaySeconds == nil then
-        return 180
-    end
-
-    return math.max(0, delaySeconds)
-end
-
-local function sendDisconnectedGhostRoleInfo(client, character)
-    if client == nil or character == nil or character.IsDead then
-        return
-    end
-
-    local role = Traitormod.RoleManager.GetRole(character)
-    if role == nil or role.Greet == nil then
-        return
-    end
-
-    Timer.Wait(function ()
-        if client == nil or client.Character ~= character or not client.InGame then
-            return
-        end
-
-        local message = role:Greet()
-        if type(message) == "string" and message ~= "" then
-            Traitormod.SendMessage(client, message)
-        end
-    end, 500)
-end
-
-local function clearAbandonedCharacter(accountKey)
-    local abandonedCharacter = Traitormod.AbandonedCharacters[accountKey]
-    if abandonedCharacter == nil then
-        return nil
-    end
-
-    if abandonedCharacter.GhostRoleId and Traitormod.GhostRoles then
-        Traitormod.GhostRoles.Remove(abandonedCharacter.GhostRoleId)
-    end
-
-    Traitormod.AbandonedCharacters[accountKey] = nil
-    return abandonedCharacter
-end
-
-local function createDisconnectedGhostRole(abandonedCharacter)
-    if abandonedCharacter == nil or abandonedCharacter.GhostRoleCreated or Traitormod.GhostRoles == nil then
-        return false
-    end
-
-    local character = abandonedCharacter.Character
-    if character == nil or character.IsDead or not character.ClientDisconnected then
-        return false
-    end
-
-    local role = Traitormod.GhostRoles.Create("system.disconnected", character, {
-        Name = character.Name,
-        OnAssigned = function (ghostClient, assignedCharacter)
-            Traitormod.AbandonedCharacters[abandonedCharacter.AccountKey] = nil
-            sendDisconnectedGhostRoleInfo(ghostClient, assignedCharacter)
-        end
-    })
-
-    if not role then
-        return false
-    end
-
-    abandonedCharacter.GhostRoleCreated = true
-    abandonedCharacter.GhostRoleId = role.Id
-    return true
-end
-
-updateAbandonedCharacters = function()
-    if not Game.RoundStarted then
-        return
-    end
-
-    local ghostRoleConfig = Traitormod.Config.GhostRoleConfig
-    if ghostRoleConfig == nil or not ghostRoleConfig.Enabled or next(Traitormod.AbandonedCharacters) == nil then
-        return
-    end
-
-    local connectedAccountKeys = {}
-    for _, connectedClient in pairs(Client.ClientList) do
-        local accountKey = Traitormod.GetClientAccountKey(connectedClient)
-        if accountKey ~= nil then
-            connectedAccountKeys[accountKey] = true
-        end
-    end
-
-    local now = Timer.GetTime()
-    local toRemove = {}
-    local toCreate = {}
-
-    for accountKey, abandonedCharacter in pairs(Traitormod.AbandonedCharacters) do
-        local character = abandonedCharacter.Character
-
-        if character == nil or character.IsDead then
-            table.insert(toRemove, accountKey)
-        elseif connectedAccountKeys[accountKey] then
-            table.insert(toRemove, accountKey)
-        elseif not abandonedCharacter.GhostRoleCreated and now >= abandonedCharacter.AvailableAt then
-            table.insert(toCreate, abandonedCharacter)
-        end
-    end
-
-    for _, accountKey in ipairs(toRemove) do
-        clearAbandonedCharacter(accountKey)
-    end
-
-    for _, abandonedCharacter in ipairs(toCreate) do
-        createDisconnectedGhostRole(abandonedCharacter)
-    end
-end
-
 -- new player connected to the server
 Hook.Add("clientConnected", "Traitormod.ClientConnected", function (client)
     if Traitormod.Config.RemotePoints then
@@ -976,16 +416,7 @@ Hook.Add("clientConnected", "Traitormod.ClientConnected", function (client)
         Traitormod.Discord.AnnounceClientConnected(client)
     end
 
-    local accountKey = Traitormod.GetClientAccountKey(client)
-    local abandonedCharacter = Traitormod.AbandonedCharacters[accountKey]
-    if abandonedCharacter then
-        if abandonedCharacter.Character and abandonedCharacter.Character.IsDead then
-            -- client left while char was alive -> but char is dead
-            Traitormod.Debug(string.format("%s connected, but his character died in the meantime...", Traitormod.ClientLogName(client)))
-        end
-
-        clearAbandonedCharacter(accountKey)
-    end
+    Traitormod.GhostRoles.HandleReconnect(client)
 end)
 
 -- player disconnected from server
@@ -998,18 +429,7 @@ Hook.Add("clientDisconnected", "Traitormod.ClientDisconnected", function (client
         Traitormod.Discord.AnnounceClientDisconnected(client)
     end
 
-    -- if character was alive while disconnecting, make sure player looses live if he rejoins the round
-    if client.Character and not client.Character.IsDead and client.Character.IsHuman then
-        Traitormod.Debug(string.format("%s disconnected with an alive character. Remembering for rejoin...", Traitormod.ClientLogName(client)))
-        local accountKey = Traitormod.GetClientAccountKey(client)
-        Traitormod.AbandonedCharacters[accountKey] = {
-            AccountKey = accountKey,
-            Character = client.Character,
-            AvailableAt = Timer.GetTime() + getDisconnectedCharacterGhostRoleDelay(),
-            GhostRoleCreated = false,
-            GhostRoleId = nil,
-        }
-    end
+    Traitormod.GhostRoles.HandleDisconnect(client)
 end)
 
 -- Traitormod.Commands hook
@@ -1037,83 +457,6 @@ Hook.Add("chatMessage", "Traitormod.ChatMessage", function(message, client)
 end)
 
 
-LuaUserData.MakeMethodAccessible(Descriptors["Barotrauma.Item"], "set_InventoryIconColor")
-
-Traitormod.PointItems = {}
-
-local function setupPointItem(item, amount, text, onUsed)
-    text = text or ""
-
-    Traitormod.PointItems[item] = {}
-    Traitormod.PointItems[item].Amount = amount
-    Traitormod.PointItems[item].OnUsed = onUsed
-
-    local terminal = item.GetComponentString("Terminal")
-    terminal.ShowMessage = text .. "\n" .. Traitormod.FormatText("PointItemTerminalText", amount)
-    terminal.SyncHistory()
-
-    item.set_InventoryIconColor(Color(0, 0, 255))
-    item.SpriteColor = Color(0, 0, 255, 255)
-    item.Scale = 0.5
-
-    local color = item.SerializableProperties[Identifier("SpriteColor")]
-    Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(color, item))
-
-    local scale = item.SerializableProperties[Identifier("Scale")]
-    Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(scale, item))
-
-    local invColor = item.SerializableProperties[Identifier("InventoryIconColor")]
-    Networking.CreateEntityEvent(item, Item.ChangePropertyEventData(invColor, item))
-end
-
-Traitormod.SpawnPointItem = function(inventory, amount, text, onSpawn, onUsed)
-    local prefab = ItemPrefab.GetItemPrefab("handheldterminal")
-    if prefab == nil then return false end
-
-    Entity.Spawner.AddItemToSpawnQueue(prefab, inventory, nil, nil, function(item)
-        setupPointItem(item, amount, text, onUsed)
-        if onSpawn then
-            onSpawn(item)
-        end
-    end)
-
-    return true
-end
-
-Traitormod.DropPointItem = function(client, amount)
-    if Traitormod.IsSecretEnding() or client == nil or client.Character == nil or client.Character.IsDead then
-        return false
-    end
-
-    amount = math.floor(tonumber(amount) or 0)
-    if amount <= 0 then return false end
-
-    local currentPoints = math.floor(tonumber(Traitormod.GetData(client, "Points") or 0) or 0)
-    if currentPoints < amount then return false end
-
-    local prefab = ItemPrefab.GetItemPrefab("handheldterminal")
-    if prefab == nil then return false end
-
-    local character = client.Character
-    local position = character.WorldPosition
-
-    local ok = pcall(function()
-        Entity.Spawner.AddItemToSpawnQueue(prefab, position, nil, nil, function(item)
-            local latestPoints = math.floor(tonumber(Traitormod.GetData(client, "Points") or 0) or 0)
-            if latestPoints < amount then
-                pcall(function() item.Remove() end)
-                return
-            end
-
-            setupPointItem(item, amount, "", nil)
-            Traitormod.SetData(client, "Points", latestPoints - amount)
-            Traitormod.SendMessage(client, Traitormod.FormatText("CMDDropPointsDropped", amount))
-        end)
-    end)
-
-    return ok
-end
-
 Hook.Patch("Barotrauma.Items.Components.Terminal", "ServerEventRead", function(instance, ptable)
     local msg = ptable["msg"]
     local client = ptable["c"]
@@ -1127,27 +470,6 @@ Hook.Patch("Barotrauma.Items.Components.Terminal", "ServerEventRead", function(i
     Hook.Call("traitormod.terminalWrite", item, client, output)
 end, Hook.HookMethodType.Before)
 
-
-Hook.Add("traitormod.terminalWrite", "Traitormod.PointItem", function (item, client, output)
-    if string.lower(tostring(output or "")) ~= Traitormod.GetText("PointItemClaimCommand") then return end
-
-    local data = Traitormod.PointItems[item]
-
-    if data == nil then return end
-
-    Traitormod.AwardPoints(client, data.Amount)
-    Traitormod.SendMessage(client, Traitormod.FormatText("ReceivedPoints", data.Amount), "InfoFrameTabButton.Mission")
-
-    if data.OnUsed then
-        data.OnUsed(client)
-    end
-
-    local terminal = item.GetComponentString("Terminal")
-    terminal.ShowMessage = Traitormod.FormatText("PointItemClaimedBy", client.Name)
-    terminal.SyncHistory()
-
-    Traitormod.PointItems[item] = nil
-end)
 
 if Traitormod.Config.OverrideRespawnSubmarine then
     Traitormod.SubmarineBuilder = dofile(Traitormod.Path .. "/Lua/submarinebuilder.lua")
@@ -1170,8 +492,10 @@ Traitormod.MidRoundSpawn = dofile(Traitormod.Path .. "/Lua/features/midroundspaw
 Traitormod.GhostRoles = dofile(Traitormod.Path .. "/Lua/ghostroles.lua")
 Traitormod.RoundStats = dofile(Traitormod.Path .. "/Lua/roundstats.lua")
 Traitormod.CameraTeleport = dofile(Traitormod.Path .. "/Lua/features/camerateleport.lua")
+Traitormod.AdminGhost = dofile(Traitormod.Path .. "/Lua/features/adminghost.lua")
 
 Traitormod.Stats = dofile(Traitormod.Path .. "/Lua/statistics.lua")
+dofile(Traitormod.Path .. "/Lua/features/pointitems.lua")
 dofile(Traitormod.Path .. "/Lua/features/respawnshuttle.lua")
 dofile(Traitormod.Path .. "/Lua/features/welcome.lua")
 dofile(Traitormod.Path .. "/Lua/features/deathlogbook.lua")
@@ -1181,6 +505,7 @@ dofile(Traitormod.Path .. "/Lua/features/piratemissionghostroles.lua")
 
 Traitormod.AddGamemode(dofile(Traitormod.Path .. "/Lua/gamemodes/gamemode.lua"))
 Traitormod.AddGamemode(dofile(Traitormod.Path .. "/Lua/gamemodes/secret.lua"))
+Traitormod.AddGamemode(dofile(Traitormod.Path .. "/Lua/gamemodes/station/station.lua"))
 Traitormod.AddGamemode(dofile(Traitormod.Path .. "/Lua/gamemodes/pvp.lua"))
 Traitormod.AddGamemode(dofile(Traitormod.Path .. "/Lua/gamemodes/submarineroyale.lua"))
 Traitormod.AddGamemode(dofile(Traitormod.Path .. "/Lua/gamemodes/attackdefendv2.lua"))

@@ -12,20 +12,6 @@ end
 local WAIT_AFTER_DOWNLOAD = 20 
 local welcomeUpdateTimer = 0
 
-local function getWelcomeText()
-    if Traitormod and Traitormod.GetText then
-        return Traitormod.GetText("WelcomeMessage")
-    end
-    return ""
-end
-
-local function getServerSenderText()
-    if Traitormod and Traitormod.GetText then
-        return Traitormod.GetText("ChatSenderServer")
-    end
-    return ""
-end
-
 local function IsDownloading(client)
     if not Game.Server or not Game.Server.FileSender then return false end
     for key, value in pairs(Game.Server.FileSender.ActiveTransfers) do
@@ -69,7 +55,7 @@ Hook.Add("think", "Welcome_Logic", function(deltaTime)
             data.timer = data.timer + elapsed 
             if data.timer > WAIT_AFTER_DOWNLOAD then
                 local ok, err = pcall(function()
-                    local chatMessage = ChatMessage.Create(getServerSenderText(), getWelcomeText(), ChatMessageType.ServerMessageBox, nil, nil)
+                    local chatMessage = ChatMessage.Create(Traitormod.GetText("ChatSenderServer"), Traitormod.GetText("WelcomeMessage"), ChatMessageType.ServerMessageBox, nil, nil)
                     Game.SendDirectChatMessage(chatMessage, client)
                 end)
 

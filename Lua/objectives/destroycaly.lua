@@ -8,7 +8,6 @@ function objective:Start(target)
     for key, value in pairs(Submarine.MainSub.GetItems(false)) do
         if value.Prefab.Identifier == "calyxanide" then
             table.insert(self.Items, value)
-            cool = value
         end
     end
 

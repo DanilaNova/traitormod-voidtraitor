@@ -16,6 +16,7 @@ config.Extensions = {
     dofile(Traitormod.Path .. "/Lua/extensions/attackdefendreactorblastfix.lua"),
     dofile(Traitormod.Path .. "/Lua/extensions/spectatorjobfix.lua"),
     dofile(Traitormod.Path .. "/Lua/extensions/servermessageutf8fix.lua"),
+    dofile(Traitormod.Path .. "/Lua/extensions/stationragdollplatforms.lua"),
     --dofile(Traitormod.Path .. "/Lua/extensions/weaponnerfs.lua"),
     --dofile(Traitormod.Path .. "/Lua/extensions/paralysisnerf.lua"),
     --dofile(Traitormod.Path .. "/Lua/extensions/pressuremidjoin.lua"),
@@ -30,6 +31,49 @@ config.ExtensionConfig = {
         Debug = false,
     }
 }
+
+config.IdConsole = {
+    -- Doors check these tags on the ID card in the card slot.
+    -- They are set on card instances, never in the ID card prefab's Tags.
+    Access = {
+        { Tag = "vt_access_maintenance", Name = "IdConsoleMaintenance" },
+        { Tag = "vt_access_engineering", Name = "IdConsoleEngineering" },
+        { Tag = "vt_access_reactor", Name = "IdConsoleReactor" },
+        { Tag = "vt_access_engineering_stock", Name = "IdConsoleEngineeringStock" },
+        { Tag = "vt_access_medical", Name = "IdConsoleMedical" },
+        { Tag = "vt_access_medical_stock", Name = "IdConsoleMedicalStock" },
+        { Tag = "vt_access_security", Name = "IdConsoleSecurity" },
+        { Tag = "vt_access_armory", Name = "IdConsoleArmory" },
+        { Tag = "vt_access_cargo", Name = "IdConsoleCargo" },
+        { Tag = "vt_access_command", Name = "IdConsoleCommand" },
+        { Tag = "vt_access_personnel", Name = "IdConsolePersonnel" },
+    },
+    Presets = {
+        { Id = "assistant", JobId = "assistant", Tags = { "vt_access_maintenance" } },
+        { Id = "mechanic", JobId = "mechanic", Tags = { "vt_access_maintenance", "vt_access_engineering", "vt_access_engineering_stock" } },
+        { Id = "engineer", JobId = "engineer", Tags = { "vt_access_maintenance", "vt_access_engineering", "vt_access_reactor", "vt_access_engineering_stock" } },
+        { Id = "medicaldoctor", JobId = "medicaldoctor", Tags = { "vt_access_maintenance", "vt_access_medical", "vt_access_medical_stock" } },
+        { Id = "surgeon", JobId = "surgeon", Tags = { "vt_access_maintenance", "vt_access_medical", "vt_access_medical_stock" } },
+        { Id = "securityofficer", JobId = "securityofficer", Tags = { "vt_access_maintenance", "vt_access_security", "vt_access_armory" } },
+        { Id = "captain", JobId = "captain", AllAccess = true, Tags = {} },
+        { Id = "headpersonnel", Name = "IdConsoleHeadPersonnel", AllAccess = true, Tags = {} },
+        { Id = "cargo", Name = "IdConsoleCargoJob", Tags = { "vt_access_maintenance", "vt_access_cargo" } },
+    },
+}
+config.Cargo = {
+    Budget = 10000,
+    Categories = { "medical", "materials", "maintenance", "wiring", "biomass" },
+    AccessTag = "vt_access_cargo",
+    MaxOrders = 100,
+    MaxQuantity = 20,
+    SaleMultiplier = 0.5,
+    SaleExcluded = {},
+    LargeAreaSize = 200,
+    DeliveredHistorySeconds = 150,
+}
+config.Cloning = { Time = 30, HumanBiomassCost = 50, HumanBiomassYield = 28 }
+config.Nuclear = { Time = 300, MinimumTime = 180, Cooldown = 30, DisarmTime = 30, ExplosionRange = 12000, PlacementMargin = 150, MusicStartDelay = 30 }
+config.Communications = { InitialDelay = 30, AnnouncementCooldown = 90, VoiceDuration = 30, VoiceCooldown = 90 }
 
 ----- DISCORD -----
 
@@ -91,6 +135,11 @@ config.GameVote = {
             Apply = "Secret"
         },
         {
+            Name = "Station",
+            LanguageKey = "GameVoteOptionStation",
+            Apply = "Station"
+        },
+        {
             Name = "AttackDefend",
             LanguageKey = "GameVoteOptionAttackDefend",
             Apply = "AttackDefend"
@@ -105,6 +154,7 @@ config.GameVote = {
     SecretModeIdentifier = "mission",
     SecretTraitorProbability = 100,
     SecretDifficulty = 50,
+    SecretRespawnMode = "MidRound", -- None | MidRound | BetweenRounds | Permadeath; Station sets Permadeath itself
     SecretMissionTypes = {
         "Pirate",
         "Salvage",
@@ -125,9 +175,11 @@ config.GameVote = {
     AttackDefendKeepSecretMissionTypes = true,
     AttackDefendOutpostName = "Random",
     AttackDefendTraitorProbability = 100,
+    AttackDefendRespawnMode = "MidRound",
 
     HideModeIdentifier = "pvp",
     HideTraitorProbability = 100,
+    HideRespawnMode = "MidRound",
     HideMissionTypes = {"HideAndSeekV2"},
     HideKeepSecretMissionTypes = true,
     HideOutpostName = "Random"
@@ -229,6 +281,8 @@ config.GamemodeConfig = {
     Secret = {
         PointshopCategories = {"clown", "traitor", "saboteur", "cultist", "deathspawn", "deathspawnhusk", "deathspawnfriend", "deathtrigerevent", "deathtrigereventevil", "deathtrigereventrandom", "abilities", "surgery", "medical", "security", "wiring", "maintenance", "materials", "ores", "otherresources", "other", "randomize", "ships"},
         EndOnComplete = true,           -- end round everyone but traitors are dead
+        EndWhenCrewDown = true,         -- end round when every crew player is dead or unconscious (not in test mode or while a respawn is pending)
+        CrewDownEndDelaySeconds = 120,
         EnableRandomEvents = true,
         EndGameDelaySeconds = 60,
         TraitorSelectDelayMin = 120,
@@ -284,16 +338,11 @@ config.GamemodeConfig = {
         },
 
         AmountTraitors = function (amountPlayers)
-            config.TestMode = false
             if amountPlayers > 18 and math.random() < 0.25 then return 4 end
             if amountPlayers > 12 then return 3 end
             if amountPlayers > 7 then return 2 end            
             if amountPlayers > 3 then return 1 end
-            if amountPlayers == 1 then 
-                Traitormod.SendMessageEveryone(Traitormod.Language.TestingMode)
-                config.TestMode = true
-                return 1
-            end
+            if amountPlayers == 1 then return 1 end
             print("Not enough players to start traitor mode.")
             return 0
         end,
@@ -309,6 +358,87 @@ config.GamemodeConfig = {
             if client.Character.HasJob("surgeon") then return 0.5 end
             return 1
         end
+    },
+
+    Station = {
+        EndWhenCrewDown = true,
+        CrewDownEndDelaySeconds = 120,
+        OutpostEscapePercent = 60,
+        OutpostEscapeMinutes = 2,
+        JobSlots = {
+            captain = 1,
+            mechanic = 5,
+            assistant = 5,
+            securityofficer = 6,
+            medicaldoctor = 3,
+            surgeon = 2,
+            engineer = 5,
+            scientist = 5,
+        },
+        WavesEnabled = true,
+        SuppressOutdoorWaves = true,
+        WaveMinPlayers = 20,
+        WaveMaxPlayers = 40,
+        WaveMinAmountMultiplier = 1,
+        WaveMaxAmountMultiplier = 1.25,
+        WaveInitialDelayMinMinutes = 14,
+        WaveInitialDelayMaxMinutes = 19,
+        WaveIntervals = {
+            { Players = 2, Min = 19, Max = 24 },
+            { Players = 5, Min = 16, Max = 20 },
+            { Players = 9, Min = 14, Max = 18 },
+            { Players = 40, Min = 12, Max = 16 },
+        },
+        WaveMaxDifficulty = 100,
+        WaveDifficultyBands = {
+            { Min = 1, Max = 10 }, { Min = 10, Max = 30 },
+            { Min = 30, Max = 60 }, { Min = 60, Max = 100 },
+        },
+        WaveDifficultyCurve = {
+            { Minutes = 20, Weights = { 100, 0, 0, 0 } },
+            { Minutes = 30, Weights = { 80, 20, 0, 0 } },
+            { Minutes = 45, Weights = { 55, 35, 9, 1 } },
+            { Minutes = 60, Weights = { 25, 45, 25, 5 } },
+            { Minutes = 90, Weights = { 5, 30, 50, 15 } },
+            { Minutes = 120, Weights = { 0, 15, 50, 35 } },
+            { Minutes = 150, Weights = { 0, 5, 40, 55 } },
+        },
+        WavePopulationLimits = {
+            { Fraction = 0.15, Band = 1 },
+            { Fraction = 0.40, Band = 2 },
+            { Fraction = 0.75, Band = 3 },
+        },
+        WavePools = {
+            { Weight = 75, Sets = {
+                "Difficulty level 1", "Difficulty level 2", "Difficulty level 3",
+                "Difficulty level 4", "Difficulty level 5", "Difficulty level 6",
+                "Difficulty level 7", "Difficulty level 8", "Difficulty level 9", "Difficulty level 10",
+            } },
+            { Weight = 25, Sets = { "HuskOne", "HuskTwo", "HuskThree" } },
+        },
+        WaveSpawnMinDistance = 5,
+        WaveSpawnMaxDistance = 15,
+        WaveWallClearance = 10,
+        WaveActiveDistance = 250,
+        Evacuation = {
+            InitialDelay = 600,
+            RecallDelay = 60,
+            BoardingTime = 180,
+            OtherDockBoardingTime = 300,
+            NoDockBoardingTime = 360,
+            TravelTime = 300,
+            PumpFlowMultiplier = 1,
+        },
+        PointshopCategories = {"traitor", "cultist", "saboteur", "clown"},
+        EndOnComplete = false,
+        EnableRandomEvents = true,
+        TraitorTypeSelectionMode = "Random",
+        TraitorTypeChance = {
+            Traitor = 50,
+            Cultist = 50,
+            Saboteur = 50,
+            Clown = 50,
+        },
     },
 
     PvP = {
@@ -522,7 +652,30 @@ config.ObjectiveConfig = {
 
 ----- EVENTS -----
 config.RandomEventConfig = {
+    ModeEvents = {
+        Shared = {
+            "MaintenanceToolsDelivery", "MedicalDelivery", "AmmoDelivery", "EmergencyTeam",
+            "VentCreatures", "ClownCrateSurprise", "OxygenGeneratorHusk", "RandomLights",
+            "ClownMagic", "LightsOff", "CommunicationsOffline", "ReactorShutdown",
+            "SupercapacitorFailure", "JunctionBoxOverload", "OxygenGeneratorPoison",
+            "OxygenSufforin", "OxygenParalyzant", "OxygenMorbusine", "OxygenCyanide",
+            "SecurityMindSense", "SecurityTurretCoilgun", "SecurityTurretChaingun",
+            "SecurityTurretFlakcannon", "SecurityTurretPulseLaser", "SecurityTurretDoubleCoilgun",
+            "SecurityTurretRailgun", "MechanicMechanicalRepair", "MechanicHullRepair",
+            "MechanicSkillBoost", "EngineerElectricalRepair", "EngineerSkillBoost",
+            "MedicSkillBoost", "SurgeonSkillBoost", "ElectricalFixDischarge", "FixHull",
+            "FullFixHull", "FullElectricalFixDischarge",
+        },
+        Secret = {
+            "SuperBallastFlora", "WeakBallastFlora", "AbyssHelp", "ShadyMission", "Prisoner",
+            "WreckRescue", "BeaconRescue", "CaptainHelmBoost", "OutpostPirateAttack",
+            "PirateCrew", "HiddenPirate", "WreckPirate", "BeaconPirate",
+            "BreackElectrical", "BreackHull", "KillElectrical", "KillHull",
+        },
+        Station = { "StationAttack" },
+    },
     Events = {
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/stationattack.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/superballastflora.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/maintenancetoolsdelivery.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/medicaldelivery.lua"),
@@ -585,6 +738,10 @@ config.PointShopConfig = {
     DeathTimeoutTime = 60,
     DeathSpawnRefundAtEndRound = true,
     ItemCategories = {
+        { Identifier = "biomass", IconIdentifier = "vt_biomass", Products = {
+            { Identifier = "vt_biomass", Price = 100, Limit = 20,
+                Items = { "vt_biomass", "vt_biomass", "vt_biomass", "vt_biomass", "vt_biomass", "vt_biomass", "vt_biomass", "vt_biomass", "vt_biomass", "vt_biomass" } },
+        } },
         dofile(Traitormod.Path .. "/Lua/config/pointshop/security.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/maintenance.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/materials.lua"),

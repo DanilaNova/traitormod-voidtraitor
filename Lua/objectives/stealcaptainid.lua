@@ -16,8 +16,11 @@ function objective:Start(target)
 end
 
 function objective:IsCompleted()
+    local captainCardTag = Traitormod.SelectedGamemode ~= nil and Traitormod.SelectedGamemode.CaptainCardTag or nil
     for item in self.Character.Inventory.AllItems do
-        if item.Prefab.Identifier == "idcard" and item.GetComponentString("IdCard").OwnerJobId == "captain" then
+        if captainCardTag ~= nil then
+            if item.HasTag(captainCardTag) then return true end
+        elseif item.Prefab.Identifier == "idcard" and item.GetComponentString("IdCard").OwnerJobId == "captain" then
             return true
         end
     end

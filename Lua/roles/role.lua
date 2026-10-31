@@ -13,7 +13,7 @@ function role:Transfer(character)
     self.Character = character
 
     for key, value in pairs(self.Objectives) do
-        value.Character = character
+        if value.Transfer ~= nil then value:Transfer(character) else value.Character = character end
     end
 end
 
@@ -87,8 +87,7 @@ function role:FindValidTarget(objective)
 end
 
 function role:FilterTarget(objective, character)
-    if character == botGod then return false end
-    if not character.IsHuman or character.IsDead then return false end
+    if not character.IsHuman or character.IsDead or Traitormod.AdminGhost.IsGhost(character) then return false end
     if objective.RoleFilter ~= nil and not objective.RoleFilter[character.Info.Job.Prefab.Identifier.Value] then
         return false
     end

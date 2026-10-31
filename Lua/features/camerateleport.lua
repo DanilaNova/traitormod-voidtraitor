@@ -11,11 +11,6 @@ local function toNetInt32(value, fallback)
     return math.max(-2147483648, math.min(2147483647, value))
 end
 
-local function canUse(client)
-    if client == nil or not client.InGame or not Game.RoundStarted then return false end
-    return client.Character == nil or client.Character.IsDead
-end
-
 local function getCharacterIcon(character)
     local ghostRoles = Traitormod.GhostRoles
     if ghostRoles ~= nil then
@@ -67,7 +62,7 @@ end
 function cameraTeleport.SendSnapshot(client, openMenu)
     if client == nil or client.Connection == nil then return false end
 
-    local allowed = canUse(client)
+    local allowed = client.InGame and Game.RoundStarted and (client.Character == nil or client.Character.IsDead)
     local targets = allowed and getTargets() or {}
     local message = Networking.Start(guiNet.Snapshot)
 

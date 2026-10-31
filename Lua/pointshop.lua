@@ -386,6 +386,17 @@ ps.CanClientSeeProduct = function(client, product)
         return false
     end
 
+    if Traitormod.SelectedGamemode ~= nil and Traitormod.SelectedGamemode.RestrictShopToAccessibleCategories then
+        local allowed = false
+        for _, category in ipairs(ps.ActiveCategories) do
+            if category.Identifier == product.CategoryIdentifier and ps.CanClientAccessCategory(client, category) then
+                allowed = true
+                break
+            end
+        end
+        if not allowed then return false end
+    end
+
     if product.VisibleJobs ~= nil then
         local character = client ~= nil and client.Character or nil
         if character == nil or character.IsDead or not character.IsHuman then
@@ -406,6 +417,15 @@ end
 
 ---@param client Barotrauma.Networking.Client
 ---@return boolean
+ps.CanUseShop = function(client)
+    if Traitormod.SelectedGamemode == nil or not Traitormod.SelectedGamemode.RestrictShopToAccessibleCategories then return true end
+    if client.Character == nil or client.Character.IsDead or not client.Character.IsHuman then return false end
+    for _, category in ipairs(ps.ActiveCategories) do
+        if ps.CanClientAccessCategory(client, category) then return true end
+    end
+    return false
+end
+
 ps.ValidateClient = function(client)
     if not config.PointShopConfig.Enabled then
         Traitormod.SendMessage(client, Traitormod.Language.CommandNotActive)
@@ -414,6 +434,11 @@ ps.ValidateClient = function(client)
 
     if not client.InGame then
         Traitormod.SendMessage(client, Traitormod.Language.PointshopInGame)
+        return false
+    end
+
+    if not ps.CanUseShop(client) then
+        Traitormod.SendMessage(client, Traitormod.Language.PointshopNotAvailable)
         return false
     end
 
@@ -453,10 +478,12 @@ local function runProductAction(client, product, items, paidPrice)
     return true
 end
 
+ps.RunProductAction = runProductAction
+
 ---@param client Barotrauma.Networking.Client
 ---@param item Pointshop.Item
 ---@param onSpawned fun(obj: Barotrauma.Item)
-ps.SpawnItem = function(client, item, onSpawned)
+ps.SpawnItem = function(client, item, onSpawned, destination)
     local prefab, reason = getProductItemPrefab(item)
     local condition = item.Condition or item.MaxCondition
 
@@ -477,10 +504,18 @@ ps.SpawnItem = function(client, item, onSpawned)
             discharge.OutdoorsOnly = false
         end
 
-        if onSpawned then onSpawned(item) end
+        local placed = true
+        if destination ~= nil and destination.Inventory ~= nil then
+            placed = not destination.Container.Removed and destination.Container.Submarine == destination.Submarine
+                and destination.Inventory.TryPutItem(item, destination.Slot, false, false, nil, true)
+        end
+        if onSpawned then onSpawned(item, placed) end
     end
 
-    if item.IsInstallation then
+    if destination ~= nil then
+        Entity.Spawner.AddItemToSpawnQueue(prefab, destination.Position - destination.Submarine.Position,
+            destination.Submarine, condition, nil, OnSpawn)
+    elseif item.IsInstallation then
         local position = client.Character.AnimController.GetLimb(LimbType.Torso).WorldPosition
         if client.Character.Submarine == nil then
             Entity.Spawner.AddItemToSpawnQueue(prefab, position, condition, nil, OnSpawn)
@@ -504,7 +539,7 @@ end
 ---@param itemsToSpawn Pointshop.Item[]
 ---@return boolean
 ---@return Pointshop.ProductBuyFailureReason?
-ps.ActivateProduct = function (client, product, paidPrice, itemsToSpawn)
+ps.ActivateProduct = function (client, product, paidPrice, itemsToSpawn, destinations, onCompleted)
     if #itemsToSpawn == 0 then
         if product.Action then
             return runProductAction(client, product, nil, paidPrice)
@@ -515,21 +550,24 @@ ps.ActivateProduct = function (client, product, paidPrice, itemsToSpawn)
     local spawnedItems = {}
     local spawnedItemCount = 0
     local expectedSpawnCount = #itemsToSpawn
+    local placedAll = true
 
-    local function OnSpawned(item)
+    local function OnSpawned(item, placed)
         table.insert(spawnedItems, item)
         spawnedItemCount = spawnedItemCount + 1
-
-        if spawnedItemCount == expectedSpawnCount and product.Action then
-            local success, result = runProductAction(client, product, spawnedItems, paidPrice)
-            if not success then
-                Traitormod.SendMessage(client, result or Traitormod.Language.PointshopCannotBeUsed)
+        if placed == false then placedAll = false end
+        if spawnedItemCount == expectedSpawnCount then
+            local success, result = placedAll, nil
+            if placedAll and product.Action then
+                success, result = runProductAction(client, product, spawnedItems, paidPrice)
+                if not success then Traitormod.SendMessage(client, result or Traitormod.Language.PointshopCannotBeUsed) end
             end
+            if onCompleted ~= nil then onCompleted(success, spawnedItems) end
         end
     end
 
-    for _, item in ipairs(itemsToSpawn) do
-        ps.SpawnItem(client, item, OnSpawned)
+    for index, item in ipairs(itemsToSpawn) do
+        ps.SpawnItem(client, item, OnSpawned, destinations ~= nil and destinations[index] or nil)
     end
 
     return true
@@ -565,7 +603,7 @@ ps.BuyProduct = function(client, product)
     local points = nil
     local previousTimeout = nil
     local accountKey = Traitormod.GetClientAccountKey(client)
-    local secretEnding = Traitormod.IsSecretEnding()
+    local roundFinalizing = Traitormod.IsRoundFinalizing()
 
     if not ps.CanClientSeeProduct(client, product) then
         return Traitormod.Language.PointshopCannotBeUsed
@@ -638,16 +676,16 @@ ps.BuyProduct = function(client, product)
             return ps.ProductBuyFailureReason.NoStock
         end
 
-        if not secretEnding then
+        if not roundFinalizing then
             Traitormod.SetData(client, "Points", points - price)
         end
     end
 
-    local paidPrice = secretEnding and 0 or price
+    local paidPrice = roundFinalizing and 0 or price
     local success, result = ps.ActivateProduct(client, product, paidPrice, itemsToSpawn)
     if success == false then
         if not Traitormod.Config.TestMode then
-            if not secretEnding then
+            if not roundFinalizing then
                 Traitormod.SetData(client, "Points", points)
             end
             ps.UseProductLimit(client, product, -1)
@@ -852,7 +890,7 @@ end
 
 -- GUI pointshop for clients with the pack's Lua. Everyone else, and special shops the GUI
 -- doesn't support, use the text prompt shop above.
-ps.GuiNet = ps.GuiNet or {
+ps.GuiNet = {
     Ready = "VoidTraitor_PointshopGuiReady",
     Request = "VoidTraitor_PointshopRequest",
     Snapshot = "VoidTraitor_PointshopSnapshot",
@@ -864,17 +902,6 @@ ps.GuiNet = ps.GuiNet or {
     PurchaseSound = "VoidTraitor_PointshopPurchaseSound",
     ClassLimits = "VoidTraitor_PointshopClassLimits",
 }
--- ps.GuiNet survives a Lua reload, so the names are set again in case they changed.
-ps.GuiNet.Ready = "VoidTraitor_PointshopGuiReady"
-ps.GuiNet.Request = "VoidTraitor_PointshopRequest"
-ps.GuiNet.Snapshot = "VoidTraitor_PointshopSnapshot"
-ps.GuiNet.State = "VoidTraitor_PointshopState"
-ps.GuiNet.Balance = "VoidTraitor_PointshopBalance"
-ps.GuiNet.ProductState = "VoidTraitor_PointshopProductState"
-ps.GuiNet.BuyCart = "VoidTraitor_PointshopBuyCart"
-ps.GuiNet.Probe = "VoidTraitor_PointshopProbe"
-ps.GuiNet.PurchaseSound = "VoidTraitor_PointshopPurchaseSound"
-ps.GuiNet.ClassLimits = "VoidTraitor_PointshopClassLimits"
 local guiNet = ps.GuiNet
 
 
@@ -1015,10 +1042,6 @@ local function getGuiMaxQuantity(client, product)
     return math.max(remaining, 1)
 end
 
-local function getSinglePurchaseMessage()
-    return Traitormod.Language.PointshopGuiSinglePurchase or Traitormod.Language.PointshopCannotBeUsed
-end
-
 local function canUseGuiShop(client)
     if not ps.GuiClients[client] then
         return false
@@ -1095,14 +1118,6 @@ local function getManualGuiIconIdentifier(config)
     end
 
     return ""
-end
-
-local function getCategoryIconIdentifier(category)
-    return getManualGuiIconIdentifier(category)
-end
-
-local function getSubcategoryIconIdentifier(subcategory)
-    return getManualGuiIconIdentifier(subcategory)
 end
 
 local function getAttackDefendClassJobIdentifier(product)
@@ -1227,6 +1242,45 @@ local function getProductIconIdentifier(product)
     return ""
 end
 
+function ps.GetGuiProduct(client, category, product, id)
+    local productPath = ps.GetProductSubcategoryPath(product)
+    local pathNames = {}
+    local pathIdentifiers = {}
+    local pathIcons = {}
+    for _, pathEntry in ipairs(productPath) do
+        table.insert(pathNames, ps.GetSubcategoryName(pathEntry))
+        table.insert(pathIdentifiers, tostring(pathEntry.Identifier or pathEntry.Name or ""))
+        table.insert(pathIcons, getManualGuiIconIdentifier(pathEntry))
+    end
+
+    local remaining = ps.GetProductLimit(client, product)
+    local limit = product.Limit or defaultLimit
+    local disabledReason = getProductStateDisabledReason(client, product)
+
+    return {
+        Id = id,
+        Category = ps.GetCategoryName(category),
+        Path = table.concat(pathNames, " > "),
+        Name = ps.GetProductName(product),
+        Description = getProductDescription(product),
+        Price = ps.GetProductPrice(client, product),
+        Stock = remaining,
+        Limit = limit,
+        Type = getProductType(product),
+        IconIdentifier = getProductIconIdentifier(product),
+        AllowQuantity = canUseQuantityInGui(product),
+        DisabledReason = disabledReason,
+        CategoryIdentifier = tostring(category.Identifier or ""),
+        CategoryIconIdentifier = getManualGuiIconIdentifier(category),
+        PathIdentifiers = table.concat(pathIdentifiers, " > "),
+        PathIconIdentifiers = table.concat(pathIcons, "\31"),
+        MaxQuantity = getGuiMaxQuantity(client, product),
+        CooldownRemaining = getProductCooldownRemaining(client, product),
+        CloseAfterPurchase = shouldCloseGuiAfterPurchase(product),
+        LimitText = getAttackDefendClassLimitText(product),
+    }
+end
+
 function ps.SendGuiSnapshot(client, message, purchaseCompleted, closeAfterPurchase)
     if not canUseGuiShop(client) then
         return false
@@ -1243,16 +1297,6 @@ function ps.SendGuiSnapshot(client, message, purchaseCompleted, closeAfterPurcha
             for productConfigIndex, product in ipairs(category.Products) do
                 if ps.CanClientSeeProduct(client, product) then
                     productIndex = productIndex + 1
-                    local productPath = ps.GetProductSubcategoryPath(product)
-                    local pathNames = {}
-                    local pathIdentifiers = {}
-                    local pathIcons = {}
-                    for _, pathEntry in ipairs(productPath) do
-                        table.insert(pathNames, ps.GetSubcategoryName(pathEntry))
-                        table.insert(pathIdentifiers, tostring(pathEntry.Identifier or pathEntry.Name or ""))
-                        table.insert(pathIcons, getSubcategoryIconIdentifier(pathEntry))
-                    end
-
                     local guiId = tostring(categoryIndex) .. ":" .. tostring(productConfigIndex) .. ":" .. tostring(productIndex)
                     productMap[guiId] = {
                         Id = guiId,
@@ -1261,32 +1305,7 @@ function ps.SendGuiSnapshot(client, message, purchaseCompleted, closeAfterPurcha
                     }
                     table.insert(productIds, guiId)
 
-                    local remaining = ps.GetProductLimit(client, product)
-                    local limit = product.Limit or defaultLimit
-                    local disabledReason = getProductStateDisabledReason(client, product)
-
-                    table.insert(products, {
-                        Id = guiId,
-                        Category = ps.GetCategoryName(category),
-                        Path = table.concat(pathNames, " > "),
-                        Name = ps.GetProductName(product),
-                        Description = getProductDescription(product),
-                        Price = ps.GetProductPrice(client, product),
-                        Stock = remaining,
-                        Limit = limit,
-                        Type = getProductType(product),
-                        IconIdentifier = getProductIconIdentifier(product),
-                        AllowQuantity = canUseQuantityInGui(product),
-                        DisabledReason = disabledReason,
-                        CategoryIdentifier = tostring(category.Identifier or ""),
-                        CategoryIconIdentifier = getCategoryIconIdentifier(category),
-                        PathIdentifiers = table.concat(pathIdentifiers, " > "),
-                        PathIconIdentifiers = table.concat(pathIcons, "\31"),
-                        MaxQuantity = getGuiMaxQuantity(client, product),
-                        CooldownRemaining = getProductCooldownRemaining(client, product),
-                        CloseAfterPurchase = shouldCloseGuiAfterPurchase(product),
-                        LimitText = getAttackDefendClassLimitText(product),
-                    })
+                    table.insert(products, ps.GetGuiProduct(client, category, product, guiId))
                 end
             end
         end
@@ -1539,7 +1558,7 @@ local function validateGuiCart(client, entries)
         local maxQuantity = getGuiMaxQuantity(client, product)
         if requestedQuantity > maxQuantity then
             if not canUseQuantityInGui(product) then
-                return false, getSinglePurchaseMessage()
+                return false, Traitormod.Language.PointshopGuiSinglePurchase or Traitormod.Language.PointshopCannotBeUsed
             end
             return false, Traitormod.Language.PointshopNoStock
         end

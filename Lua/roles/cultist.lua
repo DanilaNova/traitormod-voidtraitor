@@ -33,7 +33,7 @@ function role:CultistLoop(first)
         husk.Fail = function(objective, silent)
             fail(objective, silent)
 
-            if Traitormod.IsSecretEnding() then return end
+            if Traitormod.IsRoundFinalizing() then return end
 
             local delay = math.random(this.NextObjectiveDelayMin, this.NextObjectiveDelayMax) * 1000
             Timer.Wait(function(...)
@@ -126,6 +126,11 @@ function role:End(roundEnd)
         --Traitormod.SendMessage(client, Traitormod.Language.TraitorDeath, "InfoFrameTabButton.Traitor")
         Traitormod.UpdateVanillaTraitor(client, false)
     end
+end
+
+function role:Transfer(character)
+    Traitormod.RoleManager.Roles.Role.Transfer(self, character)
+    character.AddAbilityFlag(AbilityFlags.IgnoredByEnemyAI)
 end
 
 ---@return string mainPart, string subPart
@@ -229,9 +234,9 @@ end)
 
 Hook.Patch("Traitormod.Cultist.PreventInfectedSurrender", "Barotrauma.Character", "ServerEventRead", function (character, ptable)
     if not Game.RoundStarted then return end
-    if Traitormod.SelectedGamemode == nil or Traitormod.SelectedGamemode.Name ~= "Secret" then return end
-    if #Traitormod.RoleManager.FindCharactersByRole("Cultist") == 0 then return end
+    if Traitormod.SelectedGamemode == nil or not Traitormod.SelectedGamemode.UsesSecretRules then return end
     if not character.IsIncapacitated then return end
+    if #Traitormod.RoleManager.FindCharactersByRole("Cultist") == 0 then return end
 
     local client = ptable["c"]
     if client.Character ~= character then return end

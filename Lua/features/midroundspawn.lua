@@ -19,10 +19,10 @@ m.SetSpawnedClient = function (client, character)
     hasBeenSpawned[Traitormod.GetClientAccountKey(client)] = character
 end
 
-m.SpawnClientCharacterOnSub = function(submarine, client)
+m.SpawnClientCharacterOnSub = function(submarine, client, jobPreference)
     if not Game.RoundStarted or not client.InGame then return false end 
 
-    local spawned = m.TryCreateClientCharacter(submarine, client)
+    local spawned = m.TryCreateClientCharacter(submarine, client, jobPreference)
     hasBeenSpawned[Traitormod.GetClientAccountKey(client)] = spawned
 
     return spawned
@@ -31,7 +31,7 @@ end
 m.CrewHasJob = function(job)
     if #Client.ClientList > 1 then
         for key, value in pairs(Client.ClientList) do
-            if value.Character and value.Character.HasJob(job) then return true end
+            if value.Character and value.Character.HasJob(job) and not Traitormod.AdminGhost.IsGhost(value.Character) then return true end
         end
     end
     return false
@@ -43,25 +43,25 @@ m.GetJobVariant = function(jobId)
 end
 
 -- TryCreateClientCharacter inspied by Oiltanker
-m.TryCreateClientCharacter = function(submarine, client)
+m.TryCreateClientCharacter = function(submarine, client, jobPreference)
     local session = Game.GameSession
     local crewManager = session.CrewManager
 
     -- fix client char info
     if client.CharacterInfo == nil then client.CharacterInfo = CharacterInfo("human", client.Name) end
 
-    local jobPreference = client.JobPreferences[1]
-
     if jobPreference == nil then
-        -- if no jobPreference, set assistant
-        jobPreference = m.GetJobVariant("assistant")
-
-    elseif preventMultiCaptain and jobPreference.Prefab.Identifier == "captain" then
-        -- if crew has a captain, spawn as security
-        if m.CrewHasJob("captain") then
-            Traitormod.Log(client.Name .. " tried to mid-round spawn as second captain - assigning security instead.")
-            -- set jobPreference = security
-            jobPreference = m.GetJobVariant("securityofficer")
+        jobPreference = client.JobPreferences[1]
+        if jobPreference == nil then
+            -- if no jobPreference, set assistant
+            jobPreference = m.GetJobVariant("assistant")
+        elseif preventMultiCaptain and jobPreference.Prefab.Identifier == "captain" then
+            -- if crew has a captain, spawn as security
+            if m.CrewHasJob("captain") then
+                Traitormod.Log(client.Name .. " tried to mid-round spawn as second captain - assigning security instead.")
+                -- set jobPreference = security
+                jobPreference = m.GetJobVariant("securityofficer")
+            end
         end
     end
 
@@ -114,7 +114,7 @@ m.TryCreateClientCharacter = function(submarine, client)
 
         client.SetClientCharacter(char)
 
-        char.GiveJobItems(waypoint)
+        char.GiveJobItems(LuaUserData.IsTargetType(session.GameMode, "Barotrauma.PvPMode"), waypoint)
         char.LoadTalents()
 
         Hook.Call("traitormod.midroundspawn", client, char)

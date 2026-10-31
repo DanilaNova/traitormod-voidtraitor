@@ -34,7 +34,8 @@ category.Init = function ()
         end
     end)
 
-    Hook.Patch("Barotrauma.Items.Components.Wearable", "Equip", function(instance, ptable)
+    -- Item.Equip calls this overload directly; Wearable.Equip(Character) only forwards to it.
+    Hook.Patch("Barotrauma.Items.Components.Wearable", "Equip", { "Barotrauma.Character", "System.Boolean" }, function(instance, ptable)
         if not instance.Item.HasTag("chocker") then return end
         if instance.AllowedSlots[2] ~= InvSlotType.Head then return end
 

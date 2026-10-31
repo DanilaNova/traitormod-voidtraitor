@@ -23,4 +23,32 @@ local config = ...
 -- config.GamemodeConfig.HideAndSeekV2.WinningPointsBlue = 2000
 -- config.GamemodeConfig.HideAndSeekV2.WinningPointsRed = 2000
 
+-- Station defaults; explicit [traitormod] map settings take priority.
+-- config.GamemodeConfig.Station.JobSlots = { captain = 1, mechanic = 5, assistant = 5,
+--     securityofficer = 6, medicaldoctor = 3, surgeon = 2, engineer = 5, scientist = 5 }
+-- config.GamemodeConfig.Station.WaveMinPlayers = 20
+-- config.GamemodeConfig.Station.WaveMaxPlayers = 40
+-- config.GamemodeConfig.Station.WaveInitialDelayMinMinutes = 14
+-- config.GamemodeConfig.Station.WaveInitialDelayMaxMinutes = 19
+-- config.GamemodeConfig.Station.WaveSpawnMinDistance = 5
+-- config.GamemodeConfig.Station.WaveSpawnMaxDistance = 15
+-- config.GamemodeConfig.Station.WaveIntervals = { { Players = 40, Min = 12, Max = 16 } }
+-- Automatic events: Shared + current mode. Manual antagonist/shop calls are unchanged.
+-- Move an event between config.RandomEventConfig.ModeEvents.Shared / Secret / Station.
+
+-- ID console defaults are in baseconfig.lua; override config.IdConsole here.
+-- Add access and a cross-department preset (doors must use matching RequiredItem tags):
+-- table.insert(config.IdConsole.Access, { Tag = "vt_access_laboratory", Name = "Лаборатория" })
+-- table.insert(config.IdConsole.Presets, {
+--     Id = "engineering_laboratory", Name = "Инженер лаборатории",
+--     Tags = { "vt_access_maintenance", "vt_access_engineering",
+--              "vt_access_reactor", "vt_access_engineering_stock", "vt_access_laboratory" },
+-- })
+-- Change an existing preset (access list is independent of the displayed job):
+-- for _, preset in ipairs(config.IdConsole.Presets) do
+--     if preset.Id == "engineer" then table.insert(preset.Tags, "vt_access_cargo") end
+-- end
+-- JobId is optional: only explicitly configured native jobs change IdCard.OwnerJobId.
+-- Captain and headpersonnel presets with AllAccess also include custom Access entries.
+
 return config

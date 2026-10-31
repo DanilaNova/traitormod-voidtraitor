@@ -5,7 +5,6 @@
 local ADV2 = dofile(Traitormod.Path .. "/Lua/config/pointshop/attackdefend/utility/adv2.lua")
 local CreateClassProduct = ADV2.CreateClassProduct
 local CreateClassSubcategory = ADV2.CreateClassSubcategory
-ADV2 = nil
 
 local ShopTeamID = CharacterTeamType.Team1
 

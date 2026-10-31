@@ -2,10 +2,6 @@ local path = ...
 
 local m = {}
 
-local function ReplaceModDir(str)
-    return str:gsub("%%ModDir%%", path)
-end
-
 m.RemoveAll = function (root, name)
     while (true) do
         local element = root.Element(name) or root.Element(string.lower(name))
@@ -15,7 +11,8 @@ m.RemoveAll = function (root, name)
 end
 
 m.Add = function (root, xml)
-    xml = XDocument.Parse(ReplaceModDir(xml))
+    xml = xml:gsub("%%ModDir%%", path)
+    xml = XDocument.Parse(xml)
 
     for element in xml.Root.Elements() do
         root.Add(element)

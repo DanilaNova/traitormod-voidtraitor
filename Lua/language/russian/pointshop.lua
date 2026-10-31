@@ -292,4 +292,5 @@ language.PointshopMissingItem = "Ошибка PointShop: не удалось н�
 language.PointItemTerminalText = "В этом журнале %s очков. Введите \"claim\", чтобы забрать очки."
 language.PointItemClaimCommand = "claim"
 language.PointItemClaimedBy = "Забрано игроком %s"
+language.PointItemClaimUnavailable = "Раунд завершается: забрать очки из журнала сейчас нельзя."
 return language

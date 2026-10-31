@@ -13,8 +13,23 @@ LuaUserData.MakePropertyAccessible(serverSettingsDescriptor, "SelectedOutpostNam
 LuaUserData.MakePropertyAccessible(serverSettingsDescriptor, "HiddenSubs")
 
 local SubmarineTags = LuaUserData.CreateEnumTable("Barotrauma.SubmarineTag")
+local RespawnModes = LuaUserData.CreateEnumTable("Barotrauma.Networking.RespawnMode")
+
+vt.IsStationSub = function(sub)
+    return sub ~= nil and Traitormod.ParseSubmarineConfig(sub.Description.Value).Gamemode == "Station"
+end
+
+vt.IsStationLobby = function()
+    if Game.ServerSettings.GameModeIdentifier ~= "mission"
+        or not vt.IsStationSub(Game.NetLobbyScreen.SelectedSub) then return false end
+    for value in Game.ServerSettings.AllowedRandomMissionTypes do
+        if value == "VoidTraitorStation" then return true end
+    end
+    return false
+end
 
 local function getVoteText(key)
+    if key ~= nil and string.sub(key, 1, 7) == "MapVote" and vt.IsStationLobby() then key = "Station" .. key end
     if Traitormod ~= nil and Traitormod.Language ~= nil and Traitormod.Language[key] ~= nil then
         return Traitormod.Language[key]
     end
@@ -171,6 +186,13 @@ local function markServerSettingsDirty()
 end
 
 local function applyCommonLobbySync()
+    if vt.IsStationLobby() then
+        if vt.SubVotingBeforeStation == nil then vt.SubVotingBeforeStation = Game.ServerSettings.AllowSubVoting end
+        Game.ServerSettings.AllowSubVoting = false
+    elseif vt.SubVotingBeforeStation ~= nil then
+        Game.ServerSettings.AllowSubVoting = vt.SubVotingBeforeStation
+        vt.SubVotingBeforeStation = nil
+    end
     markServerSettingsDirty()
     syncLobby()
 end
@@ -356,7 +378,17 @@ end
 local function getEligibleSecretSubs()
     local result = {}
     for sub in SubmarineInfo.SavedSubmarines do
-        if sub.IsPlayer and not isForbiddenSecretSub(sub) then
+        if sub.IsPlayer and not vt.IsStationSub(sub) and not isForbiddenSecretSub(sub) then
+            table.insert(result, sub)
+        end
+    end
+    return result
+end
+
+local function getEligibleStationSubs()
+    local result = {}
+    for sub in SubmarineInfo.SavedSubmarines do
+        if sub.IsPlayer and vt.IsStationSub(sub) and not isHiddenSubmarine(sub) and not hasSubTag(sub, "HideInMenus") then
             table.insert(result, sub)
         end
     end
@@ -405,6 +437,7 @@ local function applySecretSelection(playerCount)
     Game.ServerSettings.SelectedSubmarine = tostring(submarine.Name)
     Game.ServerSettings.TraitorProbability = tonumber(cfg.SecretTraitorProbability) or 1
     Game.ServerSettings.SelectedLevelDifficulty = tonumber(cfg.SecretDifficulty) or 50
+    Game.ServerSettings.RespawnMode = RespawnModes[cfg.SecretRespawnMode or "MidRound"]
 
     setMissionTypeList(cfg.SecretMissionTypes)
     applyCommonLobbySync()
@@ -414,6 +447,19 @@ local function applySecretSelection(playerCount)
         tostring(submarine.Name),
         getCapacityText(submarine)
     )
+end
+
+local function applyStationSelection(playerCount)
+    local submarine = chooseBestSubmarine(getEligibleStationSubs(), playerCount)
+    if submarine == nil then return false, getVoteText("GameVoteNoStation") end
+    Game.NetLobbyScreen.SelectedModeIdentifier = "mission"
+    Game.NetLobbyScreen.SelectedSub = submarine
+    Game.ServerSettings.GameModeIdentifier = "mission"
+    Game.ServerSettings.SelectedSubmarine = tostring(submarine.Name)
+    Game.ServerSettings.TraitorProbability = 1
+    setMissionTypeList({"VoidTraitorStation"})
+    applyCommonLobbySync()
+    return true, string.format(getVoteText("GameVoteSelectedStation"), tostring(submarine.Name), getCapacityText(submarine))
 end
 
 local function applyHideSelection(playerCount)
@@ -428,6 +474,7 @@ local function applyHideSelection(playerCount)
     Game.ServerSettings.GameModeIdentifier = cfg.HideModeIdentifier or "pvp"
     Game.ServerSettings.SelectedSubmarine = tostring(submarine.Name)
     Game.ServerSettings.TraitorProbability = tonumber(cfg.HideTraitorProbability) or 0
+    Game.ServerSettings.RespawnMode = RespawnModes[cfg.HideRespawnMode or "MidRound"]
 
     local missionTypes = cfg.HideMissionTypes or {}
     if cfg.HideKeepSecretMissionTypes ~= false then
@@ -463,6 +510,7 @@ local function applyAttackDefendSelection(playerCount)
     Game.ServerSettings.GameModeIdentifier = cfg.AttackDefendModeIdentifier or "pvp"
     Game.ServerSettings.SelectedSubmarine = tostring(submarine.Name)
     Game.ServerSettings.TraitorProbability = tonumber(cfg.AttackDefendTraitorProbability) or 0
+    Game.ServerSettings.RespawnMode = RespawnModes[cfg.AttackDefendRespawnMode or "MidRound"]
 
     local missionTypes = cfg.AttackDefendMissionTypes or {}
     if cfg.AttackDefendKeepSecretMissionTypes ~= false then
@@ -483,6 +531,7 @@ end
 
 local applyHandlers = {
     Secret = applySecretSelection,
+    Station = applyStationSelection,
     AttackDefend = applyAttackDefendSelection,
     HideAndSeek = applyHideSelection
 }
@@ -500,7 +549,7 @@ local function getConfiguredGameVoteModes()
                 Name = entry.Name or modeId,
                 LanguageKey = entry.LanguageKey,
                 Text = function()
-                    return getVoteText(entry.LanguageKey, entry.Name or modeId)
+                    return getVoteText(entry.LanguageKey) or entry.Name or modeId
                 end,
                 Apply = applyHandler
             })
@@ -778,7 +827,17 @@ vt.StartVote = function(text, options, time, completed, clients)
     end
 end
 
+local nextLobbyCheck = 0
+
 Hook.Add("think", "Traitormod.Voting.Think", function()
+    -- IsStationLobby parses the submarine's JSON, so check the lobby only twice a second.
+    local stationLobby
+    if isLobbyState() and Timer.GetTime() >= nextLobbyCheck then
+        nextLobbyCheck = Timer.GetTime() + 0.5
+        stationLobby = vt.IsStationLobby()
+        if (stationLobby and Game.ServerSettings.AllowSubVoting)
+            or (not stationLobby and vt.SubVotingBeforeStation ~= nil) then applyCommonLobbySync() end
+    end
     for key, voteData in pairs(vt.Votes) do
         if Timer.GetTime() > voteData.Time then
             voteData.Completed = true
@@ -799,6 +858,8 @@ Hook.Add("think", "Traitormod.Voting.Think", function()
     if vt.MapVote ~= nil then
         if Game.RoundStarted then
             finishMapVote(getVoteText("MapVoteCancelledRoundStarted"))
+        elseif stationLobby ~= nil and vt.MapVote.StationMap ~= stationLobby then
+            finishMapVote(getVoteText("LobbyVoteCancelledMissionChanged"))
         elseif Timer.GetTime() > vt.MapVote.Time then
             finishMapVote()
         end
@@ -878,7 +939,8 @@ vt.StartMapVote = function(client, silent)
     end
 
     local playerCount = countVotePlayers()
-    local candidates = sortSubmarinesForVote(getPreferredSubmarineCandidates(getEligibleSecretSubs(), playerCount))
+    local stationMap = vt.IsStationLobby()
+    local candidates = sortSubmarinesForVote(getPreferredSubmarineCandidates(stationMap and getEligibleStationSubs() or getEligibleSecretSubs(), playerCount))
 
     if #candidates == 0 then
         Traitormod.SendMessage(client, string.format(getVoteText("MapVoteNoCandidates"), tostring(playerCount)))
@@ -892,6 +954,7 @@ vt.StartMapVote = function(client, silent)
     end
 
     vt.MapVote = {
+        StationMap = stationMap,
         Time = Timer.GetTime() + voteDuration,
         Duration = voteDuration,
         GuiId = "map:" .. tostring(Timer.GetTime()),
@@ -1048,6 +1111,7 @@ vt.GetGuiSnapshot = function(client)
     local snapshot = {
         StartBlockedReason = getGuiStartBlockedReason(),
         CanStart = isLobbyState() and vt.GameVote == nil and vt.MapVote == nil,
+        StationMap = vt.IsStationLobby(),
         GameCooldownRemaining = getVoteCooldownRemaining("game", client),
         MapCooldownRemaining = getVoteCooldownRemaining("map", client),
         Active = nil

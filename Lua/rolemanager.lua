@@ -45,7 +45,7 @@ rm.AddObjective = function(objective)
 end
 
 rm.CheckObjectives = function(endRound, silentFailures)
-    if Traitormod.IsSecretEnding() then return end
+    if Traitormod.IsRoundFinalizing() then return end
 
     for character, role in pairs(rm.RoundRoles) do
         if not character.IsDead and role.Objectives then
@@ -220,7 +220,7 @@ rm.IsSameRole = function (character1, character2)
 end
 
 rm.CallObjectiveFunction = function (functionName, ...)
-    if Traitormod.IsSecretEnding() then return end
+    if Traitormod.IsRoundFinalizing() then return end
 
     for character, role in pairs(rm.RoundRoles) do
         if not character.IsDead and role.Objectives then
@@ -250,7 +250,7 @@ Hook.Add("characterDeath", "Traitormod.RoleManager.CharacterDeath", function(dea
     rm.CallObjectiveFunction("CharacterDeath", deadCharacter)
 
     local role = rm.GetRole(deadCharacter)
-    if role then
+    if role and (Traitormod.SelectedGamemode == nil or not Traitormod.SelectedGamemode.KeepRolesOnDeath) then
         if Traitormod.ObjectiveHud ~= nil then
             Traitormod.ObjectiveHud.ClearRole(role)
         end
@@ -270,9 +270,9 @@ Hook.Patch("Barotrauma.HumanAIController", "StructureDamaged", function (instanc
     local damage = ptable["damageAmount"]
 
     if damage > 0 then return end
-    if ptable["character"] == nil then return end
+    if ptable["attacker"] == nil then return end
 
-    rm.CallObjectiveFunction("HullRepaired", ptable["character"], damage)
+    rm.CallObjectiveFunction("HullRepaired", ptable["attacker"], damage)
 end, Hook.HookMethodType.After)
 
 Hook.Patch("Barotrauma.Character", "TryAdjustHealerSkill", function (character, ptable)

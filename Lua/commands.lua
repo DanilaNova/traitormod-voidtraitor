@@ -1,4 +1,5 @@
 ----- USER COMMANDS -----
+
 Traitormod.AddCommand("!help", function (client, args)
     Traitormod.SendMessage(client, Traitormod.Language.Help)
 
@@ -117,6 +118,20 @@ end)
 Traitormod.AddCommand({"!point", "!points"}, function (client, args)
     Traitormod.SendMessage(client, Traitormod.GetDataInfo(client, true))
 
+    return true
+end)
+
+Traitormod.AddCommand("!testmode", function(client)
+    if not client.HasPermission(ClientPermissions.ConsoleCommands) then return true end
+    if not Game.RoundStarted or Traitormod.SelectedGamemode == nil then
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDTestModeUnavailable"))
+        return true
+    end
+
+    Traitormod.Config.TestMode = not Traitormod.Config.TestMode
+    Traitormod.TestModeOverride = Traitormod.Config.TestMode
+    Traitormod.SendMessage(client, Traitormod.GetText(Traitormod.Config.TestMode
+        and "CMDTestModeEnabled" or "CMDTestModeDisabled"))
     return true
 end)
 
@@ -284,7 +299,7 @@ Traitormod.AddCommand("!endroundnow", function (client, args)
     if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
 
     local selected = Traitormod.SelectedGamemode
-    if not Game.RoundStarted or selected == nil or selected.Name ~= "Secret" or not selected.Ending then
+    if not Game.RoundStarted or selected == nil or not selected.UsesSecretRules or not selected.Ending then
         Traitormod.SendMessage(client, Traitormod.Language.CommandNotActive)
         return true
     end
@@ -465,6 +480,19 @@ Traitormod.AddCommand("!unvoid", function (client, args)
     voidPos[target.Character] = nil
     
     Traitormod.SendMessage(client, Traitormod.GetText("CMDVoidRemoved"))
+
+    return true
+end)
+
+Traitormod.AddCommand("!aghost", function (client, args)
+    if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
+
+    if not Game.RoundStarted then
+        Traitormod.SendMessage(client, Traitormod.Language.RoundNotStarted)
+        return true
+    end
+
+    Traitormod.AdminGhost.Toggle(client)
 
     return true
 end)

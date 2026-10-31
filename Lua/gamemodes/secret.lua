@@ -1,4 +1,4 @@
-local weightedRandom = dofile(Traitormod.Path .. "/Lua/gamemodes/weightedrandom.lua")
+local weightedRandom = dofile(Traitormod.Path .. "/Lua/weightedrandom.lua")
 local gm = Traitormod.Gamemodes.Gamemode:new()
 
 if not LuaUserData.IsRegistered("Barotrauma.CheckDataAction") then LuaUserData.RegisterType("Barotrauma.CheckDataAction") end
@@ -6,12 +6,16 @@ local gameServerDescriptor = Descriptors["Barotrauma.Networking.GameServer"] or 
 local transitionTypes = LuaUserData.CreateEnumTable("Barotrauma.CampaignMode+TransitionType")
 local voteTypes = LuaUserData.CreateEnumTable("Barotrauma.Networking.VoteType")
 LuaUserData.MakePropertyAccessible(gameServerDescriptor, "EndRoundTimer")
+local respawnManagerDescriptor = Descriptors["Barotrauma.Networking.RespawnManager"] or LuaUserData.RegisterType("Barotrauma.Networking.RespawnManager")
+LuaUserData.MakeFieldAccessible(respawnManagerDescriptor, "teamSpecificStates")
+LuaUserData.RegisterType("System.Collections.Generic.Dictionary`2[[Barotrauma.CharacterTeamType],[Barotrauma.Networking.RespawnManager+TeamSpecificState]], System.Collections")
 
 local summaryNetMessage = "VoidTraitor_RoundSummary"
 local lobbySummaryPending = nil
 local missionDescriptors = {}
 
 gm.Name = "Secret"
+gm.UsesSecretRules = true
 
 local function missionWouldComplete(mission, transitionType)
     if mission == nil or mission.ForceFailure then return false end
@@ -58,7 +62,7 @@ local function reachedLevelEnd()
     local charactersOutsideOutpost = 0
     for _, client in pairs(Client.ClientList) do
         local character = client.Character
-        if character ~= nil and not character.IsDead and not character.IsUnconscious then
+        if character ~= nil and not character.IsDead and not character.IsUnconscious and not Traitormod.AdminGhost.IsGhost(character) then
             if character.Submarine == endOutpost then
                 charactersInsideOutpost = charactersInsideOutpost + 1
             else
@@ -73,6 +77,26 @@ local function reachedLevelEnd()
 
     return (mainSub.AtEndExit and charactersInsideOutpost > 0)
         or charactersInsideOutpost > charactersOutsideOutpost
+end
+
+-- The game's own check counts every client's character; here ghost-role creatures,
+-- free cameras and admin ghosts don't count as living crew.
+local function crewDown()
+    for _, client in pairs(Client.ClientList) do
+        local character = client.Character
+        if character ~= nil and character.IsHuman and character.TeamID == CharacterTeamType.Team1
+            and not character.IsDead and not character.IsIncapacitated
+        then
+            return false
+        end
+    end
+    return true
+end
+
+-- true while the crew's respawn countdown is running
+local function respawnPending()
+    local respawnManager = Game.RespawnManager
+    return respawnManager ~= nil and respawnManager.teamSpecificStates[CharacterTeamType.Team1].RespawnCountdownStarted
 end
 
 
@@ -130,10 +154,12 @@ function gm:Start()
     self.EndTransitionType = transitionTypes.None
     self.EndViaCampaignTransition = false
     self.EndTransitionStarted = false
+    self.CrewDownEndsAt = nil
     self.FinalSummary = nil
     self.AwardedPoints = {}
     self.InitialCrew = {}
     self.InitialCrewDeaths = {}
+    local crewCount = 0
     for _, client in pairs(Client.ClientList) do
         local character = client.Character
         if character ~= nil
@@ -142,12 +168,15 @@ function gm:Start()
             and character.TeamID == CharacterTeamType.Team1
         then
             self.InitialCrew[Traitormod.GetClientAccountKey(client)] = true
+            crewCount = crewCount + 1
         end
     end
+    -- set it here too, otherwise the crew-down check could end a solo test round before antagonists are picked
+    self:UpdateTestMode(crewCount)
     lobbySummaryPending = nil
 
     if self.EnableRandomEvents then
-        Traitormod.RoundEvents.Initialize()
+        Traitormod.RoundEvents.Initialize(nil, self.Name)
     end
 
     Hook.Add("characterDeath", "Traitormod.Secret.CharacterDeath", function(character, affliction)
@@ -261,6 +290,13 @@ function gm:AssignAntagonists(antagonists)
     end
 end
 
+-- Test mode is on when only one player is in the round, unless an admin set it with !testmode.
+function gm:UpdateTestMode(playerCount)
+    if Traitormod.TestModeOverride == nil then
+        Traitormod.Config.TestMode = playerCount == 1
+    end
+end
+
 function gm:SelectAntagonists()
     local this = self
     local thisRoundNumber = Traitormod.RoundNumber
@@ -277,7 +313,9 @@ function gm:SelectAntagonists()
             -- valid traitor choices must be ingame, player was spawned before (has a character), is no spectator
             if value.InGame and value.Character and not value.SpectateOnly then
                 -- filter by config
-                if this.TraitorFilter(value) > 0 and Traitormod.GetData(value, "NonTraitor") ~= true then
+                if this.TraitorFilter(value) > 0 and Traitormod.GetData(value, "NonTraitor") ~= true
+                    and not Traitormod.AdminGhost.IsGhost(value.Character)
+                then
                     -- players are alive or if respawning is on and config allows dead traitors (not supported yet)
                     if not value.Character.IsDead and Traitormod.RoleManager.GetRole(value.Character) == nil then
                         clientWeight[value] = (Traitormod.GetData(value, "Weight") or 0) * this.TraitorFilter(value)
@@ -292,6 +330,11 @@ function gm:SelectAntagonists()
             this:AssignAntagonists({})
             Traitormod.Log("No players to assign traitors")
             return
+        end
+
+        this:UpdateTestMode(playerInGame)
+        if playerInGame == 1 and Traitormod.Config.TestMode then
+            Traitormod.SendMessageEveryone(Traitormod.Language.TestingMode)
         end
 
         local amountTraitors = this.AmountTraitors(playerInGame)
@@ -667,8 +710,26 @@ function gm:End()
     Hook.Remove("traitormod.midroundspawn", "Traitormod.Secret.MidRoundSpawn")
 end
 
+function gm:UpdateCrewDown()
+    if self.Ending or not self.EndWhenCrewDown then
+        self.CrewDownEndsAt = nil
+    elseif Traitormod.Config.TestMode or not crewDown() or respawnPending() then
+        if self.CrewDownEndsAt ~= nil then
+            self.CrewDownEndsAt = nil
+            Traitormod.SendMessageEveryone(Traitormod.Language.SecretCrewDownCancelled)
+        end
+    elseif self.CrewDownEndsAt == nil then
+        self.CrewDownEndsAt = Timer.GetTime() + self.CrewDownEndDelaySeconds
+        Traitormod.SendMessageEveryone(string.format(Traitormod.Language.SecretCrewDownCountdown, self.CrewDownEndDelaySeconds))
+    elseif Timer.GetTime() >= self.CrewDownEndsAt then
+        self:BeginEnding("crewdown")
+    end
+end
+
 function gm:Think()
     if not Game.RoundStarted then return end
+
+    self:UpdateCrewDown()
 
     if self.Ending then return end
 
@@ -734,7 +795,7 @@ end, Hook.HookMethodType.Before)
 
 Hook.Patch("Traitormod.Secret.EndGame.Before", "Barotrauma.Networking.GameServer", "EndGame", function (instance, ptable)
     local selected = Traitormod.SelectedGamemode
-    if selected == nil or selected.Name ~= "Secret" then return end
+    if selected == nil or not selected.UsesSecretRules then return end
 
     if selected.AllowRealEndGame then
         if selected.Ending and not selected.EndTransitionStarted then
@@ -753,6 +814,18 @@ Hook.Patch("Traitormod.Secret.EndGame.Before", "Barotrauma.Networking.GameServer
 
     selected:BeginEnding("manual", ptable["transitionType"] or transitionTypes.None, false)
     ptable.PreventExecution = true
+end, Hook.HookMethodType.Before)
+
+-- Secret ends rounds by its own rules (UpdateCrewDown, reaching the level end). The game's end-round timer is kept
+-- between zero and its delay, so it never announces a crew death or ends the round by itself.
+-- Dead players see this timer, so it shows the crew-down countdown.
+Hook.Patch("Traitormod.Secret.EndRoundTimer", "Barotrauma.Networking.GameServer", "Update", { "System.Single" }, function (instance)
+    local selected = Traitormod.SelectedGamemode
+    if selected == nil or not selected.UsesSecretRules or not Game.RoundStarted then return end
+
+    local delay = instance.EndRoundDelay
+    local remaining = selected.CrewDownEndsAt ~= nil and selected.CrewDownEndsAt - Timer.GetTime() or delay
+    instance.EndRoundTimer = math.max(delay - math.max(remaining, 1), 0.01)
 end, Hook.HookMethodType.Before)
 
 Hook.Patch("Traitormod.Secret.EndGame.After", "Barotrauma.Networking.GameServer", "EndGame", function ()

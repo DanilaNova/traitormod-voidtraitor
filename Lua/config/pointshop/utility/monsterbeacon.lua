@@ -4,15 +4,11 @@ local monsterBeacons = {}
 local monsterBeaconConfig = {}
 local timer = 0
 
-local function IsCharacterSpeciesAvailable(species)
-    return CharacterPrefab.FindBySpeciesName(Identifier(species)) ~= nil
-end
-
 local function IsMonsterBeaconPoolValid(pool)
     if pool == nil or pool.Creatures == nil or #pool.Creatures == 0 then return false end
 
     for _, species in ipairs(pool.Creatures) do
-        if not IsCharacterSpeciesAvailable(species) then
+        if CharacterPrefab.FindBySpeciesName(Identifier(species)) == nil then
             return false
         end
     end
@@ -38,11 +34,6 @@ local function GetAvailableMonsterBeaconPools()
     end
 
     return pools
-end
-
-local function GetBeaconInterfaceState(item)
-    local interface = item.GetComponentString("CustomInterface")
-    return interface ~= nil and interface.customInterfaceElementList[1].State
 end
 
 local function GetBeaconTargetSubmarine(item, sourceCharacter)
@@ -218,7 +209,8 @@ function monsterBeacon.Init()
             if item == nil or item.Removed then
                 monsterBeacons[item] = nil
             else
-                if GetBeaconInterfaceState(item) then
+                local interface = item.GetComponentString("CustomInterface")
+                if interface ~= nil and interface.customInterfaceElementList[1].State then
                     data.TimeLeft = data.TimeLeft - 5
                 end
 

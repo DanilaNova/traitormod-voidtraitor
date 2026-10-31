@@ -3,11 +3,13 @@ if Traitormod.EventNPC ~= nil then return Traitormod.EventNPC end
 local npc = {}
 local homeSubmarines = {}
 local returnObjectives = {}
+local patchAI
 local idleBehavior = LuaUserData.CreateEnumTable("Barotrauma.AIObjectiveIdle+BehaviorType")
 local idleDescriptor = LuaUserData.RegisterType("Barotrauma.AIObjectiveIdle")
 LuaUserData.MakeFieldAccessible(idleDescriptor, "targetHulls")
 LuaUserData.MakeFieldAccessible(idleDescriptor, "hullWeights")
 LuaUserData.MakeFieldAccessible(LuaUserData.RegisterType("Barotrauma.HumanAIController"), "steeringManager")
+LuaUserData.RegisterType("System.Collections.Generic.HashSet`1[[Barotrauma.WayPoint]], System.Collections")
 
 local function getSpawnPoints(submarine)
     local waypoints = submarine.GetWaypoints(false)
@@ -41,7 +43,7 @@ local function getSpawnPoints(submarine)
     for _, waypoint in pairs(waypoints) do
         local hull = waypoint.CurrentHull
         if hull ~= nil and hull.Submarine == submarine and not hull.AvoidStaying
-            and not waypoint.IsObstructed and waypoint.Ladders == nil and waypoint.ConnectedDoor == nil then
+            and waypoint.Ladders == nil and waypoint.ConnectedDoor == nil then
             local danger = hull.FireCount
             local distance = math.huge
             for _, threat in ipairs(threats) do
@@ -85,6 +87,7 @@ function npc.GetSpawnPoint(submarine)
 end
 
 function npc.Stay(character, submarine)
+    patchAI()
     homeSubmarines[character] = submarine
     for _, objective in pairs(character.AIController.ObjectiveManager.Objectives) do
         if objective.Identifier == "idle" then
@@ -124,98 +127,6 @@ local function distanceToSubmarine(character, submarine)
     return dx * dx + dy * dy
 end
 
--- NPCs away from home are sent back with a forced GoTo order, which also paths from outside.
-Hook.Patch("Barotrauma.AIObjectiveManager", "UpdateObjectives", function(instance, ptable)
-    local character = instance.HumanAIController.Character
-    local home = getHome(character)
-    if home == nil or (character.CurrentHull ~= nil and character.Submarine == home) then
-        clearReturn(character)
-        return
-    end
-
-    -- don't interrupt combat, it uses the same steering
-    if instance.CurrentObjective ~= nil and instance.CurrentObjective.Identifier == "combat" then return end
-
-    -- more than 50 m from home: go to the nearest allowed submarine instead
-    if distanceToSubmarine(character, home) > 5000 ^ 2 then
-        local nearest, distance = home, distanceToSubmarine(character, home)
-        for _, submarine in pairs(Submarine.Loaded) do
-            if submarine == Submarine.MainSub or submarine == Level.Loaded.BeaconStation or submarine.Info.IsWreck then
-                local d = distanceToSubmarine(character, submarine)
-                if d < distance then nearest = submarine; distance = d end
-            end
-        end
-        if nearest ~= home then
-            clearReturn(character)
-            home = nearest
-            homeSubmarines[character] = home
-        end
-    end
-
-    local state = returnObjectives[character]
-    if state == nil or (state.Objective.IsCompleted or not state.Objective.CanBeCompleted or state.Exterior)
-        and Timer.GetTime() >= state.RetryAt then
-        clearReturn(character)
-        local target, path, distance
-        local entrance, entranceDistance
-        local steering = character.AIController.PathSteering
-        local unreachableHulls = {}
-        for hull in character.AIController.UnreachableHulls do unreachableHulls[hull] = true end
-        for _, hull in pairs(home.GetHulls(false)) do
-            local d = Vector2.DistanceSquared(character.WorldPosition, hull.WorldPosition)
-            if hull.IsAirlock or hull.LeadsOutside(character) then
-                if entrance == nil or d < entranceDistance then entrance = hull; entranceDistance = d end
-            end
-            if not unreachableHulls[hull] and (target == nil or hull.IsAirlock and not target.IsAirlock or hull.IsAirlock == target.IsAirlock and d < distance) then
-                local route = steering.PathFinder.FindPath(character.SimPosition, character.GetRelativeSimPosition(hull), character.Submarine, nil, 0, nil, nil, nil, false)
-                if not route.Unreachable then
-                    target = hull; path = route; distance = d
-                end
-            end
-        end
-        local exterior = target == nil
-        if target == nil then
-            -- If every entry is blocked, approach a reachable exterior point and retry.
-            for _, waypoint in pairs(home.GetWaypoints(false)) do
-                if waypoint.CurrentHull == nil and not waypoint.IsObstructed then
-                    local d = Vector2.DistanceSquared(waypoint.WorldPosition, entrance and entrance.WorldPosition or home.WorldPosition)
-                    if target == nil or d < distance then
-                        local route = steering.PathFinder.FindPath(character.SimPosition, character.GetRelativeSimPosition(waypoint), character.Submarine, nil, 0, nil, nil, nil, false)
-                        if not route.Unreachable then target = waypoint; path = route; distance = d end
-                    end
-                end
-            end
-        end
-        if target == nil then
-            for _, waypoint in pairs(home.GetWaypoints(false)) do
-                if waypoint.CurrentHull == nil and not waypoint.IsObstructed then
-                    local d = Vector2.DistanceSquared(character.WorldPosition, waypoint.WorldPosition)
-                    if target == nil or d < distance then target = waypoint; distance = d end
-                end
-            end
-        end
-        if target == nil then target = npc.GetSpawnPoint(home) end
-        if target == nil then return end
-        local objective = AIObjectiveGoTo(target, character, instance, exterior)
-        objective.AllowGoingOutside = true
-        -- above ordinary tasks, below combat and urgent treatment
-        objective.OverridePriority = 89
-        returnObjectives[character] = { Objective = objective, PreviousOrder = instance.ForcedOrder, Exterior = exterior, RetryAt = Timer.GetTime() + 5 }
-        instance.SetForcedOrder(objective)
-        instance.WaitTimer = 0
-        instance.SortObjectives()
-        if path ~= nil then steering.SetPath(character.GetRelativeSimPosition(target), path) end
-    end
-end, Hook.HookMethodType.Before)
-
-Hook.Patch("Barotrauma.AIObjectiveFindSafety", "GetPriority", function(instance, ptable)
-    local character = instance.character
-    if returnObjectives[character] ~= nil and getHome(character) ~= nil
-        and character.IsProtectedFromPressure and not character.IsLowInOxygen then
-        return 0
-    end
-end, Hook.HookMethodType.After)
-
 -- With the list type registered we get the C# list instead of a table copy; it is unregistered again
 -- so other mods still get tables.
 local function getList(instance, field, typeName)
@@ -226,54 +137,152 @@ local function getList(instance, field, typeName)
     return list
 end
 
--- idle wandering normally skips wrecks, but event NPCs should patrol them too
-Hook.Patch("Barotrauma.AIObjectiveIdle", "FindTargetHulls", function(instance, ptable)
-    local home = getHome(instance.character)
-    if home == nil then return end
-
-    local targetHulls = getList(instance, "targetHulls", "System.Collections.Generic.List`1[Barotrauma.Hull]")
-    local hullWeights = getList(instance, "hullWeights", "System.Collections.Generic.List`1[System.Single]")
-    targetHulls.Clear()
-    hullWeights.Clear()
-    local unsafeHulls = {}
-    for hull in instance.character.AIController.UnsafeHulls do unsafeHulls[hull] = true end
-    for _, point in ipairs(getSpawnPoints(home)) do
-        local hull = point.Waypoint.CurrentHull
-        if point.Danger == 0 and not unsafeHulls[hull]
-            and hull.RectWidth >= 200 and hull.CeilingHeight >= ConvertUnits.ToDisplayUnits(Single(instance.character.AnimController.HeadPosition))
-            and not targetHulls.Contains(hull) then
-            targetHulls.Add(hull)
-            hullWeights.Add(math.max(0.01, 1 - point.Water / 100))
+-- Patched only when the first NPC is told to stay: the patch then runs on every bot update for the rest of the session.
+local aiPatched = false
+function patchAI()
+    if aiPatched then return end
+    aiPatched = true
+    -- NPCs away from home are sent back with a forced GoTo order, which also paths from outside.
+    Hook.Patch("Barotrauma.AIObjectiveManager", "UpdateObjectives", function(instance, ptable)
+        local character = instance.HumanAIController.Character
+        local home = getHome(character)
+        if home == nil or (character.CurrentHull ~= nil and character.Submarine == home) then
+            clearReturn(character)
+            return
         end
-    end
-end, Hook.HookMethodType.After)
 
-Hook.Patch("Barotrauma.AIObjectiveFindSafety", "FindBestHull", function(instance, ptable)
-    if getHome(instance.character) ~= nil then
-        ptable["allowChangingSubmarine"] = false
-    end
-end, Hook.HookMethodType.Before)
+        -- don't interrupt combat, it uses the same steering
+        if instance.CurrentObjective ~= nil and instance.CurrentObjective.Identifier == "combat" then return end
 
-Hook.Patch("Barotrauma.AIObjectiveGoTo", "Act", function(instance, ptable)
-    local home = getHome(instance.character)
-    if home == nil then return end
+        -- more than 50 m from home: go to the nearest allowed submarine instead
+        if distanceToSubmarine(character, home) > 5000 ^ 2 then
+            local nearest, distance = home, distanceToSubmarine(character, home)
+            for _, submarine in pairs(Submarine.Loaded) do
+                if submarine == Submarine.MainSub or submarine == Level.Loaded.BeaconStation or submarine.Info.IsWreck then
+                    local d = distanceToSubmarine(character, submarine)
+                    if d < distance then nearest = submarine; distance = d end
+                end
+            end
+            if nearest ~= home then
+                clearReturn(character)
+                home = nearest
+                homeSubmarines[character] = home
+            end
+        end
 
-    local source = instance.SourceObjective
-    while source ~= nil do
-        if source.Identifier == "combat" then return end
-        source = source.SourceObjective
-    end
+        local state = returnObjectives[character]
+        if state == nil or (state.Objective.IsCompleted or not state.Objective.CanBeCompleted or state.Exterior)
+            and Timer.GetTime() >= state.RetryAt then
+            clearReturn(character)
+            local target, path, distance
+            local entrance, entranceDistance
+            local steering = character.AIController.PathSteering
+            local unreachableHulls = {}
+            for hull in character.AIController.UnreachableHulls do unreachableHulls[hull] = true end
+            for _, hull in pairs(home.GetHulls(false)) do
+                local d = Vector2.DistanceSquared(character.WorldPosition, hull.WorldPosition)
+                if hull.IsAirlock or hull.LeadsOutside(character) then
+                    if entrance == nil or d < entranceDistance then entrance = hull; entranceDistance = d end
+                end
+                if not unreachableHulls[hull] and (target == nil or hull.IsAirlock and not target.IsAirlock or hull.IsAirlock == target.IsAirlock and d < distance) then
+                    local route = steering.PathFinder.FindPath(character.SimPosition, character.GetRelativeSimPosition(hull), character.Submarine, nil, 0, nil, nil, nil, false)
+                    if not route.Unreachable then
+                        target = hull; path = route; distance = d
+                    end
+                end
+            end
+            local exterior = target == nil
+            if target == nil then
+                -- If every entry is blocked, approach a reachable exterior point and retry.
+                for _, waypoint in pairs(home.GetWaypoints(false)) do
+                    if waypoint.CurrentHull == nil and waypoint.ObstructedConnections.Count == 0 then
+                        local d = Vector2.DistanceSquared(waypoint.WorldPosition, entrance and entrance.WorldPosition or home.WorldPosition)
+                        if target == nil or d < distance then
+                            local route = steering.PathFinder.FindPath(character.SimPosition, character.GetRelativeSimPosition(waypoint), character.Submarine, nil, 0, nil, nil, nil, false)
+                            if not route.Unreachable then target = waypoint; path = route; distance = d end
+                        end
+                    end
+                end
+            end
+            if target == nil then
+                for _, waypoint in pairs(home.GetWaypoints(false)) do
+                    if waypoint.CurrentHull == nil and waypoint.ObstructedConnections.Count == 0 then
+                        local d = Vector2.DistanceSquared(character.WorldPosition, waypoint.WorldPosition)
+                        if target == nil or d < distance then target = waypoint; distance = d end
+                    end
+                end
+            end
+            if target == nil then target = npc.GetSpawnPoint(home) end
+            if target == nil then return end
+            local objective = AIObjectiveGoTo(target, character, instance, exterior)
+            objective.AllowGoingOutside = true
+            -- above ordinary tasks, below combat and urgent treatment
+            objective.OverridePriority = 89
+            returnObjectives[character] = { Objective = objective, PreviousOrder = instance.ForcedOrder, Exterior = exterior, RetryAt = Timer.GetTime() + 5 }
+            instance.SetForcedOrder(objective)
+            instance.WaitTimer = 0
+            instance.SortObjectives()
+            if path ~= nil then steering.SetPath(character.GetRelativeSimPosition(target), path) end
+        end
+    end, Hook.HookMethodType.Before)
 
-    instance.AllowGoingOutside = instance.character.CurrentHull == nil or instance.character.Submarine ~= home
-    local state = returnObjectives[instance.character]
-    if state ~= nil and state.Objective == instance then
-        instance.character.AIController.steeringManager = instance.character.AIController.PathSteering
-    end
-    if instance.Target ~= nil and instance.Target.Submarine ~= home then
-        instance.Abandon = true
-        ptable.PreventExecution = true
-    end
-end, Hook.HookMethodType.Before)
+    Hook.Patch("Barotrauma.AIObjectiveFindSafety", "GetPriority", function(instance, ptable)
+        local character = instance.character
+        if returnObjectives[character] ~= nil and getHome(character) ~= nil
+            and character.IsProtectedFromPressure and not character.IsLowInOxygen then
+            return 0
+        end
+    end, Hook.HookMethodType.After)
+
+    -- idle wandering normally skips wrecks, but event NPCs should patrol them too
+    Hook.Patch("Barotrauma.AIObjectiveIdle", "FindTargetHulls", function(instance, ptable)
+        local home = getHome(instance.character)
+        if home == nil then return end
+
+        local targetHulls = getList(instance, "targetHulls", "System.Collections.Generic.List`1[Barotrauma.Hull]")
+        local hullWeights = getList(instance, "hullWeights", "System.Collections.Generic.List`1[System.Single]")
+        targetHulls.Clear()
+        hullWeights.Clear()
+        local unsafeHulls = {}
+        for hull in instance.character.AIController.UnsafeHulls do unsafeHulls[hull] = true end
+        for _, point in ipairs(getSpawnPoints(home)) do
+            local hull = point.Waypoint.CurrentHull
+            if point.Danger == 0 and not unsafeHulls[hull]
+                and hull.RectWidth >= 200 and hull.CeilingHeight >= ConvertUnits.ToDisplayUnits(Single(instance.character.AnimController.HeadPosition))
+                and not targetHulls.Contains(hull) then
+                targetHulls.Add(hull)
+                hullWeights.Add(math.max(0.01, 1 - point.Water / 100))
+            end
+        end
+    end, Hook.HookMethodType.After)
+
+    Hook.Patch("Barotrauma.AIObjectiveFindSafety", "FindBestHull", function(instance, ptable)
+        if getHome(instance.character) ~= nil then
+            ptable["allowChangingSubmarine"] = false
+        end
+    end, Hook.HookMethodType.Before)
+
+    Hook.Patch("Barotrauma.AIObjectiveGoTo", "Act", function(instance, ptable)
+        local home = getHome(instance.character)
+        if home == nil then return end
+
+        local source = instance.SourceObjective
+        while source ~= nil do
+            if source.Identifier == "combat" then return end
+            source = source.SourceObjective
+        end
+
+        instance.AllowGoingOutside = instance.character.CurrentHull == nil or instance.character.Submarine ~= home
+        local state = returnObjectives[instance.character]
+        if state ~= nil and state.Objective == instance then
+            instance.character.AIController.steeringManager = instance.character.AIController.PathSteering
+        end
+        if instance.Target ~= nil and instance.Target.Submarine ~= home then
+            instance.Abandon = true
+            ptable.PreventExecution = true
+        end
+    end, Hook.HookMethodType.Before)
+end
 
 Hook.Add("roundEnd", "Traitormod.EventNPC.EndRound", function()
     homeSubmarines = {}
