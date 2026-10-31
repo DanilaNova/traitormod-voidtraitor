@@ -18,6 +18,7 @@ local respawnTimer = 0
 local transportTimer = 0
 
 local lastTimerDisplay = 0
+local respawnCheckTimer = 0.25
 
 local function RespawnMessage(msg)
     for key, client in pairs(Client.ClientList) do
@@ -108,7 +109,7 @@ local function SpawnCharacter(client, submarine)
     Traitormod.RespawnedCharacters[character] = client
 
     if Traitormod.Config.RespawnedPlayersDontLooseLives then
-        Traitormod.LostLivesThisRound[client.SteamID] = true
+        Traitormod.LostLivesThisRound[Traitormod.GetClientAccountKey(client)] = true
     end
 end
 
@@ -148,34 +149,57 @@ local function ResetSubmarine(submarine)
     end
 end
 
-Hook.Add("think", "RespawnShuttle.Think", function ()
-    if Traitormod.DisableRespawnShuttle then return end
+Hook.Add("think", "DeathSwarm.Think", function (deltaTime)
+    if Traitormod.DisableRespawnShuttle then
+        respawnCheckTimer = 0.25
+        return
+    end
     if not Game.RoundStarted then return end
-    if not Traitormod.SubmarineBuilder.IsActive() then return end
-
-    local ratio = #GetRespawnClients() / #Client.ClientList
-
-    if #Client.ClientList == 0 then
-        ratio = 0
-    end
-
-    if ratio > Game.ServerSettings.MinRespawnRatio then
-        if not timerActive and not transporting then
-            timerActive = true
-            respawnTimer = Game.ServerSettings.RespawnInterval
-            lastTimerDisplay = respawnTimer
-            RespawnMessage(string.format(Traitormod.Config.RespawnText, math.floor(respawnTimer)))
-        end
-    else
-        timerActive = false
-    end
-
-    if timerActive then
-        respawnTimer = respawnTimer - (1 / 60)
+    if not Traitormod.SubmarineBuilder.IsActive() then
+        respawnCheckTimer = 0.25
+        return
     end
 
     if transporting then
-        transportTimer = transportTimer - (1 / 60)
+        respawnCheckTimer = 0.25
+    else
+        respawnCheckTimer = respawnCheckTimer + deltaTime
+        if respawnCheckTimer >= 0.25 then
+            respawnCheckTimer = 0
+
+            local clientCount = 0
+            local respawnClientCount = 0
+            for _, client in pairs(Client.ClientList) do
+                clientCount = clientCount + 1
+                if client.Character == nil or client.Character.IsDead then
+                    respawnClientCount = respawnClientCount + 1
+                end
+            end
+
+            local ratio = 0
+            if clientCount > 0 then
+                ratio = respawnClientCount / clientCount
+            end
+
+            if ratio > Game.ServerSettings.MinRespawnRatio then
+                if not timerActive then
+                    timerActive = true
+                    respawnTimer = Game.ServerSettings.RespawnInterval
+                    lastTimerDisplay = respawnTimer
+                    RespawnMessage(string.format(Traitormod.Config.RespawnText, math.floor(respawnTimer)))
+                end
+            else
+                timerActive = false
+            end
+        end
+    end
+
+    if timerActive then
+        respawnTimer = respawnTimer - deltaTime
+    end
+
+    if transporting then
+        transportTimer = transportTimer - deltaTime
     end
 
     local timerDisplayMax = 15
@@ -220,12 +244,13 @@ Hook.Add("think", "RespawnShuttle.Think", function ()
     end
 end)
 
-Hook.Add("roundEnd", "RespawnShuttle.RoundEnd", function ()
+Hook.Add("roundEnd", "DeathSwarm.RoundEnd", function ()
     timerActive = false
     transporting = false
     respawnTimer = 0
     transportTimer = 0
     lastTimerDisplay = 0
+    respawnCheckTimer = 0.25
 end)
 
 return extension

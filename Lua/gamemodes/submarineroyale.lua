@@ -1,6 +1,5 @@
 -- lmao
 
-local weightedRandom = dofile(Traitormod.Path .. "/Lua/weightedrandom.lua")
 local gm = Traitormod.Gamemodes.Gamemode:new()
 
 gm.Name = "SubmarineRoyale"
@@ -12,6 +11,7 @@ gm.radiationEnabled = false
 
 local radiationPrefab = AfflictionPrefab.Prefabs["radiationsickness"]
 local antiRadPrefab = ItemPrefab.GetItemPrefab("antirad")
+local radiationStrengthPerSecond = 0.15
 
 
 local function StringStarts(String,Start)
@@ -118,6 +118,7 @@ function gm:StartRadiation(args, client)
     end
 
     self.radiationEnabled = true
+    self.LastRadiationUpdate = Traitormod.RoundTime
 
     return true
 end
@@ -311,30 +312,36 @@ function gm:End()
 end
 
 function gm:Think()
-    local aliveClientCount = 0
-    for _, client in pairs(Client.ClientList) do
-        if client.Character and not client.Character.IsDead and client.Character.IsHuman then
-            aliveClientCount = aliveClientCount + 1
+    if not self.Ending then
+        local aliveClientCount = 0
+        for _, client in pairs(Client.ClientList) do
+            if client.Character and not client.Character.IsDead and client.Character.IsHuman then
+                aliveClientCount = aliveClientCount + 1
+            end
+        end
+
+        if aliveClientCount < 2 then
+            Traitormod.SendMessageEveryone(Traitormod.Language.SubmarineRoyaleEnd)
+            Timer.Wait(function ()
+                Game.EndGame()
+            end, 5000)
+
+            self.Ending = true
         end
     end
 
-    if aliveClientCount < 2 and not self.Ending then
-        Traitormod.SendMessageEveryone(Traitormod.Language.SubmarineRoyaleEnd)
-        Timer.Wait(function ()
-            Game.EndGame()
-        end, 5000)
-
-        self.Ending = true
-    end
-
     if not self.radiationEnabled then return end
+
+    local radiationDeltaTime = math.max(0, Traitormod.RoundTime - self.LastRadiationUpdate)
+    self.LastRadiationUpdate = Traitormod.RoundTime
+    local radiationStrength = radiationStrengthPerSecond * radiationDeltaTime
 
     for key, value in pairs(Client.ClientList) do
         if value.Character and not value.Character.IsDead then
             local char = value.Character
             local limb = char.AnimController.MainLimb
 
-            char.CharacterHealth.ApplyAffliction(limb, radiationPrefab.Instantiate(0.0025))
+            char.CharacterHealth.ApplyAffliction(limb, radiationPrefab.Instantiate(radiationStrength))
         end
     end
 end

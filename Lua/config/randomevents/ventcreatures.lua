@@ -1,10 +1,10 @@
 local event = {}
 
 event.Name = "VentCreatures"
-event.MinRoundTime = 8
+event.MinRoundTime = 5
 event.MinIntensity = 0
 event.MaxIntensity = 1
-event.ChancePerMinute = 0.006
+event.ChancePerMinute = 0.075
 event.OnlyOncePerRound = true
 
 local monsterPool = { "crawler_hatchling", "tigerthresher_hatchling", "mudraptor_hatchling" }
@@ -17,11 +17,7 @@ local clownPetPool = {
 }
 
 local function isSpeciesAvailable(species)
-    local ok, prefab = pcall(function()
-        return CharacterPrefab.FindBySpeciesName(Identifier(species))
-    end)
-
-    return ok and prefab ~= nil
+    return CharacterPrefab.FindBySpeciesName(Identifier(species)) ~= nil
 end
 
 local function getVentItems()
@@ -67,19 +63,17 @@ local function getAvailableMappedPool(map)
     return available
 end
 
-local function assignGhostRole(character, prefix)
-    event.SpawnedRoles = (event.SpawnedRoles or 0) + 1
-
-    Traitormod.GhostRoles.Ask(prefix .. " " .. tostring(event.SpawnedRoles), function(client)
-        Traitormod.LostLivesThisRound[client.SteamID] = false
-        client.SetClientCharacter(character)
-    end, character)
+local function assignGhostRole(character)
+    local roleConfig = Traitormod.GhostRoles.GetConfigBySpecies("ventcreatures", character.SpeciesName.Value)
+    if roleConfig ~= nil then
+        Traitormod.GhostRoles.Create(roleConfig.FullIdentifier, character)
+    end
 end
 
 local function spawnCreature(species, position, giveGhostRole)
     Entity.Spawner.AddCharacterToSpawnQueue(species, position, function(character)
         if giveGhostRole and character ~= nil then
-            assignGhostRole(character, "Vent Creature")
+            assignGhostRole(character)
         end
     end)
 end

@@ -2,10 +2,11 @@ local extension = {}
 
 extension.Identifier = "paralysisnerf"
 
-extension.CureTime = 60 * 60 * 7 -- 7 minutes
+extension.CureTime = 60 * 7 -- 7 minutes
 
 extension.Init = function ()
     local timer = {}
+    local updateTimer = 0
 
     local function GetParalysisAmount(character)
         local paralysis = character.CharacterHealth.GetAfflictionStrengthByIdentifier("paralysis")
@@ -20,7 +21,13 @@ extension.Init = function ()
         return 0
     end
 
-    Hook.Add("think", "ParalysisNerf", function (...)
+    Hook.Add("think", "ParalysisNerf", function (deltaTime)
+        updateTimer = updateTimer + deltaTime
+        if updateTimer < 0.25 then return end
+
+        local elapsed = updateTimer
+        updateTimer = 0
+
         for _, client in pairs(Client.ClientList) do
             local character = client.Character
             if character then
@@ -29,10 +36,10 @@ extension.Init = function ()
                         timer[character] = 0
                     end
 
-                    timer[character] = timer[character] + 1
+                    timer[character] = timer[character] + elapsed
 
                     if timer[character] > extension.CureTime then -- 7 minutes
-                        character.CharacterHealth.ApplyAffliction(character.AnimController.MainLimb, AfflictionPrefab.Prefabs["paralysis"].Instantiate(-1))
+                        character.CharacterHealth.ApplyAffliction(character.AnimController.MainLimb, AfflictionPrefab.Prefabs["paralysis"].Instantiate(-60 * elapsed))
                     end
                 elseif timer[character] then
                     timer[character] = 0
@@ -45,7 +52,7 @@ extension.Init = function ()
                         affliction = character.CharacterHealth.GetAffliction("slowparalysis", true)
                     end
                     if affliction then
-                        affliction._strength = affliction._strength - 0.05
+                        affliction._strength = affliction._strength - (3 * elapsed)
                     end
                 end
             end
@@ -54,6 +61,7 @@ extension.Init = function ()
 
     Hook.Add("roundEnd", "ParalysisNerf.RoundEnd", function (...)
         timer = {}
+        updateTimer = 0
     end)
 end
 

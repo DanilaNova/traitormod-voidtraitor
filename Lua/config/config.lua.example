@@ -14,9 +14,13 @@ local config = ...
 -- GameVote override examples:
 -- config.GameVote.DurationSeconds = 60
 -- config.GameVote.AttackDefendOutpostName = "Random"
--- config.GameVote.HideMaps = {
---     "#Hide and seek I Big station",
---     "#Hide and seek I in Residence"
--- }
+-- config.GameVote.HideOutpostName = "Random"
+-- HideAndSeekV2 defaults (a selected outpost [traitormod] config has priority):
+-- config.GamemodeConfig.HideAndSeekV2.StartDelayMinutes = 1
+-- config.GamemodeConfig.HideAndSeekV2.RoundDurationMinutes = 6
+-- config.GamemodeConfig.HideAndSeekV2.ClassSelectionTimeoutMinutes = 3
+-- config.GamemodeConfig.HideAndSeekV2.ReconnectGraceSeconds = 60
+-- config.GamemodeConfig.HideAndSeekV2.WinningPointsBlue = 2000
+-- config.GamemodeConfig.HideAndSeekV2.WinningPointsRed = 2000
 
 return config

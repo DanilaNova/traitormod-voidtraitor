@@ -1,10 +1,10 @@
 local event = {}
 
 event.Name = "MechanicMechanicalRepair"
-event.MinRoundTime = 10
+event.MinRoundTime = 1
 event.MinIntensity = 0
 event.MaxIntensity = 1
-event.ChancePerMinute = 0.0005
+event.ChancePerMinute = 0.01
 event.OnlyOncePerRound = true
 
 local mechanicalIdentifiers = {

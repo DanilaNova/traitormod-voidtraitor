@@ -14,7 +14,7 @@ Traitormod.AddCommand("!tc", function(client, args)
         feedback = Traitormod.Language.CommandNotActive
     elseif #args > 0 then
         local msg = ""
-        for word in args do
+        for _, word in ipairs(args) do
             msg = msg .. " " .. word
         end
 
@@ -51,7 +51,7 @@ Traitormod.AddCommand({"!tannounce", "!ta"}, function(client, args)
         feedback = Traitormod.Language.CommandNotActive
     elseif #args > 0 then
         local msg = ""
-        for word in args do
+        for _, word in ipairs(args) do
             msg = msg .. " " .. word
         end
 
@@ -90,7 +90,7 @@ Traitormod.AddCommand("!tdm", function(client, args)
         if #args > 1 then
             local found = Traitormod.FindClient(table.remove(args, 1))
             local msg = ""
-            for word in args do
+            for _, word in ipairs(args) do
                 msg = msg .. " " .. word
             end
             if found then

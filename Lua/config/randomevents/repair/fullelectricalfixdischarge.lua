@@ -1,10 +1,10 @@
 local event = {}
 
 event.Name = "FullElectricalFixDischarge"
-event.MinRoundTime = 10
+event.MinRoundTime = 5
 event.MinIntensity = 0.8
 event.MaxIntensity = 1
-event.ChancePerMinute = 0.0025
+event.ChancePerMinute = 0.025
 event.OnlyOncePerRound = false
 
 local allowedItems = {"junctionbox", "supercapacitor", "battery", "smallpump", "navterminal", "pump", "statusmonitor", "reactor1", "engine", "Largeengine", "shuttleengine"}

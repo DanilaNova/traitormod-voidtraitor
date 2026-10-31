@@ -27,6 +27,8 @@
 ---@field PricePerLimit integer?
 ---@field Limit integer?
 ---@field IsLimitGlobal boolean? default is false
+---@field IsLimitGlobalAcrossCategories boolean? Share the limit between all players and products with the same Identifier in different categories
+---@field CategoryIdentifier string? Internal category identifier used to scope product limits
 ---@field Action ?fun(client: Barotrauma.Networking.Client, product: Pointshop.Product, spawnedItems: Barotrauma.Item[]?, paidPrice: integer)
 ---@field CanBuy ?fun(client: Barotrauma.Networking.Client, product: Pointshop.Product): boolean, Pointshop.ProductBuyFailureReason?
 ---@field Items (string | Pointshop.Item)[]?

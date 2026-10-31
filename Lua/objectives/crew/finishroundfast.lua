@@ -11,7 +11,7 @@ function objective:Start(target)
 end
 
 function objective:IsCompleted()
-    if Traitormod.RoundTime < 60 * 20 then
+    if Traitormod.RoundTime >= 60 * 20 then
         return false
     end
 

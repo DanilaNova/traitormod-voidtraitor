@@ -1,4 +1,40 @@
 local category = {}
+local abilities = dofile(Traitormod.Path .. "/Lua/config/pointshop/utility/abilities.lua")
+
+local function canBuyTurretEvent(eventName, slotIdentifier)
+    if Traitormod.RoundEvents.IsEventActive(eventName) then
+        return false, Traitormod.Language.PointshopCannotBeUsed
+    end
+
+    return abilities.CanBuyTurretAbility(nil, slotIdentifier)
+end
+
+local function markTurretEventTriggered(eventName)
+    if Traitormod.RoundEvents ~= nil and Traitormod.RoundEvents.ThisRoundEvents ~= nil then
+        if Traitormod.RoundEvents.ThisRoundEvents[eventName] == nil then
+            Traitormod.RoundEvents.ThisRoundEvents[eventName] = 0
+        end
+        Traitormod.RoundEvents.ThisRoundEvents[eventName] = Traitormod.RoundEvents.ThisRoundEvents[eventName] + 1
+    end
+
+    if Traitormod.Stats ~= nil and Traitormod.Stats.AddStat ~= nil then
+        pcall(function() Traitormod.Stats.AddStat("EventTriggered", eventName, 1) end)
+    end
+end
+
+local function installTurretFromGhostShop(eventName, turretIdentifier, slotIdentifier)
+    if Traitormod.RoundEvents.IsEventActive(eventName) then
+        return false, Traitormod.Language.PointshopCannotBeUsed
+    end
+
+    local success, reason = abilities.InstallTurret(turretIdentifier, slotIdentifier, Traitormod.GetText("EuropeanForceTurretInstalled"))
+    if not success then
+        return false, reason or Traitormod.Language.PointshopCannotBeUsed
+    end
+
+    markTurretEventTriggered(eventName)
+    return true
+end
 
 category.Identifier = "deathtrigerevent"
 category.Decoration = "huskinvite"
@@ -14,7 +50,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 300,
-        Timeout = 150,
+        Timeout = 60,
 
         RoundPrice = {
             PriceReduction = 750,
@@ -36,7 +72,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 300,
-        Timeout = 150,
+        Timeout = 60,
 
         RoundPrice = {
             PriceReduction = 750,
@@ -58,7 +94,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 600,
-        Timeout = 150,
+        Timeout = 60,
 
         RoundPrice = {
             PriceReduction = 1000,
@@ -80,7 +116,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 600,
-        Timeout = 150,
+        Timeout = 60,
 
         RoundPrice = {
             PriceReduction = 1000,
@@ -102,7 +138,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 200,
-        Timeout = 150,
+        Timeout = 60,
 
         RoundPrice = {
             PriceReduction = 400,
@@ -124,7 +160,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 300,
-        Timeout = 150,
+        Timeout = 60,
 
         RoundPrice = {
             PriceReduction = 750,
@@ -146,7 +182,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 200,
-        Timeout = 150,
+        Timeout = 60,
 
         RoundPrice = {
             PriceReduction = 250,
@@ -168,7 +204,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 1000,
-        Timeout = 150,
+        Timeout = 60,
 
         RoundPrice = {
             PriceReduction = 2350,
@@ -190,7 +226,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 150,
-        Timeout = 150,
+        Timeout = 60,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_captain" },
@@ -216,7 +252,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 200,
-        Timeout = 150,
+        Timeout = 60,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_security" },
@@ -242,7 +278,6 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 350,
-        Timeout = 180,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_security" },
@@ -255,11 +290,11 @@ category.Products = {
             EndTime = 30,
         },
         CanBuy = function ()
-            return not Traitormod.RoundEvents.IsEventActive("SecurityTurretCoilgun")
+            return canBuyTurretEvent("SecurityTurretCoilgun", "turrethardpoint")
         end,
 
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("SecurityTurretCoilgun")
+            return installTurretFromGhostShop("SecurityTurretCoilgun", "coilgun", "turrethardpoint")
         end
     },
 
@@ -269,7 +304,6 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 400,
-        Timeout = 180,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_security" },
@@ -282,11 +316,11 @@ category.Products = {
             EndTime = 30,
         },
         CanBuy = function ()
-            return not Traitormod.RoundEvents.IsEventActive("SecurityTurretChaingun")
+            return canBuyTurretEvent("SecurityTurretChaingun", "turrethardpoint")
         end,
 
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("SecurityTurretChaingun")
+            return installTurretFromGhostShop("SecurityTurretChaingun", "chaingun", "turrethardpoint")
         end
     },
 
@@ -296,7 +330,6 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 450,
-        Timeout = 180,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_security" },
@@ -309,11 +342,11 @@ category.Products = {
             EndTime = 30,
         },
         CanBuy = function ()
-            return not Traitormod.RoundEvents.IsEventActive("SecurityTurretFlakcannon")
+            return canBuyTurretEvent("SecurityTurretFlakcannon", "largeturrethardpoint")
         end,
 
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("SecurityTurretFlakcannon")
+            return installTurretFromGhostShop("SecurityTurretFlakcannon", "flakcannon", "largeturrethardpoint")
         end
     },
 
@@ -323,7 +356,6 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 180,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_security" },
@@ -336,11 +368,11 @@ category.Products = {
             EndTime = 30,
         },
         CanBuy = function ()
-            return not Traitormod.RoundEvents.IsEventActive("SecurityTurretPulseLaser")
+            return canBuyTurretEvent("SecurityTurretPulseLaser", "turrethardpoint")
         end,
 
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("SecurityTurretPulseLaser")
+            return installTurretFromGhostShop("SecurityTurretPulseLaser", "pulselaser", "turrethardpoint")
         end
     },
 
@@ -350,7 +382,6 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 180,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_security" },
@@ -363,11 +394,11 @@ category.Products = {
             EndTime = 30,
         },
         CanBuy = function ()
-            return not Traitormod.RoundEvents.IsEventActive("SecurityTurretDoubleCoilgun")
+            return canBuyTurretEvent("SecurityTurretDoubleCoilgun", "largeturrethardpoint")
         end,
 
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("SecurityTurretDoubleCoilgun")
+            return installTurretFromGhostShop("SecurityTurretDoubleCoilgun", "doublecoilgun", "largeturrethardpoint")
         end
     },
 
@@ -377,7 +408,6 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 180,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_security" },
@@ -390,11 +420,11 @@ category.Products = {
             EndTime = 30,
         },
         CanBuy = function ()
-            return not Traitormod.RoundEvents.IsEventActive("SecurityTurretRailgun")
+            return canBuyTurretEvent("SecurityTurretRailgun", "largeturrethardpoint")
         end,
 
         Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("SecurityTurretRailgun")
+            return installTurretFromGhostShop("SecurityTurretRailgun", "railgun", "largeturrethardpoint")
         end
     },
 
@@ -404,7 +434,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 250,
-        Timeout = 150,
+        Timeout = 60,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_mechanic" },
@@ -426,11 +456,11 @@ category.Products = {
 
     {
         Identifier = "MechanicHullRepair",
-        Price = 1500,
+        Price = 2000,
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 300,
-        Timeout = 150,
+        Timeout = 60,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_mechanic" },
@@ -450,31 +480,6 @@ category.Products = {
         end
     },
 
-    {
-        Identifier = "MechanicSkillBoost",
-        Price = 700,
-        Limit = 2,
-        IsLimitGlobal = true,
-        PricePerLimit = 175,
-        Timeout = 150,
-        Subcategory = {
-            { Identifier = "deathtrigereventabilities" },
-            { Identifier = "abilities_mechanic" },
-        },
-
-        RoundPrice = {
-            PriceReduction = 250,
-            StartTime = 10,
-            EndTime = 20,
-        },
-        CanBuy = function ()
-            return not Traitormod.RoundEvents.IsEventActive("MechanicSkillBoost")
-        end,
-
-        Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("MechanicSkillBoost")
-        end
-    },
 
     {
         Identifier = "EngineerElectricalRepair",
@@ -482,7 +487,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 250,
-        Timeout = 150,
+        Timeout = 60,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_engineer" },
@@ -503,12 +508,38 @@ category.Products = {
     },
 
     {
+        Identifier = "MechanicSkillBoost",
+        Price = 700,
+        Limit = 2,
+        IsLimitGlobal = true,
+        PricePerLimit = 175,
+        Timeout = 60,
+        Subcategory = {
+            { Identifier = "deathtrigereventabilities" },
+            { Identifier = "abilities_mechanic" },
+        },
+
+        RoundPrice = {
+            PriceReduction = 250,
+            StartTime = 10,
+            EndTime = 20,
+        },
+        CanBuy = function ()
+            return not Traitormod.RoundEvents.IsEventActive("MechanicSkillBoost")
+        end,
+
+        Action = function ()
+            Traitormod.RoundEvents.TriggerEvent("MechanicSkillBoost")
+        end
+    },
+
+    {
         Identifier = "EngineerSkillBoost",
         Price = 650,
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 150,
-        Timeout = 150,
+        Timeout = 60,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_engineer" },
@@ -534,7 +565,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 175,
-        Timeout = 150,
+        Timeout = 60,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_medical" },
@@ -560,7 +591,7 @@ category.Products = {
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 175,
-        Timeout = 150,
+        Timeout = 60,
         Subcategory = {
             { Identifier = "deathtrigereventabilities" },
             { Identifier = "abilities_surgeon" },

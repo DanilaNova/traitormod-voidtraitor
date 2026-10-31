@@ -3,8 +3,8 @@ local event = {}
 event.Name = "ReactorShutdown"
 event.MinRoundTime = 10
 event.MinIntensity = 0
-event.MaxIntensity = 1
-event.ChancePerMinute = 0.0005
+event.MaxIntensity = 0.5
+event.ChancePerMinute = 0.01
 event.OnlyOncePerRound = true
 
 local function syncItemComponent(item, component)

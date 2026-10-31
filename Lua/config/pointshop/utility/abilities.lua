@@ -173,7 +173,7 @@ function abilities.CanInstallTurret(slotIdentifier)
     return #getFreeTurretHardpoints(slotIdentifier) > 0
 end
 
-function abilities.InstallTurret(turretIdentifier, slotIdentifier)
+function abilities.InstallTurret(turretIdentifier, slotIdentifier, messageFormat)
     local hardpoints = getFreeTurretHardpoints(slotIdentifier)
     if #hardpoints == 0 then
         return false, Traitormod.Language.AbilityNoTurretSlots
@@ -195,7 +195,11 @@ function abilities.InstallTurret(turretIdentifier, slotIdentifier)
     end
 
     local turretName = prefab.Name and prefab.Name.Value or turretIdentifier
-    Traitormod.RoundEvents.SendEventMessage(string.format(Traitormod.Language.SecurityTurretInstalled, turretName), "GameModeIcon.sandbox", Color.Yellow)
+    local message = Traitormod.Language.SecurityTurretInstalled
+    if messageFormat ~= nil and tostring(messageFormat) ~= "" then
+        message = messageFormat
+    end
+    Traitormod.RoundEvents.SendEventMessage(string.format(message, turretName), "GameModeIcon.sandbox", Color.Yellow)
     return true
 end
 

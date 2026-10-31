@@ -18,7 +18,7 @@ end
 
 event.Start = function ()
     if event.SubmarineID == nil then return end
-    if not Traitormod.SubmarineBuilder.IsActive then return end
+    if not Traitormod.SubmarineBuilder.IsActive() then return end
 
     local submarine = Traitormod.SubmarineBuilder.FindSubmarine(event.SubmarineID)
     event.Submarine = submarine
@@ -67,7 +67,7 @@ event.Start = function ()
     event.Pirates = {}
 
     local crew = {"mechanic", "engineer", "captain", "securityofficer"}
-    for k, v in pairs(crew) do
+    for _, v in pairs(crew) do
         local info = CharacterInfo(Identifier("human"))
         info.Name = "Pirate " .. info.Name
         info.Job = Job(JobPrefab.Get(v), false)
@@ -115,12 +115,11 @@ event.Start = function ()
             character.Inventory.TryPutItem(item, character.Inventory.FindLimbSlot(InvSlotType.InnerClothes), true, false, character)
         end)
 
-        Traitormod.GhostRoles.Ask("Pirate Crew " .. k, function (client)
-            Traitormod.LostLivesThisRound[client.SteamID] = false
-            client.SetClientCharacter(character)
-
-            Traitormod.SendMessageCharacter(character, Traitormod.Language.PirateCrewYou, "InfoFrameTabButton.Mission")
-        end, character)
+        Traitormod.GhostRoles.Create("pirates.crew.member", character, {
+            OnAssigned = function ()
+                Traitormod.SendMessageCharacter(character, Traitormod.Language.PirateCrewYou, "InfoFrameTabButton.Mission")
+            end
+        })
     end
 
     local text = string.format(Traitormod.Language.PirateCrew, event.AmountPoints)

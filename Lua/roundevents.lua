@@ -47,6 +47,23 @@ local function canStartEvent(event)
     return result ~= false
 end
 
+local wrappedEventEnds = {}
+
+local function ensureEventEndCleanup(event)
+    if wrappedEventEnds[event] then return end
+
+    local originalEnd = event.End
+    event.End = function (isRoundEnd)
+        re.OnGoingEvents[event.Name] = nil
+
+        if originalEnd then
+            return originalEnd(isRoundEnd)
+        end
+    end
+
+    wrappedEventEnds[event] = true
+end
+
 ---Triggers event
 ---@param eventName string event.Name field
 re.TriggerEvent = function (eventName)
@@ -78,16 +95,18 @@ re.TriggerEvent = function (eventName)
         return false
     end
 
-    local originalEnd = event.End
-    event.End = function (isRoundEnd)
+    ensureEventEndCleanup(event)
+
+    re.OnGoingEvents[eventName] = event
+
+    local ok, result = pcall(event.Start)
+    if not ok then
         re.OnGoingEvents[eventName] = nil
-        originalEnd(isRoundEnd)
+        Traitormod.Error("Event " .. eventName .. " Start failed: " .. tostring(result))
+        return false
     end
 
     Traitormod.Stats.AddStat("EventTriggered", event.Name, 1)
-
-    re.OnGoingEvents[eventName] = event
-    event.Start()
 
     if re.ThisRoundEvents[eventName] == nil then
         re.ThisRoundEvents[eventName] = 0

@@ -56,7 +56,9 @@ function role:ObjectivesToString()
     local objs = Traitormod.StringBuilder:new()
 
     for _, objective in pairs(self.Objectives) do
-        if objective:IsCompleted() then
+        if objective.Failed then
+            objs:append(" > ", objective.Text, Traitormod.Language.Failed)
+        elseif objective:IsCompleted() then
             objs:append(" > ", objective.Text, Traitormod.Language.Completed)
         else
             objs:append(" > ", objective.Text, string.format(Traitormod.Language.Points, objective.AmountPoints))

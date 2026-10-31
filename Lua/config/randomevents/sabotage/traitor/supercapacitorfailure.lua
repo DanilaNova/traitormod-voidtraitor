@@ -1,10 +1,10 @@
 local event = {}
 
 event.Name = "SupercapacitorFailure"
-event.MinRoundTime = 10
+event.MinRoundTime = 5
 event.MinIntensity = 0
-event.MaxIntensity = 1
-event.ChancePerMinute = 0.0005
+event.MaxIntensity = 0.5
+event.ChancePerMinute = 0.01
 event.OnlyOncePerRound = true
 
 local function getItemIdentifier(item)

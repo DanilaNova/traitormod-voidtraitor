@@ -12,23 +12,14 @@ local function getAfflictionStrength(character, identifier)
     if character == nil or identifier == nil then return 0 end
     if character.CharacterHealth == nil then return 0 end
 
-    local success, strength = pcall(function()
-        return character.CharacterHealth.GetAfflictionStrengthByIdentifier(identifier)
-    end)
-
-    if not success or strength == nil then return 0 end
-    return strength
+    return character.CharacterHealth.GetAfflictionStrengthByIdentifier(identifier)
 end
 
 local function hasSevereLowOxygen(objectiveInstance, character)
     if character == nil or character.Removed then return false end
 
-    local oxygen = nil
-    local success = pcall(function()
-        oxygen = character.Oxygen
-    end)
-
-    if success and oxygen ~= nil and oxygen <= objectiveInstance.SevereOxygenThreshold then
+    local oxygen = character.Oxygen
+    if oxygen <= objectiveInstance.SevereOxygenThreshold then
         return true
     end
 
@@ -49,7 +40,7 @@ function objective:Start(target)
 
     if self.Target == nil then return false end
 
-    self.Text = string.format("Suffocate %s to death.", self.Target.Name)
+    self.Text = string.format(Traitormod.GetText("ObjectiveSuffocateCrew"), self.Target.Name)
 
     return true
 end

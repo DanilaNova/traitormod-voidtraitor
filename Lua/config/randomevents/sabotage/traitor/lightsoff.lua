@@ -1,9 +1,9 @@
 local event = {}
 
 event.Name = "LightsOff"
-event.MinRoundTime = 15
+event.MinRoundTime = 10
 event.MinIntensity = 0
-event.MaxIntensity = 0.1
+event.MaxIntensity = 0.25
 event.ChancePerMinute = 0.0025
 event.OnlyOncePerRound = true
 

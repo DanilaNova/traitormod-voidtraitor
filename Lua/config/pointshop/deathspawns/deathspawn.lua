@@ -7,48 +7,7 @@ category.CanAccess = function(client)
     return client.Character == nil or client.Character.IsDead or not client.Character.IsHuman
 end
 
-local function SpawnCreature(species, client, product, paidPrice, insideHuman)
-    local waypoints = Submarine.MainSub.GetWaypoints(true)
-
-    if LuaUserData.IsTargetType(Game.GameSession.GameMode, "Barotrauma.PvPMode") then
-        waypoints = Submarine.MainSubs[math.random(2)].GetWaypoints(true)
-    end
-
-    local spawnPositions = {}
-
-    if insideHuman then
-        for key, value in pairs(Character.CharacterList) do
-            if value.IsHuman and not value.IsDead and value.TeamID == CharacterTeamType.Team1 then
-                table.insert(spawnPositions, value.WorldPosition)
-            end
-        end
-    else
-        for key, value in pairs(waypoints) do
-            if value.CurrentHull == nil then
-                local walls = Level.Loaded.GetTooCloseCells(value.WorldPosition, 250)
-                if #walls == 0 then
-                    table.insert(spawnPositions, value.WorldPosition)
-                end
-            end
-        end
-    end
-
-    local spawnPosition
-
-    if #spawnPositions == 0 then
-        -- no waypoints? https://c.tenor.com/RgExaLgYIScAAAAC/megamind-megamind-meme.gif
-        spawnPosition = Submarine.MainSub.WorldPosition -- spawn it in the middle of the sub
-
-        Traitormod.Log("Couldnt find any good waypoints, spawning in the middle of the sub.")
-    else
-        spawnPosition = spawnPositions[math.random(#spawnPositions)]
-    end
-
-    Entity.Spawner.AddCharacterToSpawnQueue(species, spawnPosition, function (character)
-        client.SetClientCharacter(character)
-        Traitormod.Pointshop.TrackRefund(client, product, paidPrice)
-    end)
-end
+local SpawnCreature = dofile(Traitormod.Path .. "/Lua/config/pointshop/utility/deathspawncreature.lua")
 
 category.Products = {
     {
@@ -64,6 +23,10 @@ category.Products = {
             StartTime = 10,
             EndTime = 20,
         },
+
+        GuiCreature = "crawler",
+        Icon = "vt_preview_creature_crawler",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("crawler", client, product, paidPrice)
@@ -84,6 +47,10 @@ category.Products = {
             EndTime = 20,
         },
 
+        GuiCreature = "Leucocyte",
+        Icon = "vt_preview_creature_leucocyte",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Leucocyte", client, product, paidPrice)
         end
@@ -102,6 +69,10 @@ category.Products = {
             StartTime = 10,
             EndTime = 20,
         },
+
+        GuiCreature = "legacycrawler",
+        Icon = "vt_preview_creature_legacycrawler",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("legacycrawler", client, product, paidPrice)
@@ -122,6 +93,10 @@ category.Products = {
             EndTime = 10,
         },
 
+        GuiCreature = "crawler_hatchling",
+        Icon = "vt_preview_creature_crawler_hatchling",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("crawler_hatchling", client, product, paidPrice)
         end
@@ -140,6 +115,10 @@ category.Products = {
             StartTime = 10,
             EndTime = 20,
         },
+
+        GuiCreature = "mudraptor_hatchling",
+        Icon = "vt_preview_creature_mudraptor_hatchling",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("mudraptor_hatchling", client, product, paidPrice)
@@ -160,6 +139,10 @@ category.Products = {
             EndTime = 25,
         },
 
+        GuiCreature = "tigerthresher_hatchling",
+        Icon = "vt_preview_creature_tigerthresher_hatchling",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("tigerthresher_hatchling", client, product, paidPrice)
         end
@@ -178,6 +161,10 @@ category.Products = {
             StartTime = 15,
             EndTime = 30,
         },
+
+        GuiCreature = "spineling",
+        Icon = "vt_preview_creature_spineling",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("spineling", client, product, paidPrice)
@@ -198,6 +185,10 @@ category.Products = {
             EndTime = 30,
         },
 
+        GuiCreature = "Spineling_morbusine",
+        Icon = "vt_preview_creature_spineling_morbusine",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Spineling_morbusine", client, product, paidPrice)
         end
@@ -217,6 +208,10 @@ category.Products = {
             EndTime = 35,
         },
 
+        GuiCreature = "mudraptor",
+        Icon = "vt_preview_creature_mudraptor",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("mudraptor", client, product, paidPrice)
         end
@@ -235,6 +230,10 @@ category.Products = {
             StartTime = 20,
             EndTime = 35,
         },
+
+        GuiCreature = "mantis",
+        Icon = "vt_preview_creature_mantis",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("mantis", client, product, paidPrice)
@@ -256,6 +255,10 @@ category.Products = {
             EndTime = 35,
         },
 
+        GuiCreature = "Bonethresher",
+        Icon = "vt_preview_creature_bonethresher",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Bonethresher", client, product, paidPrice)
         end
@@ -275,6 +278,10 @@ category.Products = {
             StartTime = 20,
             EndTime = 40,
         },
+
+        GuiCreature = "Tigerthresher",
+        Icon = "vt_preview_creature_tigerthresher",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Tigerthresher", client, product, paidPrice)
@@ -296,6 +303,10 @@ category.Products = {
             EndTime = 35,
         },
 
+        GuiCreature = "legacymoloch",
+        Icon = "vt_preview_creature_legacymoloch",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("legacymoloch", client, product, paidPrice)
         end
@@ -316,6 +327,10 @@ category.Products = {
             EndTime = 45,
         },
 		
+        GuiCreature = "legacymoloch",
+        Icon = "vt_preview_creature_legacymoloch",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("legacymoloch", client, product, paidPrice)
         end
@@ -335,6 +350,10 @@ category.Products = {
             StartTime = 30,
             EndTime = 45,
         },
+
+        GuiCreature = "Molochblack",
+        Icon = "vt_preview_creature_molochblack",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Molochblack", client, product, paidPrice)
@@ -356,6 +375,10 @@ category.Products = {
             EndTime = 20,
         },
 
+        GuiCreature = "Carrier",
+        Icon = "vt_preview_creature_carrier",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Carrier", client, product, paidPrice)
         end
@@ -375,6 +398,10 @@ category.Products = {
             StartTime = 15,
             EndTime = 35,
         },
+
+        GuiCreature = "hammerhead",
+        Icon = "vt_preview_creature_hammerhead",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("hammerhead", client, product, paidPrice)
@@ -396,6 +423,10 @@ category.Products = {
             EndTime = 45,
         },
 
+        GuiCreature = "Hammerheadmatriarch",
+        Icon = "vt_preview_creature_hammerheadmatriarch",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Hammerheadmatriarch", client, product, paidPrice)
         end
@@ -414,6 +445,10 @@ category.Products = {
             StartTime = 15,
             EndTime = 40,
         },
+
+        GuiCreature = "fractalguardian",
+        Icon = "vt_preview_creature_fractalguardian",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("fractalguardian", client, product, paidPrice)
@@ -435,6 +470,10 @@ category.Products = {
             EndTime = 55,
         },
 
+        GuiCreature = "Spineling_giant",
+        Icon = "vt_preview_creature_spineling_giant",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Spineling_giant", client, product, paidPrice)
         end
@@ -455,6 +494,10 @@ category.Products = {
             EndTime = 40,
         },
 
+        GuiCreature = "Mudraptor_veteran",
+        Icon = "vt_preview_creature_mudraptor_veteran",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Mudraptor_veteran", client, product, paidPrice)
         end
@@ -473,6 +516,10 @@ category.Products = {
             StartTime = 45,
             EndTime = 55,
         },
+
+        GuiCreature = "latcher",
+        Icon = "vt_preview_creature_latcher",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("latcher", client, product, paidPrice)
@@ -493,6 +540,10 @@ category.Products = {
             EndTime = 45,
         },
 		
+        GuiCreature = "Watcher",
+        Icon = "vt_preview_creature_watcher",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("Watcher", client, product, paidPrice)
         end
@@ -512,6 +563,10 @@ category.Products = {
             EndTime = 60,
         },
 
+        GuiCreature = "charybdis",
+        Icon = "vt_preview_creature_charybdis",
+        CloseGuiAfterPurchase = true,
+
         Action = function (client, product, items, paidPrice)
             SpawnCreature("charybdis", client, product, paidPrice)
         end
@@ -530,6 +585,10 @@ category.Products = {
             StartTime = 50,
             EndTime = 60,
         },
+
+        GuiCreature = "endworm",
+        Icon = "vt_preview_creature_endworm",
+        CloseGuiAfterPurchase = true,
 
         Action = function (client, product, items, paidPrice)
             SpawnCreature("endworm", client, product, paidPrice)

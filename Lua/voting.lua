@@ -5,27 +5,26 @@ local textPromptUtils = require("textpromptutils")
 vt.Votes = {}
 vt.GameVote = nil
 vt.MapVote = nil
+vt.GameVoteCooldownUntil = 0
+vt.MapVoteCooldownUntil = 0
 
-local function tryMakeServerSettingsPropertiesAccessible()
-    local ok, descriptor = pcall(LuaUserData.RegisterType, "Barotrauma.Networking.ServerSettings")
-    if not ok or descriptor == nil then return end
+local serverSettingsDescriptor = Descriptors["Barotrauma.Networking.ServerSettings"] or LuaUserData.RegisterType("Barotrauma.Networking.ServerSettings")
+LuaUserData.MakePropertyAccessible(serverSettingsDescriptor, "SelectedOutpostName")
+LuaUserData.MakePropertyAccessible(serverSettingsDescriptor, "HiddenSubs")
 
-    pcall(LuaUserData.MakePropertyAccessible, descriptor, "SelectedOutpostName")
-    pcall(LuaUserData.MakePropertyAccessible, descriptor, "HiddenSubs")
-end
-
-tryMakeServerSettingsPropertiesAccessible()
-
-local SubmarineTags = nil
-pcall(function()
-    SubmarineTags = LuaUserData.CreateEnumTable("Barotrauma.SubmarineTag")
-end)
+local SubmarineTags = LuaUserData.CreateEnumTable("Barotrauma.SubmarineTag")
 
 local function getVoteText(key)
     if Traitormod ~= nil and Traitormod.Language ~= nil and Traitormod.Language[key] ~= nil then
         return Traitormod.Language[key]
     end
     return key
+end
+
+local function notifyGuiVoteChanged()
+    if Traitormod ~= nil and Traitormod.ClientMenu ~= nil and Traitormod.ClientMenu.SendVoteSnapshotEveryone ~= nil then
+        Traitormod.ClientMenu.SendVoteSnapshotEveryone()
+    end
 end
 
 local function getVoteConfig()
@@ -42,6 +41,28 @@ local function getVoteDurationSeconds()
     end
 
     return math.max(1, math.floor(duration))
+end
+
+local function getVoteCooldownSeconds()
+    local cooldown = tonumber(getVoteConfig().CooldownSeconds)
+    if cooldown == nil then return 300 end
+    return math.max(0, math.floor(cooldown))
+end
+
+local function isVoteCooldownBypassed(client)
+    return client == nil or client.HasPermission(ClientPermissions.ConsoleCommands)
+end
+
+local function getVoteCooldownRemaining(voteType, client)
+    if isVoteCooldownBypassed(client) then return 0 end
+
+    local cooldownUntil = voteType == "map" and vt.MapVoteCooldownUntil or vt.GameVoteCooldownUntil
+    return math.max(0, math.ceil((tonumber(cooldownUntil) or 0) - Timer.GetTime()))
+end
+
+local function formatCooldownTime(seconds)
+    seconds = math.max(0, math.ceil(tonumber(seconds) or 0))
+    return string.format("%d:%02d", math.floor(seconds / 60), seconds % 60)
 end
 
 local function isLobbyState()
@@ -88,10 +109,9 @@ end
 
 local function getHiddenSubNamesFromFile()
     for _, filePath in ipairs(getServerSettingsFileCandidates()) do
-        local okExists, exists = pcall(function() return File.Exists(filePath) end)
-        if okExists and exists then
-            local okRead, xml = pcall(function() return File.Read(filePath) end)
-            if okRead and xml ~= nil and xml ~= "" then
+        if File.Exists(filePath) then
+            local xml = File.Read(filePath)
+            if xml ~= nil and xml ~= "" then
                 local hiddenAttr = string.match(xml, 'HiddenSubs%s*=%s*"([^"]*)"')
                 if hiddenAttr ~= nil then
                     local hidden = {}
@@ -110,16 +130,14 @@ end
 local function getHiddenSubNames()
     local hidden = {}
 
-    pcall(function()
-        if Game ~= nil and Game.ServerSettings ~= nil and Game.ServerSettings.HiddenSubs ~= nil then
-            for name in Game.ServerSettings.HiddenSubs do
-                local text = trim(name)
-                if text ~= "" then
-                    hidden[text] = true
-                end
+    if Game ~= nil and Game.ServerSettings ~= nil and Game.ServerSettings.HiddenSubs ~= nil then
+        for name in Game.ServerSettings.HiddenSubs do
+            local text = trim(name)
+            if text ~= "" then
+                hidden[text] = true
             end
         end
-    end)
+    end
 
     local fromFile = getHiddenSubNamesFromFile()
     for name, value in pairs(fromFile) do
@@ -148,17 +166,8 @@ end
 local function markServerSettingsDirty()
     if Game == nil or Game.ServerSettings == nil then return end
 
-    pcall(function()
-        Game.ServerSettings.ServerDetailsChanged = true
-    end)
-
-    pcall(function()
-        Game.ServerSettings:ForcePropertyUpdate()
-    end)
-
-    pcall(function()
-        Game.ServerSettings.ForcePropertyUpdate(Game.ServerSettings)
-    end)
+    Game.ServerSettings.ServerDetailsChanged = true
+    Game.ServerSettings:ForcePropertyUpdate()
 end
 
 local function applyCommonLobbySync()
@@ -289,15 +298,8 @@ local function chooseBestSubmarine(candidates, playerCount)
     return preferredCandidates[math.random(1, #preferredCandidates)]
 end
 
-local function getLowerSafe(value)
-    local ok, text = pcall(function()
-        if type(value) == "function" then
-            return tostring(value() or "")
-        end
-        return tostring(value or "")
-    end)
-    if not ok then return "" end
-    return string.lower(text)
+local function getLower(value)
+    return string.lower(tostring(value or ""))
 end
 
 local function hasWord(text, word)
@@ -308,14 +310,11 @@ end
 local function hasSubTag(sub, tagName)
     if sub == nil or tagName == nil then return false end
 
-    if SubmarineTags ~= nil and SubmarineTags[tagName] ~= nil then
-        local ok, result = pcall(function()
-            return sub:HasTag(SubmarineTags[tagName])
-        end)
-        if ok then return result == true end
+    if SubmarineTags[tagName] ~= nil and sub:HasTag(SubmarineTags[tagName]) then
+        return true
     end
 
-    local lowerTags = getLowerSafe(function() return sub.Tags end)
+    local lowerTags = getLower(sub.Tags)
     if lowerTags == "" then return false end
 
     local normalized = string.gsub(lowerTags, "[%s_%-]+", "")
@@ -323,23 +322,10 @@ local function hasSubTag(sub, tagName)
     return string.find(normalized, wanted, 1, true) ~= nil
 end
 
-local function containsText(list, wantedText)
-    wantedText = trim(wantedText)
-    if wantedText == "" then return false end
-
-    for _, value in ipairs(list or {}) do
-        if trim(value) == wantedText then
-            return true
-        end
-    end
-    return false
-end
-
 local function isForbiddenSecretSub(sub)
     local cfg = getVoteConfig()
 
-    local okCampaign, isCampaignCompatible = pcall(function() return sub.IsCampaignCompatible end)
-    if okCampaign and isCampaignCompatible == false then return true end
+    if not sub.IsCampaignCompatible then return true end
 
     local name = tostring(sub.Name or "")
     if name == "" then return true end
@@ -357,7 +343,7 @@ local function isForbiddenSecretSub(sub)
         end
     end
 
-    local lowerPath = getLowerSafe(function() return sub.FilePath end)
+    local lowerPath = getLower(sub.FilePath)
     if lowerPath ~= "" then
         if hasWord(lowerPath, "/tutorial/") or hasWord(lowerPath, "\\tutorial\\") then return true end
         if hasWord(lowerPath, "/debugonlytest/") or hasWord(lowerPath, "\\debugonlytest\\") then return true end
@@ -375,26 +361,6 @@ local function getEligibleSecretSubs()
         end
     end
     return result
-end
-
-local function getEligibleHideSubs()
-    local cfg = getVoteConfig()
-    local result = {}
-
-    for sub in SubmarineInfo.SavedSubmarines do
-        if sub.IsPlayer and not isHiddenSubmarine(sub) then
-            local name = tostring(sub.Name or "")
-            if containsText(cfg.HideMaps, name) then
-                table.insert(result, sub)
-            end
-        end
-    end
-
-    return result
-end
-
-local function getEligibleAttackDefendSubs()
-    return getEligibleSecretSubs()
 end
 
 local function buildMissionTypeUnion(baseList, extraList)
@@ -452,23 +418,31 @@ end
 
 local function applyHideSelection(playerCount)
     local cfg = getVoteConfig()
-    local submarine = chooseBestSubmarine(getEligibleHideSubs(), playerCount)
+    local submarine = chooseBestSubmarine(getEligibleSecretSubs(), playerCount)
     if submarine == nil then
         return false, getVoteText("GameVoteNoHideMap")
     end
 
-    Game.NetLobbyScreen.SelectedModeIdentifier = cfg.HideModeIdentifier or "mission"
+    Game.NetLobbyScreen.SelectedModeIdentifier = cfg.HideModeIdentifier or "pvp"
     Game.NetLobbyScreen.SelectedSub = submarine
-    Game.ServerSettings.GameModeIdentifier = cfg.HideModeIdentifier or "mission"
+    Game.ServerSettings.GameModeIdentifier = cfg.HideModeIdentifier or "pvp"
     Game.ServerSettings.SelectedSubmarine = tostring(submarine.Name)
     Game.ServerSettings.TraitorProbability = tonumber(cfg.HideTraitorProbability) or 0
+
+    local missionTypes = cfg.HideMissionTypes or {}
+    if cfg.HideKeepSecretMissionTypes ~= false then
+        missionTypes = buildMissionTypeUnion(cfg.SecretMissionTypes, missionTypes)
+    end
+    setMissionTypeList(missionTypes)
+
+    local selectedOutpost = cfg.HideOutpostName or "Random"
+    Game.ServerSettings.SelectedOutpostName = Identifier(selectedOutpost)
 
     applyCommonLobbySync()
 
     return true, string.format(
         getVoteText("GameVoteSelectedHide"),
-        tostring(submarine.Name),
-        getCapacityText(submarine)
+        selectedOutpost
     )
 end
 
@@ -479,7 +453,7 @@ local function applyAttackDefendSelection(playerCount)
         return false, getVoteText("GameVoteApplyFailed")
     end
 
-    local submarine = chooseBestSubmarine(getEligibleAttackDefendSubs(), playerCount)
+    local submarine = chooseBestSubmarine(getEligibleSecretSubs(), playerCount)
     if submarine == nil then
         return false, getVoteText("GameVoteNoAttackDefendSub")
     end
@@ -497,14 +471,7 @@ local function applyAttackDefendSelection(playerCount)
     setMissionTypeList(missionTypes)
 
     local selectedOutpost = cfg.AttackDefendOutpostName or "Random"
-    local setOk = pcall(function()
-        Game.ServerSettings.SelectedOutpostName = Identifier(selectedOutpost)
-    end)
-    if not setOk then
-        pcall(function()
-            Game.ServerSettings.SelectedOutpostName = selectedOutpost
-        end)
-    end
+    Game.ServerSettings.SelectedOutpostName = Identifier(selectedOutpost)
 
     applyCommonLobbySync()
     return true, string.format(
@@ -636,15 +603,18 @@ local function finishGameVote(cancelledText)
     if vote == nil then return end
 
     vt.GameVote = nil
+    vt.GameVoteCooldownUntil = Timer.GetTime() + getVoteCooldownSeconds()
 
     if cancelledText ~= nil then
         Traitormod.SendMessageEveryone(cancelledText)
+        notifyGuiVoteChanged()
         return
     end
 
     local gameVoteModes = getConfiguredGameVoteModes()
     if #gameVoteModes == 0 then
         Traitormod.SendMessageEveryone(getVoteText("GameVoteApplyFailed"))
+        notifyGuiVoteChanged()
         return
     end
 
@@ -685,10 +655,12 @@ local function finishGameVote(cancelledText)
     local success, selectionText = winner.Apply(playerCount)
     if not success then
         Traitormod.SendMessageEveryone(selectionText)
+        notifyGuiVoteChanged()
         return
     end
 
     Traitormod.SendMessageEveryone(selectionText)
+    notifyGuiVoteChanged()
 end
 
 local function finishMapVote(cancelledText)
@@ -696,15 +668,18 @@ local function finishMapVote(cancelledText)
     if vote == nil then return end
 
     vt.MapVote = nil
+    vt.MapVoteCooldownUntil = Timer.GetTime() + getVoteCooldownSeconds()
 
     if cancelledText ~= nil then
         Traitormod.SendMessageEveryone(cancelledText)
+        notifyGuiVoteChanged()
         return
     end
 
     local candidates = vote.Candidates or {}
     if #candidates == 0 then
         Traitormod.SendMessageEveryone(string.format(getVoteText("MapVoteNoCandidates"), tostring(vote.PlayerCount or 0)))
+        notifyGuiVoteChanged()
         return
     end
 
@@ -745,10 +720,12 @@ local function finishMapVote(cancelledText)
     local success, selectionText = applySubmarineSelection(winner)
     if not success then
         Traitormod.SendMessageEveryone(selectionText)
+        notifyGuiVoteChanged()
         return
     end
 
     Traitormod.SendMessageEveryone(selectionText)
+    notifyGuiVoteChanged()
 end
 
 ---@param text string
@@ -828,7 +805,7 @@ Hook.Add("think", "Traitormod.Voting.Think", function()
     end
 end)
 
-vt.StartGameVote = function(client)
+vt.StartGameVote = function(client, silent)
     if not isLobbyState() then
         Traitormod.SendMessage(client, getVoteText("GameVoteLobbyOnly"))
         return true
@@ -836,6 +813,12 @@ vt.StartGameVote = function(client)
 
     if vt.GameVote ~= nil or vt.MapVote ~= nil then
         Traitormod.SendMessage(client, getVoteText("LobbyVoteAlreadyActive"))
+        return true
+    end
+
+    local cooldownRemaining = getVoteCooldownRemaining("game", client)
+    if cooldownRemaining > 0 then
+        Traitormod.SendMessage(client, string.format(getVoteText("GameVoteCooldown"), formatCooldownTime(cooldownRemaining)))
         return true
     end
 
@@ -853,26 +836,31 @@ vt.StartGameVote = function(client)
 
     vt.GameVote = {
         Time = Timer.GetTime() + voteDuration,
+        Duration = voteDuration,
+        GuiId = "game:" .. tostring(Timer.GetTime()),
         StartedBy = client and client.Name or getVoteText("GameVoteStartedByServer"),
         Results = results,
         ClientVotes = {}
     }
 
-    local startedText = string.format(
-        getVoteText("GameVoteStarted"),
-        vt.GameVote.StartedBy,
-        tostring(voteDuration)
-    )
-    Traitormod.SendMessageEveryone(startedText)
+    if not silent then
+        local startedText = string.format(
+            getVoteText("GameVoteStarted"),
+            vt.GameVote.StartedBy,
+            tostring(voteDuration)
+        )
+        Traitormod.SendMessageEveryone(startedText)
 
-    for _, target in pairs(Client.ClientList) do
-        sendVoteOptions(target)
+        for _, target in pairs(Client.ClientList) do
+            sendVoteOptions(target)
+        end
     end
 
+    notifyGuiVoteChanged()
     return true
 end
 
-vt.StartMapVote = function(client)
+vt.StartMapVote = function(client, silent)
     if not isLobbyState() then
         Traitormod.SendMessage(client, getVoteText("GameVoteLobbyOnly"))
         return true
@@ -880,6 +868,12 @@ vt.StartMapVote = function(client)
 
     if vt.GameVote ~= nil or vt.MapVote ~= nil then
         Traitormod.SendMessage(client, getVoteText("LobbyVoteAlreadyActive"))
+        return true
+    end
+
+    local cooldownRemaining = getVoteCooldownRemaining("map", client)
+    if cooldownRemaining > 0 then
+        Traitormod.SendMessage(client, string.format(getVoteText("MapVoteCooldown"), formatCooldownTime(cooldownRemaining)))
         return true
     end
 
@@ -899,6 +893,8 @@ vt.StartMapVote = function(client)
 
     vt.MapVote = {
         Time = Timer.GetTime() + voteDuration,
+        Duration = voteDuration,
+        GuiId = "map:" .. tostring(Timer.GetTime()),
         StartedBy = client and client.Name or getVoteText("GameVoteStartedByServer"),
         Results = results,
         Candidates = candidates,
@@ -906,20 +902,23 @@ vt.StartMapVote = function(client)
         PlayerCount = playerCount
     }
 
-    Traitormod.SendMessageEveryone(string.format(
-        getVoteText("MapVoteStarted"),
-        vt.MapVote.StartedBy,
-        tostring(voteDuration)
-    ))
+    if not silent then
+        Traitormod.SendMessageEveryone(string.format(
+            getVoteText("MapVoteStarted"),
+            vt.MapVote.StartedBy,
+            tostring(voteDuration)
+        ))
 
-    for _, target in pairs(Client.ClientList) do
-        sendMapVoteOptions(target, candidates)
+        for _, target in pairs(Client.ClientList) do
+            sendMapVoteOptions(target, candidates)
+        end
     end
 
+    notifyGuiVoteChanged()
     return true
 end
 
-local function tryHandleIndexedLobbyVote(client, args, voteData, options, getOptionName, acceptedKey, invalidKey)
+local function tryHandleIndexedLobbyVote(client, args, voteData, options, getOptionName, acceptedKey, invalidKey, silentAccepted)
     if voteData == nil then
         return false
     end
@@ -934,7 +933,10 @@ local function tryHandleIndexedLobbyVote(client, args, voteData, options, getOpt
         voteData.ClientVotes[client] = optionId
         voteData.Results[optionId] = (voteData.Results[optionId] or 0) + 1
 
-        Traitormod.SendMessage(client, string.format(getVoteText(acceptedKey), getOptionName(options[optionId])))
+        if not silentAccepted then
+            Traitormod.SendMessage(client, string.format(getVoteText(acceptedKey), getOptionName(options[optionId])))
+        end
+        notifyGuiVoteChanged()
         return true
     end
 
@@ -979,6 +981,138 @@ vt.TryHandleGameVoteCommand = function(client, args)
     end
 
     return false
+end
+
+vt.TryHandleGuiVote = function(client, optionId)
+    local args = { tostring(optionId or "") }
+
+    if vt.GameVote ~= nil then
+        local gameVoteModes = getConfiguredGameVoteModes()
+        return tryHandleIndexedLobbyVote(
+            client,
+            args,
+            vt.GameVote,
+            gameVoteModes,
+            function(option) return option.Text() end,
+            "GameVoteAccepted",
+            "GameVoteInvalidOption",
+            true
+        )
+    end
+
+    if vt.MapVote ~= nil then
+        return tryHandleIndexedLobbyVote(
+            client,
+            args,
+            vt.MapVote,
+            vt.MapVote.Candidates or {},
+            function(option) return tostring(option.Name) end,
+            "MapVoteAccepted",
+            "MapVoteInvalidOption",
+            true
+        )
+    end
+
+    return false
+end
+
+local function buildGuiVoteOption(index, text, votes, selected)
+    return {
+        Index = index,
+        Text = tostring(text or ""),
+        Votes = math.max(0, tonumber(votes or 0) or 0),
+        Selected = selected == true
+    }
+end
+
+local function getRemainingSeconds(vote)
+    if vote == nil or vote.Time == nil then return 0 end
+    return math.max(0, math.ceil(vote.Time - Timer.GetTime()))
+end
+
+local function getGuiStartBlockedReason()
+    if not isLobbyState() then
+        return getVoteText("LobbyVoteLobbyOnly")
+    end
+    if vt.GameVote ~= nil or vt.MapVote ~= nil then
+        return getVoteText("LobbyVoteAlreadyActive")
+    end
+    return ""
+end
+
+vt.HasActiveGuiVote = function()
+    return vt.GameVote ~= nil or vt.MapVote ~= nil
+end
+
+vt.GetGuiSnapshot = function(client)
+    local snapshot = {
+        StartBlockedReason = getGuiStartBlockedReason(),
+        CanStart = isLobbyState() and vt.GameVote == nil and vt.MapVote == nil,
+        GameCooldownRemaining = getVoteCooldownRemaining("game", client),
+        MapCooldownRemaining = getVoteCooldownRemaining("map", client),
+        Active = nil
+    }
+
+    if vt.GameVote ~= nil then
+        local options = {}
+        local modes = getConfiguredGameVoteModes()
+        for index, mode in ipairs(modes) do
+            table.insert(options, buildGuiVoteOption(
+                index,
+                mode.Text(),
+                vt.GameVote.Results[index] or 0,
+                vt.GameVote.ClientVotes[client] == index
+            ))
+        end
+
+        snapshot.Active = {
+            Id = vt.GameVote.GuiId or "game",
+            Type = "game",
+            StartedBy = tostring(vt.GameVote.StartedBy or ""),
+            Remaining = getRemainingSeconds(vt.GameVote),
+            Duration = tonumber(vt.GameVote.Duration or getVoteDurationSeconds()) or 1,
+            Options = options
+        }
+    elseif vt.MapVote ~= nil then
+        local options = {}
+        for index, submarine in ipairs(vt.MapVote.Candidates or {}) do
+            table.insert(options, buildGuiVoteOption(
+                index,
+                string.format("%s (%s)", tostring(submarine.Name or ""), getCapacityText(submarine)),
+                vt.MapVote.Results[index] or 0,
+                vt.MapVote.ClientVotes[client] == index
+            ))
+        end
+
+        snapshot.Active = {
+            Id = vt.MapVote.GuiId or "map",
+            Type = "map",
+            StartedBy = tostring(vt.MapVote.StartedBy or ""),
+            Remaining = getRemainingSeconds(vt.MapVote),
+            Duration = tonumber(vt.MapVote.Duration or getVoteDurationSeconds()) or 1,
+            Options = options
+        }
+    end
+
+    return snapshot
+end
+
+vt.StartGuiVote = function(client, voteType)
+    voteType = string.lower(tostring(voteType or ""))
+    -- votes started from the GUI are still announced in chat, so players without the pack can use !vote
+    if voteType == "game" then
+        return vt.StartGameVote(client, false)
+    elseif voteType == "map" then
+        return vt.StartMapVote(client, false)
+    end
+
+    return true
+end
+
+vt.CastGuiVote = function(client, optionId)
+    optionId = tonumber(optionId)
+    if optionId == nil then return true end
+    return vt.TryHandleGuiVote(client, optionId)
 end
 
 return vt

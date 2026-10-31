@@ -1,4 +1,5 @@
-local upcPirate = dofile(Traitormod.Path .. "/Lua/upcpirate.lua")
+local upcPirate = dofile(Traitormod.Path .. "/Lua/config/randomevents/pirate/utility/upcpirate.lua")
+local eventNPC = dofile(Traitormod.Path .. "/Lua/config/randomevents/utility/eventnpc.lua")
 local event = {}
 
 event.Name = "WreckPirate"
@@ -24,12 +25,14 @@ event.Start = function ()
     end
 
     local wreck = Level.Loaded.Wrecks[1]
+    local spawnPoint = eventNPC.GetSpawnPoint(wreck)
+    if spawnPoint == nil then error("WreckPirate: no interior spawn point") end
 
     local info = CharacterInfo(Identifier("human"))
     info.Name = "Pirate " .. info.Name
     info.Job = Job(JobPrefab.Get("mechanic"), false)
 
-    local character = Character.Create(info, wreck.WorldPosition, info.Name, 0, false, true)
+    local character = Character.Create(info, spawnPoint.WorldPosition, info.Name, 0, false, true)
 
     event.Character = character
     event.Wreck = wreck
@@ -39,11 +42,8 @@ event.Start = function ()
     character.CanSpeak = false
     character.TeamID = CharacterTeamType.Team2
     character.GiveJobItems(false, nil)
-	
-	local orderPrefab = OrderPrefab.Prefabs["wait"]
-	local orderTarget = OrderTarget(wreck.WorldPosition, nil)
-	local order = Order(orderPrefab, orderTarget).WithManualPriority(CharacterInfo.HighestManualOrderPriority-2)
-	character.SetOrder(order, true, false, true)
+
+    eventNPC.Stay(character, wreck)
 
     local idCard = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
     if idCard then
@@ -138,6 +138,7 @@ event.Start = function ()
     end)
 
     Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("pucs"), character.Inventory, nil, nil, function (item)
+        character.Inventory.TryPutItem(item, character.Inventory.FindLimbSlot(InvSlotType.OuterClothes), true, false, character)
         Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("combatstimulantsyringe"), item.OwnInventory)
         Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("oxygenitetank"), item.OwnInventory)
     end)
@@ -145,28 +146,29 @@ event.Start = function ()
     local text = string.format(Traitormod.Language.WreckPirate, event.AmountPoints)
     Traitormod.RoundEvents.SendEventMessage(text, "CrewWalletIconLarge")
 
-    Traitormod.GhostRoles.Ask("Wreck Pirate", function (client)
-        Traitormod.LostLivesThisRound[client.SteamID] = false
-        client.SetClientCharacter(character)
-        local pirateConfig = upcPirate.GetConfig(event)
-		local text = string.format(Traitormod.Language.UPCPirateObjective, event.AmountPointsPirate, pirateConfig.EliminateCrewReward, pirateConfig.CaptureDurationSeconds, pirateConfig.CaptureReward)
-        Traitormod.SendMessageCharacter(character, text, "InfoFrameTabButton.Mission")
-    end, character)
+    Traitormod.GhostRoles.Create("pirates.wreck.pirate", character, {
+        OnAssigned = function ()
+            local pirateConfig = upcPirate.GetConfig(event)
+		    local text = string.format(Traitormod.Language.UPCPirateObjective, event.AmountPointsPirate, pirateConfig.EliminateCrewReward, pirateConfig.CaptureDurationSeconds, pirateConfig.CaptureReward)
+            Traitormod.SendMessageCharacter(character, text, "InfoFrameTabButton.Mission")
+        end
+    })
 
     upcPirate.Start(event)
 
-    Hook.Add("think", "WreckPirate.Think", function ()
+    Hook.Add("think", "WreckPirate.Think", function (deltaTime)
         if character.IsDead then
             event.End()
             return
         end
 
-        upcPirate.Update(event)
+        upcPirate.Update(event, deltaTime)
     end)
 end
 
 
 event.End = function (isEndRound)
+    eventNPC.Release(event.Character)
     upcPirate.Stop(event)
     Hook.Remove("think", "WreckPirate.Think")
 

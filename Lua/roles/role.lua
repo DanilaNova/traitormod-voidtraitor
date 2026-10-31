@@ -39,6 +39,11 @@ end
 
 function role:AssignObjective(objective)
     table.insert(self.Objectives, objective)
+
+    if Traitormod.ObjectiveHud ~= nil then
+        Traitormod.ObjectiveHud.AddObjective(self, objective)
+        Traitormod.ObjectiveHud.SyncRoleLog(self)
+    end
 end
 
 function role:CompletedObjectives(name)
@@ -52,6 +57,8 @@ function role:CompletedObjectives(name)
 end
 
 function role:FindValidTarget(objective)
+    if self.Character.IsDead then return nil end
+
     local targets = {}
     local debug = ""
     for key, value in pairs(Character.CharacterList) do

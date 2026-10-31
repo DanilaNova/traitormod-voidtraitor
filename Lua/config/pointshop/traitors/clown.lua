@@ -164,7 +164,7 @@ category.Products = {
         Limit = 1,
         IsLimitGlobal = false,
         Action = function (client)
-            local logbook = ItemPrefab.GetItemPrefab("logbook")
+            local logbook = ItemPrefab.GetItemPrefab("handheldterminal")
             Entity.Spawner.AddItemToSpawnQueue(logbook, client.Character.Inventory, nil, nil, function (item)
                 item.Description = Traitormod.Language.Pointshop.idcardlocator_desc
                 item.set_InventoryIconColor(Color(255, 0, 0, 255))

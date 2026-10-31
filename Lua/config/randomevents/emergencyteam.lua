@@ -24,7 +24,7 @@ event.Start = function()
     local area = areas[math.random(#areas)]
 
     local crew = {"mechanic", "engineer", "mechanic", "engineer"}
-    for k, v in pairs(crew) do
+    for _, v in pairs(crew) do
         local info = CharacterInfo(Identifier("human"))
 		info.Name = "Emergency " .. info.Name
         info.Job = Job(JobPrefab.Get(v), false)
@@ -57,11 +57,11 @@ event.Start = function()
         local leakOrder = Order(leakOrderPrefab, nil, nil).WithManualPriority(CharacterInfo.HighestManualOrderPriority)
         character.SetOrder(leakOrder, true, false, true)
 		
-        Traitormod.GhostRoles.Ask("Emergency " .. k, function (client)
-            Traitormod.LostLivesThisRound[client.SteamID] = false
-            client.SetClientCharacter(character)
-            Traitormod.SendMessageCharacter(character, Traitormod.Language.EmergencyYou, "InfoFrameTabButton.Mission")
-        end, character)
+        Traitormod.GhostRoles.Create("emergency.member", character, {
+            OnAssigned = function ()
+                Traitormod.SendMessageCharacter(character, Traitormod.Language.EmergencyYou, "InfoFrameTabButton.Mission")
+            end
+        })
     end
 	
     local text = Traitormod.Language.EmergencyTeam

@@ -3,15 +3,24 @@ statistics.stats = {}
 local textPromptUtils = require("textpromptutils")
 
 local ItemsShown = 30 -- Sets how many lines will be shown. Should not be much more than 50
+local spairs
+local playtimeUpdateTimer = 0
 
-if Traitormod.Config.PermanentStatistics and not File.Exists(Traitormod.Path .. "/Lua/stats.json") then
-    File.Write(Traitormod.Path .. "/Lua/stats.json", "{}")
-end 
+Hook.Add("think", "Traitormod.Playtime.think", function(deltaTime)
+    playtimeUpdateTimer = playtimeUpdateTimer + deltaTime
+    if playtimeUpdateTimer < 1 then return end
 
-local json = dofile(Traitormod.Path .. "/Lua/json.lua")
+    local elapsed = playtimeUpdateTimer
+    playtimeUpdateTimer = 0
+
+    for _, client in pairs(Client.ClientList) do
+        Traitormod.AddData(client, "Playtime", elapsed)
+    end
+end)
+
 statistics.LoadData = function ()
     if Traitormod.Config.PermanentStatistics then
-        statistics.stats = json.decode(File.Read(Traitormod.Path .. "/Lua/stats.json")) or {}
+        statistics.stats = Traitormod.ReadJsonFile(Traitormod.Path .. "/Lua/data/stats.json", {})
     else
         statistics.stats = {}
     end
@@ -19,13 +28,22 @@ end
 
 statistics.SaveData = function ()
     if Traitormod.Config.PermanentStatistics then
-        File.Write(Traitormod.Path .. "/Lua/stats.json", json.encode(statistics.stats))
+        Traitormod.WriteJsonFile(Traitormod.Path .. "/Lua/data/stats.json", statistics.stats)
     end
+end
+
+statistics.GetRoundNumber = function ()
+    local rounds = statistics.stats["Rounds"]
+    return math.max(0, math.floor(tonumber(rounds and rounds["Rounds finished"]) or 0))
 end
 
 statistics.SetStat = function (category, key, value)
     if statistics.stats[category] == nil then statistics.stats[category] = {} end
     statistics.stats[category][key] = value
+
+    if category == "Rounds" and key == "Rounds finished" then
+        Traitormod.RoundNumber = statistics.GetRoundNumber()
+    end
 end
 
 statistics.AddStat = function (category, key, value)
@@ -61,7 +79,15 @@ end
 
 statistics.AddClientStat = function(category, client, value)
     if client then
-        statistics.AddListStat(category, client.SteamID, value, client.Name)
+        local accountKey = Traitormod.GetClientAccountKey(client)
+        local legacySteamId = Traitormod.GetClientLegacySteamId(client)
+
+        if legacySteamId ~= nil and legacySteamId ~= accountKey and statistics.stats[category] ~= nil and statistics.stats[category][accountKey] == nil and statistics.stats[category][legacySteamId] ~= nil then
+            statistics.stats[category][accountKey] = statistics.stats[category][legacySteamId]
+            statistics.stats[category][legacySteamId] = nil
+        end
+
+        statistics.AddListStat(category, accountKey, value, client.Name)
     else
         Traitormod.Error("AddClientStat failed for " .. category .. " - Client was null")
     end
@@ -75,7 +101,7 @@ statistics.AddCharacterStat = function(category, character, value)
 end
 
 statistics.ShowStats = function(client, category)
-    local text = "No stats found."
+    local text = Traitormod.GetText("CMDStatsNoStats")
     local elem = statistics.stats[category]
 
     if elem then
@@ -84,7 +110,7 @@ statistics.ShowStats = function(client, category)
             local itemLimit = ItemsShown
             local compare = function(t,a,b) return t[b] < t[a] end
             local isTable = false
-            local topic = category .. " - " .. (Traitormod.Language[category] or "Stats")
+            local topic = category .. " - " .. (Traitormod.Language[category] or Traitormod.GetText("CMDStatsDefaultCategory"))
             text = ""
 
             if elem[firstKey] and type(elem[firstKey]) == "table" and elem[firstKey].Score ~= nil then
@@ -112,21 +138,21 @@ statistics.ShowStats = function(client, category)
     Traitormod.SendMessage(client, text)
 end
 
-Traitormod.AddCommand("!stats", function (client, args)
+statistics.Command = function (client, args)
     if #args > 0 then
         statistics.ShowStats(client, args[1])
     else
-        local text = "Available stats:\n"
+        local text = Traitormod.GetText("CMDStatsAvailable") .. "\n"
 
         if next(statistics.stats) == nil  then
-            text = "No statistics available yet. Go start a round to collect stats."
+            text = Traitormod.GetText("CMDStatsNoneAvailable")
         else
             local options = {}
             if not client.InGame then
                 for key, value in pairs(statistics.stats) do
                     text = text .. "\n>> " .. key
                 end
-                text = text .. "\n\nType '!stats [option]' to show statistics."
+                text = text .. "\n\n" .. Traitormod.GetText("CMDStatsUsage")
             elseif client.HasPermission(ClientPermissions.ConsoleCommands) then
                 -- if in game show convenient prompt
                 for key, value in pairs(statistics.stats) do
@@ -140,7 +166,7 @@ Traitormod.AddCommand("!stats", function (client, args)
                 end)
                 return true
             else
-                text = "Statistics are not available in game. Use this command in the lobby."
+                text = Traitormod.GetText("CMDStatsLobbyOnly")
             end
         end
 
@@ -148,9 +174,9 @@ Traitormod.AddCommand("!stats", function (client, args)
     end
 
     return true
-end)
+end
 
-function spairs(t, order)
+spairs = function(t, order)
     -- collect the keys
     local keys = {}
     for k in pairs(t) do keys[#keys+1] = k end
@@ -174,4 +200,7 @@ function spairs(t, order)
 end
 
 statistics.LoadData()
+Traitormod.RoundNumber = statistics.GetRoundNumber()
 Traitormod.Stats = statistics
+
+return statistics

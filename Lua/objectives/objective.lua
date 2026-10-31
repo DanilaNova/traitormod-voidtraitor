@@ -7,6 +7,7 @@ objective.EndRoundObjective = false
 objective.DontLooseLives = false
 
 objective.Awarded = false
+objective.Failed = false
 
 function objective:Static() end
 
@@ -23,10 +24,6 @@ function objective:IsCompleted()
 end
 
 function objective:TargetPreference(character) return true end
-function objective:CharacterDeath(character) end
-function objective:StopRepairing(item, character) end
-function objective:HullRepaired(item, character) end
-function objective:CharacterHealed(character, healer, healthChange) end
 
 function objective:IsFailed()
     return false
@@ -34,6 +31,11 @@ end
 
 function objective:Award()
     self.Awarded = true
+    self.Failed = false
+
+    if Traitormod.ObjectiveHud ~= nil then
+        Traitormod.ObjectiveHud.CompleteObjective(self.Character, self, false)
+    end
 
     local client = Traitormod.FindClientCharacter(self.Character)
 
@@ -43,26 +45,36 @@ function objective:Award()
         Traitormod.SendObjectiveCompleted(client, self.Text, points, lives)
 
         if self.DontLooseLives then
-            Traitormod.LostLivesThisRound[client.SteamID] = true
+            Traitormod.LostLivesThisRound[Traitormod.GetClientAccountKey(client)] = true
         end
     end
 
     if self.OnAwarded ~= nil then
         self:OnAwarded()
     end
+
+    local role = Traitormod.RoleManager.GetRole(self.Character)
+    if role ~= nil and Traitormod.ObjectiveHud ~= nil then
+        Traitormod.ObjectiveHud.SyncRoleLog(role)
+    end
 end
 
-function objective:Fail()
-    self.Awarded = true
+function objective:Fail(silent)
+    self.Failed = true
+
+    if Traitormod.ObjectiveHud ~= nil then
+        Traitormod.ObjectiveHud.CompleteObjective(self.Character, self, true)
+    end
     
     local client = Traitormod.FindClientCharacter(self.Character)
 
-    if client then 
+    if client and not silent then
         Traitormod.SendObjectiveFailed(client, self.Text)
     end
 
-    if self.OnAwarded ~= nil then
-        self:OnAwarded()
+    local role = Traitormod.RoleManager.GetRole(self.Character)
+    if role ~= nil and Traitormod.ObjectiveHud ~= nil then
+        Traitormod.ObjectiveHud.SyncRoleLog(role)
     end
 end
 

@@ -18,7 +18,7 @@ Traitormod.AddCommand("!helptraitor", function (client, args)
 end)
 
 Traitormod.AddCommand("!version", function (client, args)
-    Traitormod.SendMessage(client, "Running Evil Factory's Traitor Mod v" .. Traitormod.VERSION)
+    Traitormod.SendMessage(client, string.format(Traitormod.Language.CMDVersion, Traitormod.VERSION))
 
     return true
 end)
@@ -33,6 +33,10 @@ Traitormod.AddCommand({"!role", "!traitor"}, function (client, args)
     if role == nil then
         Traitormod.SendMessage(client, Traitormod.Language.CMDNoRole)
     else
+        if Traitormod.ObjectiveHud ~= nil then
+            Traitormod.ObjectiveHud.SyncRole(role)
+        end
+
         Traitormod.SendMessage(client, role:Greet())
     end
 
@@ -116,6 +120,41 @@ Traitormod.AddCommand({"!point", "!points"}, function (client, args)
     return true
 end)
 
+Traitormod.AddCommand("!switchtest", function (client, args)
+    local activePlayers = 0
+    for player in Client.ClientList do
+        if not player.SpectateOnly then
+            activePlayers = activePlayers + 1
+        end
+    end
+
+    local gamemode = Traitormod.SelectedGamemode
+    if activePlayers ~= 1 or not Traitormod.Config.TestMode or gamemode == nil or gamemode.SwitchTestTeam == nil then
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDSwitchTestUnavailable"))
+        return true
+    end
+
+    local teamID = gamemode:SwitchTestTeam(client)
+    if teamID == nil then
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDSwitchTestUnavailable"))
+        return true
+    end
+
+    Traitormod.SendMessage(client, Traitormod.FormatText("CMDSwitchTestChanged", gamemode.Teams[teamID].Name))
+    return true
+end)
+
+Traitormod.AddCommand("!status", function (client, args)
+    if client.Character == nil or client.Character.IsDead then
+        Traitormod.SendMessage(client, Traitormod.Language.StatusAliveRequired)
+        return true
+    end
+
+    Traitormod.SendMessage(client, Traitormod.GetStatusMessage(client.Character))
+
+    return true
+end)
+
 Traitormod.AddCommand("!info", function (client, args)
     Traitormod.SendWelcome(client)
     
@@ -137,12 +176,12 @@ Traitormod.AddCommand("!vote", function (client, args)
 
     if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
     if not client.InGame then
-        Traitormod.SendMessage(client, "You must be in game to use this command.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDInGameToUse"))
         return true
     end
 
     if #args < 3 then
-        Traitormod.SendMessage(client, 'Usage: !vote "Text Here" "Option 1" "Option 2" ... "Option N"')
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDVoteUsage"))
         return true
     end
 
@@ -150,9 +189,9 @@ Traitormod.AddCommand("!vote", function (client, args)
 
     Traitormod.Voting.StartVote(text, args, 25, function(results)
         local message = Traitormod.StringBuilder:new()
-        message("Vote results: %s\n\n", text)
+        message(Traitormod.GetText("CMDVoteResultsHeader"), text)
         for key, value in pairs(results) do
-            message("%s: %s Votes\n", args[key], value)
+            message(Traitormod.GetText("CMDVoteResultsLine"), args[key], value)
         end
 
         for _, target in pairs(Client.ClientList) do
@@ -197,7 +236,10 @@ end)
 
 ----- ADMIN COMMANDS -----
 Traitormod.AddCommand("!alive", function (client, args)
-    if not (client.Character == nil or client.Character.IsDead) and not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
+    if not (client.Character == nil or client.Character.IsDead) and not client.HasPermission(ClientPermissions.ConsoleCommands) then
+        Traitormod.SendMessage(client, Traitormod.Language.CMDAliveDeadOnly)
+        return true
+    end
 
     if not Game.RoundStarted or Traitormod.SelectedGamemode == nil then
         Traitormod.SendMessage(client, Traitormod.Language.RoundNotStarted)
@@ -238,13 +280,27 @@ Traitormod.AddCommand("!roundinfo", function (client, args)
     return true
 end)
 
+Traitormod.AddCommand("!endroundnow", function (client, args)
+    if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
+
+    local selected = Traitormod.SelectedGamemode
+    if not Game.RoundStarted or selected == nil or selected.Name ~= "Secret" or not selected.Ending then
+        Traitormod.SendMessage(client, Traitormod.Language.CommandNotActive)
+        return true
+    end
+
+    selected.AllowRealEndGame = true
+    Game.EndGame()
+    return true
+end)
+
 Traitormod.AddCommand({"!allpoint", "!allpoints"}, function (client, args)
     if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
     
     local messageToSend = ""
 
     for index, value in pairs(Client.ClientList) do
-        messageToSend = messageToSend .. "\n" .. value.Name .. ": " .. math.floor(Traitormod.GetData(value, "Points") or 0) .. " Points - " .. math.floor(Traitormod.GetData(value, "Weight") or 0) .. " Weight"
+        messageToSend = messageToSend .. "\n" .. Traitormod.FormatText("CMDAllPointsLine", value.Name, math.floor(Traitormod.GetData(value, "Points") or 0), math.floor(Traitormod.GetData(value, "Weight") or 0))
     end
 
     Traitormod.SendMessage(client, messageToSend)
@@ -259,7 +315,7 @@ Traitormod.AddCommand({"!addpoint", "!addpoints"}, function (client, args)
     end
     
     if #args < 2 then
-        Traitormod.SendMessage(client, "Incorrect amount of arguments. usage: !addpoint \"Client Name\" 500")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDAddPointUsage"))
 
         return true
     end
@@ -310,7 +366,7 @@ Traitormod.AddCommand({"!addlife", "!addlive", "!addlifes", "!addlives"}, functi
     if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
 
     if #args < 1 then
-        Traitormod.SendMessage(client, "Incorrect amount of arguments. usage: !addlife \"Client Name\" 1")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDAddLifeUsage"))
 
         return true
     end
@@ -329,7 +385,9 @@ Traitormod.AddCommand({"!addlife", "!addlive", "!addlifes", "!addlives"}, functi
 
     local gainLifeClients = {}
     if string.lower(name) == "all" then
-        gainLifeClients = Client.ClientList
+        for lifeClient in Client.ClientList do
+            table.insert(gainLifeClients, lifeClient)
+        end
     else
         local found = Traitormod.FindClient(name)
 
@@ -340,7 +398,7 @@ Traitormod.AddCommand({"!addlife", "!addlive", "!addlifes", "!addlives"}, functi
         table.insert(gainLifeClients, found)
     end
 
-    for lifeClient in gainLifeClients do
+    for _, lifeClient in ipairs(gainLifeClients) do
         local lifeMsg, lifeIcon = Traitormod.AdjustLives(lifeClient, amount)
         local msg = string.format(Traitormod.Language.CMDAdminAddedLives, amount, Traitormod.ClientLogName(lifeClient))
 
@@ -348,7 +406,7 @@ Traitormod.AddCommand({"!addlife", "!addlive", "!addlifes", "!addlives"}, functi
             Traitormod.SendMessage(lifeClient, lifeMsg, lifeIcon)
             Traitormod.SendMessageEveryone(msg)
         else
-            Game.SendDirectChatMessage("", Traitormod.ClientLogName(lifeClient) .. " already has maximum lives.", nil, Traitormod.Config.Error, client)
+            Game.SendDirectChatMessage("", Traitormod.FormatText("CMDAlreadyMaximumLives", Traitormod.ClientLogName(lifeClient)), nil, ChatMessageType.Error, client)
         end
     end
 
@@ -368,7 +426,7 @@ Traitormod.AddCommand("!void", function (client, args)
     end
 
     if target.Character == nil or target.Character.IsDead then
-        Traitormod.SendMessage(client, "Client's character is dead or non-existent.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDCharacterDeadOrMissing"))
         return true
     end
 
@@ -376,7 +434,7 @@ Traitormod.AddCommand("!void", function (client, args)
     target.Character.TeleportTo(Vector2(0, Level.Loaded.Size.Y + 100000))
     target.Character.GodMode = true
 
-    Traitormod.SendMessage(client, "Sent the character to the void.")
+    Traitormod.SendMessage(client, Traitormod.GetText("CMDVoidSent"))
 
     return true
 end)
@@ -392,15 +450,21 @@ Traitormod.AddCommand("!unvoid", function (client, args)
     end
 
     if target.Character == nil or target.Character.IsDead then
-        Traitormod.SendMessage(client, "Client's character is dead or non-existent.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDCharacterDeadOrMissing"))
         return true
     end
 
-    target.Character.TeleportTo(voidPos[target.Character])
+    local originalPosition = voidPos[target.Character]
+    if originalPosition == nil then
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDVoidNotInVoid"))
+        return true
+    end
+
+    target.Character.TeleportTo(originalPosition)
     target.Character.GodMode = false
     voidPos[target.Character] = nil
     
-    Traitormod.SendMessage(client, "Remove character from the void.")
+    Traitormod.SendMessage(client, Traitormod.GetText("CMDVoidRemoved"))
 
     return true
 end)
@@ -413,9 +477,9 @@ Traitormod.AddCommand("!revive", function (client, args)
     if #args > 0 then
         -- if client name is given, revive related character
         local name = table.remove(args, 1)
-        -- find character by client name
+        -- find character by client name or account id
         for player in Client.ClientList do
-            if player.Name == name or player.SteamID == name then
+            if player.Name == name or Traitormod.GetClientAccountKey(player) == name or Traitormod.GetClientLegacySteamId(player) == name then
                 reviveClient = player
             end
         end
@@ -432,13 +496,13 @@ Traitormod.AddCommand("!revive", function (client, args)
             Traitormod.SendMessage(reviveClient, liveMsg, liveIcon)
         end
 
-        Game.SendDirectChatMessage("", "Character of " .. Traitormod.ClientLogName(reviveClient) .. " revived and given back 1 life.", nil, ChatMessageType.Error, client)
-        Traitormod.SendMessageEveryone(string.format("Admin revived %s", Traitormod.ClientLogName(reviveClient)))
+        Game.SendDirectChatMessage("", Traitormod.FormatText("CMDReviveSuccess", Traitormod.ClientLogName(reviveClient)), nil, ChatMessageType.Error, client)
+        Traitormod.SendMessageEveryone(Traitormod.FormatText("CMDReviveAnnounce", Traitormod.ClientLogName(reviveClient)))
 
     elseif reviveClient.Character then
-        Game.SendDirectChatMessage("", "Character of " .. Traitormod.ClientLogName(reviveClient) .. " is not dead.", nil, ChatMessageType.Error, client)
+        Game.SendDirectChatMessage("", Traitormod.FormatText("CMDReviveNotDead", Traitormod.ClientLogName(reviveClient)), nil, ChatMessageType.Error, client)
     else
-        Game.SendDirectChatMessage("", "Character of " .. Traitormod.ClientLogName(reviveClient) .. " not found.", nil, ChatMessageType.Error, client)
+        Game.SendDirectChatMessage("", Traitormod.FormatText("CMDReviveNotFound", Traitormod.ClientLogName(reviveClient)), nil, ChatMessageType.Error, client)
     end
 
     return true
@@ -447,7 +511,7 @@ end)
 Traitormod.AddCommand("!ongoingevents", function (client, args)
     if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
 
-    local text = "On Going Events: "
+    local text = Traitormod.GetText("CMDOngoingEvents")
     for key, value in pairs(Traitormod.RoundEvents.OnGoingEvents) do
         text = text .. "\"" .. value.Name .. "\" "
     end
@@ -461,7 +525,7 @@ Traitormod.AddCommand("!giveghostrole", function (client, args)
     if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
 
     if #args < 2 then
-        Traitormod.SendMessage(client, "Usage: !giveghostrole <ghost role name> <character>")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDGiveGhostRoleUsage"))
         return true
     end
 
@@ -479,11 +543,7 @@ Traitormod.AddCommand("!giveghostrole", function (client, args)
         return true
     end
 
-    Traitormod.GhostRoles.Ask(args[1], function (ghostClient)
-        Traitormod.LostLivesThisRound[ghostClient.SteamID] = false
-
-        ghostClient.SetClientCharacter(target)
-    end, target)
+    Traitormod.GhostRoles.Create("system.manual", target, { Name = args[1] })
 
     return true
 end)
@@ -498,7 +558,7 @@ Traitormod.AddCommand("!assignrolecharacter", function (client, args)
     if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
     
     if #args < 2 then
-        Traitormod.SendMessage(client, "Usage: !assignrole <character> <role>")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDAssignRoleCharacterUsage"))
         return true
     end
 
@@ -517,14 +577,14 @@ Traitormod.AddCommand("!assignrolecharacter", function (client, args)
     end
 
     if target == nil or target.IsDead then
-        Traitormod.SendMessage(client, "Client's character is dead or non-existent.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDCharacterDeadOrMissing"))
         return true
     end
 
     local role = Traitormod.RoleManager.Roles[args[2]]
 
     if role == nil then
-        Traitormod.SendMessage(client, "Couldn't find role to assign.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDAssignRoleNotFound"))
         return true
     end
 
@@ -533,7 +593,7 @@ Traitormod.AddCommand("!assignrolecharacter", function (client, args)
     end
     Traitormod.RoleManager.AssignRole(target, role:new())
 
-    Traitormod.SendMessage(client, "Assigned " .. target.Name .. " the role " .. role.Name .. ".")
+    Traitormod.SendMessage(client, Traitormod.FormatText("CMDAssignRoleSuccess", target.Name, role.Name))
 
     return true
 end)
@@ -542,7 +602,7 @@ Traitormod.AddCommand("!assignrole", function (client, args)
     if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
     
     if #args < 2 then
-        Traitormod.SendMessage(client, "Usage: !assignrole <client> <role>")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDAssignRoleClientUsage"))
         return true
     end
 
@@ -554,14 +614,14 @@ Traitormod.AddCommand("!assignrole", function (client, args)
     end
 
     if target.Character == nil or target.Character.IsDead then
-        Traitormod.SendMessage(client, "Client's character is dead or non-existent.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDCharacterDeadOrMissing"))
         return true
     end
 
     local role = Traitormod.RoleManager.Roles[args[2]]
 
     if role == nil then
-        Traitormod.SendMessage(client, "Couldn't find role to assign.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDAssignRoleNotFound"))
         return true
     end
 
@@ -572,7 +632,7 @@ Traitormod.AddCommand("!assignrole", function (client, args)
     end
     Traitormod.RoleManager.AssignRole(targetCharacter, role:new())
 
-    Traitormod.SendMessage(client, "Assigned " .. target.Name .. " the role " .. role.Name .. ".")
+    Traitormod.SendMessage(client, Traitormod.FormatText("CMDAssignRoleSuccess", target.Name, role.Name))
 
     return true
 end)
@@ -581,7 +641,7 @@ Traitormod.AddCommand("!triggerevent", function (client, args)
     if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
 
     if #args < 1 then
-        Traitormod.SendMessage(client, "Usage: !triggerevent <event name>")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDTriggerEventUsage"))
         return true
     end
 
@@ -593,18 +653,19 @@ Traitormod.AddCommand("!triggerevent", function (client, args)
     end
 
     if event == nil then
-        Traitormod.SendMessage(client, "Event " .. args[1] .. " doesnt exist.")
+        Traitormod.SendMessage(client, Traitormod.FormatText("CMDTriggerEventNotFound", args[1]))
         return true
     end
 
     Traitormod.RoundEvents.TriggerEvent(event.Name)
-    Traitormod.SendMessage(client, "Triggered event " .. event.Name)
+    Traitormod.SendMessage(client, Traitormod.FormatText("CMDTriggerEventSuccess", event.Name))
 
     return true
 end)
 
 Traitormod.AddCommand({"!locatesub", "!locatesubmarine"}, function (client, args)
-    if client.Character == nil or not client.InGame then
+    local mainSub = Submarine.MainSub
+    if client.Character == nil or not client.InGame or mainSub == nil then
         Traitormod.SendMessage(client, Traitormod.Language.CMDAliveToUse)
         return true
     end
@@ -615,7 +676,7 @@ Traitormod.AddCommand({"!locatesub", "!locatesubmarine"}, function (client, args
     end
 
     local center = client.Character.WorldPosition
-    local target = Submarine.MainSub.WorldPosition
+    local target = mainSub.WorldPosition
 
     local distance = Vector2.Distance(center, target) * Physics.DisplayToRealWorldRatio
 
@@ -626,7 +687,7 @@ Traitormod.AddCommand({"!locatesub", "!locatesubmarine"}, function (client, args
     local function degreeToOClock(v)
         local oClock = math.floor(v / 30)
         if oClock == 0 then oClock = 12 end
-        return oClock .. " o'clock"
+        return Traitormod.FormatText("CMDOClock", oClock)
     end
 
     Game.SendDirectChatMessage("", string.format(Traitormod.Language.CMDLocateSub, math.floor(distance), degreeToOClock(angle)), nil, ChatMessageType.Error, client)
@@ -642,12 +703,12 @@ Traitormod.AddCommand({"!monster", "!m"}, function (client, args)
     end
 
     if #args < 1 then
-        Traitormod.SendMessage(client, "Usage: !monster message")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDMonsterUsage"))
         return true
     end
 
     local msg = ""
-    for word in args do
+    for _, word in ipairs(args) do
         msg = msg .. " " .. word
     end
 
@@ -665,7 +726,7 @@ end)
 local preventSpam = {}
 Traitormod.AddCommand({"!droppoints", "!droppoint", "!dropoint", "!dropoints"}, function (client, args)
     if preventSpam[client] ~= nil and Timer.GetTime() < preventSpam[client] then
-        Traitormod.SendMessage(client, "Please wait a bit before using this command again.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDCommandCooldown"))
         return true
     end
 
@@ -675,28 +736,83 @@ Traitormod.AddCommand({"!droppoints", "!droppoint", "!dropoint", "!dropoints"}, 
     end
 
     if #args < 1 then
-        Traitormod.SendMessage(client, "Usage: !droppoints amount")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDDropPointsUsage"))
         return true
     end
 
     local amount = tonumber(args[1])
 
     if amount == nil or amount ~= amount or amount < 100 or amount > 100000 then
-        Traitormod.SendMessage(client, "Please specify a valid number between 100 and 100000.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDDropPointsInvalidAmount"))
         return true
     end
 
     local availablePoints = Traitormod.GetData(client, "Points") or 0
 
     if amount > availablePoints then
-        Traitormod.SendMessage(client, "You don't have enough points to drop.")
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDDropPointsNotEnough"))
         return true
     end
 
-    Traitormod.SpawnPointItem(client.Character.Inventory, tonumber(amount))
-    Traitormod.SetData(client, "Points", availablePoints - amount)
+    if Traitormod.DropPointItem == nil or not Traitormod.DropPointItem(client, amount) then
+        Traitormod.SendMessage(client, Traitormod.GetText("CMDDropPointsFailed"))
+        return true
+    end
 
     preventSpam[client] = Timer.GetTime() + 5
+
+    return true
+end)
+
+----- MODULE COMMANDS -----
+Traitormod.AddCommand({"!pointshop", "!pointsshop", "!ps", "!shop"}, function (client, args)
+    return Traitormod.Pointshop.Command(client, args)
+end)
+
+Traitormod.AddCommand({"!playtime", "!pt"}, function (client, args)
+    Traitormod.SendChatMessage(
+        client,
+        string.format(Traitormod.Language.CMDPlaytime, Traitormod.FormatTime(math.ceil(Traitormod.GetData(client, "Playtime") or 0))),
+        Color.Green
+    )
+    return true
+end)
+
+Traitormod.AddCommand("!stats", function (client, args)
+    if Traitormod.Stats ~= nil and Traitormod.Stats.Command ~= nil then
+        return Traitormod.Stats.Command(client, args)
+    end
+
+    Traitormod.SendMessage(client, Traitormod.GetText("CMDStatsUnavailable"))
+    return true
+end)
+
+Traitormod.AddCommand({"!ghostrole", "!ghostroles"}, function(client, args)
+    return Traitormod.GhostRoles.Command(client, args)
+end)
+
+Traitormod.AddCommand("!welcome", function (client, args)
+    local message = Networking.Start("VoidTraitor_WelcomeMenuOpen")
+    Networking.Send(message, client.Connection)
+    return true
+end)
+
+Traitormod.AddCommand({"!freehandcuffs", "!freehandcuff", "!fhc"}, function (client, args)
+    if client.Character == nil or client.Character.IsDead then
+        Traitormod.SendMessage(client, Traitormod.Language.CMDFreeHandcuffsDead)
+        return true
+    end
+    if not client.Character.IsHuman then return true end
+
+    local item = client.Character.Inventory.GetItemInLimbSlot(InvSlotType.RightHand)
+
+    if item ~= nil and item.Prefab.Identifier == "handcuffs" then
+        if not item.HasTag("fakehandcuffs") then
+            Traitormod.SendMessage(client, Traitormod.Language.CMDFreeHandcuffsNotFake)
+            return true
+        end
+        item.Drop(client.Character)
+    end
 
     return true
 end)

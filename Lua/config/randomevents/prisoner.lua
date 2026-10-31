@@ -59,12 +59,11 @@ event.Start = function ()
     local text = string.format(Traitormod.Language.PrisonerAboard, event.Award)
     Traitormod.RoundEvents.SendEventMessage(text, "GameModeIcon.sandbox", Color.Yellow)
 
-    Traitormod.GhostRoles.Ask("Prisoner", function (client)
-        Traitormod.LostLivesThisRound[client.SteamID] = false
-        client.SetClientCharacter(character)
-
-        Traitormod.SendMessageCharacter(character, string.format(Traitormod.Language.PrisonerYou, event.Award), "InfoFrameTabButton.Mission")
-    end, character)
+    Traitormod.GhostRoles.Create("prisoner.prisoner", character, {
+        OnAssigned = function ()
+            Traitormod.SendMessageCharacter(character, string.format(Traitormod.Language.PrisonerYou, event.Award), "InfoFrameTabButton.Mission")
+        end
+    })
 
     Hook.Add("think", "Prisoner.Think", function ()
         if character.IsDead then

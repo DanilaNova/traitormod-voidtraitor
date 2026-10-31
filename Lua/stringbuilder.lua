@@ -6,7 +6,12 @@ local p = setmetatable({}, {__index=table})
 ---@type string s
 ---@vararg string, format arguments
 function p:format(s, ...)
-    table.insert(self, string.format(type(s) ~= "table" and s or table.concat(s), ...))
+    if s == nil then
+        print("[VoidTraitor] StringBuilder received a nil format string; skipping this fragment")
+        return self
+    end
+
+    table.insert(self, string.format(type(s) == "table" and table.concat(s) or s, ...))
     return self
 end
 

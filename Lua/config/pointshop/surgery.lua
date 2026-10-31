@@ -8,7 +8,7 @@ category.CanAccess = function(client)
 end
 
 local function addItems(items, inventory)
-	for value in items do
+	for _, value in ipairs(items) do
 		if type(value) == "table" then
 			for _ = 1, value[2] do
 				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.Prefabs[value[1]], inventory)

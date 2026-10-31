@@ -1,4 +1,5 @@
-local upcPirate = dofile(Traitormod.Path .. "/Lua/upcpirate.lua")
+local upcPirate = dofile(Traitormod.Path .. "/Lua/config/randomevents/pirate/utility/upcpirate.lua")
+local eventNPC = dofile(Traitormod.Path .. "/Lua/config/randomevents/utility/eventnpc.lua")
 local event = {}
 
 event.Name = "BeaconPirate"
@@ -25,18 +26,17 @@ event.Start = function ()
         return
     end
 
-    local index = 0
+    local spawnPoint = eventNPC.GetSpawnPoint(beacon)
+    if spawnPoint == nil then error("BeaconPirate: no interior spawn point") end
+
     for key, value in pairs(Character.CharacterList) do
         if value.IsHuman and value.TeamID == CharacterTeamType.None and value.Submarine == beacon then
             value.Info.Name = "Pirate " .. value.Info.Name
             value.SetOriginalTeamAndChangeTeam(CharacterTeamType.Team2, true)
             value.CanSpeak = false
+            eventNPC.Stay(value, beacon)
 
-            Traitormod.GhostRoles.Ask("Beacon Pirate Helper " .. index, function (client)
-                Traitormod.LostLivesThisRound[client.SteamID] = false
-                client.SetClientCharacter(value)
-            end, value)
-            index = index + 1
+            Traitormod.GhostRoles.Create("pirates.beacon.helper", value)
         end
     end
 
@@ -53,7 +53,7 @@ event.Start = function ()
     info.Name = "Pirate " .. info.Name
     info.Job = Job(JobPrefab.Get("mechanic"), false)
 
-    local character = Character.Create(info, beacon.WorldPosition, info.Name, 0, false, true)
+    local character = Character.Create(info, spawnPoint.WorldPosition, info.Name, 0, false, true)
     event.Character = character
     event.Beacon = beacon
     event.EnteredMainSub = false
@@ -62,11 +62,8 @@ event.Start = function ()
     character.CanSpeak = false
     character.TeamID = CharacterTeamType.Team2
     character.GiveJobItems(false, nil)
-	
-	local orderPrefab = OrderPrefab.Prefabs["wait"]
-	local orderTarget = OrderTarget(beacon.WorldPosition, nil)
-	local order = Order(orderPrefab, orderTarget).WithManualPriority(CharacterInfo.HighestManualOrderPriority-2)
-	character.SetOrder(order, true, false, true)
+
+    eventNPC.Stay(character, beacon)
 
     local idCard = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
     if idCard then
@@ -158,6 +155,7 @@ event.Start = function ()
     end)
 
     Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("pucs"), character.Inventory, nil, nil, function (item)
+        character.Inventory.TryPutItem(item, character.Inventory.FindLimbSlot(InvSlotType.OuterClothes), true, false, character)
         Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("combatstimulantsyringe"), item.OwnInventory)
         Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.GetItemPrefab("oxygenitetank"), item.OwnInventory)
     end)
@@ -167,28 +165,29 @@ event.Start = function ()
     local text = string.format(Traitormod.Language.BeaconPirate, event.AmountPoints)
     Traitormod.RoundEvents.SendEventMessage(text, "CrewWalletIconLarge")
 
-    Traitormod.GhostRoles.Ask("Beacon Pirate", function (client)
-        Traitormod.LostLivesThisRound[client.SteamID] = false
-        client.SetClientCharacter(character)
-        local pirateConfig = upcPirate.GetConfig(event)
-		local text = string.format(Traitormod.Language.UPCPirateObjective, event.AmountPointsPirate, pirateConfig.EliminateCrewReward, pirateConfig.CaptureDurationSeconds, pirateConfig.CaptureReward)
-        Traitormod.SendMessageCharacter(character, text, "InfoFrameTabButton.Mission")
-    end, character)
+    Traitormod.GhostRoles.Create("pirates.beacon.captain", character, {
+        OnAssigned = function ()
+            local pirateConfig = upcPirate.GetConfig(event)
+		    local text = string.format(Traitormod.Language.UPCPirateObjective, event.AmountPointsPirate, pirateConfig.EliminateCrewReward, pirateConfig.CaptureDurationSeconds, pirateConfig.CaptureReward)
+            Traitormod.SendMessageCharacter(character, text, "InfoFrameTabButton.Mission")
+        end
+    })
 
     upcPirate.Start(event)
 
-    Hook.Add("think", "BeaconPirate.Think", function ()
+    Hook.Add("think", "BeaconPirate.Think", function (deltaTime)
         if character.IsDead then
             event.End()
             return
         end
 
-        upcPirate.Update(event)
+        upcPirate.Update(event, deltaTime)
     end)
 end
 
 
 event.End = function (isEndRound)
+    eventNPC.Release(event.Character)
     upcPirate.Stop(event)
     Hook.Remove("think", "BeaconPirate.Think")
 

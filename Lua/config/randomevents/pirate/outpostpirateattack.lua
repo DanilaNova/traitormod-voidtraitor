@@ -1,5 +1,8 @@
 local event = {}
 
+local peopleInOutpost = 0
+local autoTriggerTimer = 0
+
 event.Name = "OutpostPirateAttack"
 event.MinRoundTime = 0
 event.MinIntensity = 0
@@ -8,7 +11,43 @@ event.ChancePerMinute = 0.015
 event.OnlyOncePerRound = true
 
 event.Init = function()
+    autoTriggerTimer = Timer.GetTime()
+    Hook.Add("think", "OutpostPirateAttack.AutoTrigger", function ()
+        if autoTriggerTimer > Timer.GetTime() then return end
+        if not Game.RoundStarted then return end
 
+        autoTriggerTimer = Timer.GetTime() + 5
+
+        if Traitormod.RoundEvents.IsEventActive(event.Name) then return end
+        if Traitormod.SelectedGamemode == nil or Traitormod.SelectedGamemode.Name ~= "Secret" then return end
+        if not Level.Loaded.EndOutpost then return end
+
+        local playerInOutpost = false
+        local outpost = Level.Loaded.EndOutpost.WorldPosition
+
+        for key, character in pairs(Character.CharacterList) do
+            if character.IsRemotePlayer and character.IsHuman and not character.IsDead and Vector2.Distance(character.WorldPosition, outpost) < 5000 then
+                playerInOutpost = true
+                break
+            end
+        end
+
+        if playerInOutpost then
+            peopleInOutpost = peopleInOutpost + 1
+        end
+
+        if peopleInOutpost > 30 then
+            Traitormod.RoundEvents.TriggerEvent(event.Name)
+        end
+    end)
+
+    Hook.Add("roundEnd", "OutpostPirateAttack.RoundEnd", function ()
+        peopleInOutpost = 0
+    end)
+end
+
+event.CanStart = function()
+    return Level.Loaded ~= nil and Level.Loaded.EndOutpost ~= nil
 end
 
 event.Start = function()
@@ -105,25 +144,35 @@ event.Start = function()
         if timer > Timer.GetTime() then return end
         timer = Timer.GetTime() + 30
 
-        for key, value in pairs(event.Pirates) do
-            local target = getClosetTarget(value.WorldPosition)
+        local alivePirateFound = false
+        for _, pirate in pairs(event.Pirates) do
+            if not pirate.IsDead then
+                alivePirateFound = true
+                local target = getClosetTarget(pirate.WorldPosition)
+                if target == nil then
+                    event.End()
+                    return
+                end
 
-            if target == nil then break end
+                local orderPrefab = OrderPrefab.Prefabs["follow"]
+                local order = Order(orderPrefab, nil, target).WithManualPriority(CharacterInfo.HighestManualOrderPriority)
+                pirate.SetOrder(order, true, false, true)
 
-            local orderPrefab = OrderPrefab.Prefabs["follow"]
-            local order = Order(orderPrefab, nil, target).WithManualPriority(CharacterInfo.HighestManualOrderPriority)
-            value.SetOrder(order, true, false, true)
-
-            if Vector2.Distance(value.WorldPosition, target.WorldPosition) < 50 then
-                value.AIController.AddCombatObjective(AIObjectiveCombat.CombatMode.Offensive, target)
+                if Vector2.Distance(pirate.WorldPosition, target.WorldPosition) < 50 then
+                    pirate.AIController.AddCombatObjective(AIObjectiveCombat.CombatMode.Offensive, target)
+                end
             end
+        end
+
+        if not alivePirateFound then
+            event.End()
         end
     end)
 end
 
 
 event.End = function(isEndRound)
-
+    Hook.Remove("think", "OutpostPirateAttack.Think")
 end
 
 return event

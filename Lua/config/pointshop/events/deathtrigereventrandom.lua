@@ -10,11 +10,11 @@ end
 category.Products = {
     {
         Identifier = "VentCreatures",
-        Price = 2600,
-        Limit = 2,
+        Price = 1200,
+        Limit = 3,
         IsLimitGlobal = true,
         PricePerLimit = 500,
-        Timeout = 180,
+        Timeout = 120,
 
         RoundPrice = {
             PriceReduction = 900,
@@ -32,16 +32,16 @@ category.Products = {
 
     {
         Identifier = "ClownCrateSurprise",
-        Price = 3200,
-        Limit = 2,
+        Price = 800,
+        Limit = 5,
         IsLimitGlobal = true,
         PricePerLimit = 600,
-        Timeout = 180,
+        Timeout = 60,
 
         RoundPrice = {
-            PriceReduction = 1100,
-            StartTime = 20,
-            EndTime = 35,
+            PriceReduction = 600,
+            StartTime = 10,
+            EndTime = 25,
         },
         CanBuy = function ()
             return not Traitormod.RoundEvents.IsEventActive("ClownCrateSurprise")

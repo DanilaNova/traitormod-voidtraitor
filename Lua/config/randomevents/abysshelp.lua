@@ -17,7 +17,7 @@ end
 
 event.Start = function ()
     if event.SubmarineID == nil then return end
-    if not Traitormod.SubmarineBuilder.IsActive then return end
+    if not Traitormod.SubmarineBuilder.IsActive() then return end
 
     local submarine = Traitormod.SubmarineBuilder.FindSubmarine(event.SubmarineID)
     submarine.GodMode = false
@@ -62,6 +62,7 @@ event.Start = function ()
 
     event.Phase = 1
     event.Timer = Timer.GetTime()
+    event.NextClientCheck = 0
 
     Hook.Add("think", "AbyssHelp.Check", function ()
         if character == nil then return end
@@ -106,34 +107,47 @@ event.Start = function ()
             return
         end
 
-        local closestCharacter = nil
+        local currentTime = Timer.GetTime()
 
-        for key, value in pairs(Client.ClientList) do
-            if value.Character ~= nil and not value.Character.IsDead and value.Character.IsHuman and event.Phase == 1 and Vector2.Distance(value.Character.WorldPosition, character.WorldPosition) < 400 and character.CanSpeak then
-                event.Phase = 2
+        if event.Phase == 1 and currentTime >= event.NextClientCheck then
+            event.NextClientCheck = currentTime + 0.25
 
-                character.Speak(string.format(Traitormod.Language.AbyssHelpPart4, points), nil, 0, '', 0)
+            for key, value in pairs(Client.ClientList) do
+                if value.Character ~= nil and not value.Character.IsDead and value.Character.IsHuman and Vector2.Distance(value.Character.WorldPosition, character.WorldPosition) < 400 and character.CanSpeak then
+                    event.Phase = 2
 
-                Timer.Wait(function ()
-                    character.Speak(Traitormod.Language.AbyssHelpPart5, nil, 0, '', 0)
-                end, 4000)
+                    character.Speak(string.format(Traitormod.Language.AbyssHelpPart4, points), nil, 0, '', 0)
 
-                break
-            end
+                    Timer.Wait(function ()
+                        character.Speak(Traitormod.Language.AbyssHelpPart5, nil, 0, '', 0)
+                    end, 4000)
 
-            if event.Phase == 2 and value.Character ~= nil and not value.Character.IsDead and value.Character.IsHuman then
-                if closestCharacter == nil or Vector2.Distance(value.Character.WorldPosition, character.WorldPosition) < Vector2.Distance(closestCharacter.WorldPosition, character.WorldPosition) then
-                    closestCharacter = value.Character
+                    return
                 end
             end
         end
 
-        if event.Phase == 2 and closestCharacter ~= nil and Timer.GetTime() > event.Timer then
-            local orderPrefab = OrderPrefab.Prefabs["follow"]
-            local order = Order(orderPrefab, nil, closestCharacter).WithManualPriority(CharacterInfo.HighestManualOrderPriority)
-            character.SetOrder(order, true, false, true)
+        if event.Phase == 2 and currentTime > event.Timer then
+            local closestCharacter = nil
+            local closestDistance = nil
 
-            event.Timer = Timer.GetTime() + 10
+            for key, value in pairs(Client.ClientList) do
+                if value.Character ~= nil and not value.Character.IsDead and value.Character.IsHuman then
+                    local distance = Vector2.Distance(value.Character.WorldPosition, character.WorldPosition)
+                    if closestDistance == nil or distance < closestDistance then
+                        closestCharacter = value.Character
+                        closestDistance = distance
+                    end
+                end
+            end
+
+            if closestCharacter ~= nil then
+                local orderPrefab = OrderPrefab.Prefabs["follow"]
+                local order = Order(orderPrefab, nil, closestCharacter).WithManualPriority(CharacterInfo.HighestManualOrderPriority)
+                character.SetOrder(order, true, false, true)
+            end
+
+            event.Timer = currentTime + 10
         end
     end)
 end

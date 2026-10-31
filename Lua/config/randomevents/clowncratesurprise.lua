@@ -19,11 +19,7 @@ local clownPetPool = {
 local namedNpcIds = nil
 
 local function isSpeciesAvailable(species)
-    local ok, prefab = pcall(function()
-        return CharacterPrefab.FindBySpeciesName(Identifier(species))
-    end)
-
-    return ok and prefab ~= nil
+    return CharacterPrefab.FindBySpeciesName(Identifier(species)) ~= nil
 end
 
 local function getSpawnPosition()
@@ -45,25 +41,28 @@ local function getSpawnPosition()
     return positions[math.random(#positions)]
 end
 
-local function assignGhostRole(character, roleName)
+local function assignGhostRole(character, identifier, name)
     if character == nil or character.Removed or character.IsDead then
         return
     end
 
-    Traitormod.GhostRoles.Ask(roleName or character.Name, function(client)
-        Traitormod.LostLivesThisRound[client.SteamID] = false
-        client.SetClientCharacter(character)
-    end, character)
+    if identifier == nil then
+        local roleConfig = Traitormod.GhostRoles.GetConfigBySpecies("clowncrate", character.SpeciesName.Value)
+        if roleConfig == nil then return end
+        identifier = roleConfig.FullIdentifier
+    end
+
+    Traitormod.GhostRoles.Create(identifier, character, { Name = name })
 end
 
-local function spawnCreature(species, position, guaranteedGhostRole, randomGhostChance, roleName)
+local function spawnCreature(species, position, guaranteedGhostRole, randomGhostChance)
     Entity.Spawner.AddCharacterToSpawnQueue(species, position, function(character)
         if character == nil then
             return
         end
 
         if guaranteedGhostRole or (randomGhostChance ~= nil and math.random() <= randomGhostChance) then
-            assignGhostRole(character, roleName)
+            assignGhostRole(character)
         end
     end)
 end
@@ -134,7 +133,7 @@ local function spawnNamedNpc(position)
             character.TeamID = CharacterTeamType.FriendlyNPC
             humanPrefab.GiveItems(character, character.Submarine, nil)
             humanPrefab.InitializeCharacter(character)
-            assignGhostRole(character, character.Name)
+            assignGhostRole(character, "clowncrate.npc", character.Name)
         end)
         return true
     end
@@ -144,7 +143,7 @@ local function spawnNamedNpc(position)
     local character = Character.Create(info, position, info.Name, 0, false, true)
     character.TeamID = CharacterTeamType.FriendlyNPC
     character.GiveJobItems(false, nil)
-    assignGhostRole(character, character.Name)
+    assignGhostRole(character, "clowncrate.npc", character.Name)
     return true
 end
 
@@ -169,10 +168,11 @@ local function spawnLoot(crate)
 end
 
 local function chooseMonsterSpecies()
-    local species = monsterPool[math.random(#monsterPool)]
+    local index = math.random(#monsterPool)
+    local species = monsterPool[index]
 
     if math.random() <= 0.10 then
-        local huskSpecies = huskPool[species]
+        local huskSpecies = huskPool[index]
         if huskSpecies ~= nil and isSpeciesAvailable(huskSpecies) then
             species = huskSpecies
         end
@@ -211,12 +211,12 @@ local function openCrate(crate)
 
     if roll <= 0.40 then
         removeCrate()
-        spawnCreature(chooseMonsterSpecies(), position, false, 0.50, "Clown Crate Creature")
+        spawnCreature(chooseMonsterSpecies(), position, false, 0.50)
         Traitormod.RoundEvents.SendEventMessage(Traitormod.Language.ClownCrateMonster, "GameModeIcon.PVP", Color(255, 140, 210, 255))
     elseif roll <= 0.65 then
         local species, guaranteedGhostRole = choosePetSpecies()
         removeCrate()
-        spawnCreature(species, position, guaranteedGhostRole, 0, "Clown Crate Pet")
+        spawnCreature(species, position, guaranteedGhostRole, 0)
         Traitormod.RoundEvents.SendEventMessage(Traitormod.Language.ClownCratePet, "GameModeIcon.PVP", Color(255, 140, 210, 255))
     elseif roll <= 0.75 then
         if spawnNamedNpc(position) then

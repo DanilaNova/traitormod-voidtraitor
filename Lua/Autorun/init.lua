@@ -2,7 +2,7 @@ if CLIENT then return end
 
 ---@class Traitormod
 Traitormod = {}
-Traitormod.VERSION = "2.5.8a"
+Traitormod.VERSION = "2.6.0"
 
 print(">> Traitor Mod VoidTraitor v" .. Traitormod.VERSION)
 print(">> Github Contributors: evilfactory, MassCraxx, Philly-V, Qunk1, mc-oofert, DanilaNova.")

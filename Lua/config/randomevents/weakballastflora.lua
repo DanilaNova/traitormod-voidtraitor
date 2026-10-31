@@ -4,7 +4,7 @@ event.Name = "WeakBallastFlora"
 event.MinRoundTime = 5
 event.MinIntensity = 0
 event.MaxIntensity = 1
-event.ChancePerMinute = 0.02
+event.ChancePerMinute = 0.025
 event.OnlyOncePerRound = true
 
 local function isBallastPump(pump)

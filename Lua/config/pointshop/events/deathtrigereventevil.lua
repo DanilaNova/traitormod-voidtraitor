@@ -183,6 +183,28 @@ category.Products = {
             Traitormod.RoundEvents.TriggerEvent("SuperBallastFlora")
         end
     },
+	
+    {
+        Identifier = "WeakBallastFlora",
+        Price = 1500,
+        Limit = 1,
+        IsLimitGlobal = true,
+        PricePerLimit = 750,
+        Timeout = 180,
+
+        RoundPrice = {
+            PriceReduction = 1400,
+            StartTime = 25,
+            EndTime = 35,
+        },
+        CanBuy = function ()
+            return not Traitormod.RoundEvents.IsEventActive("WeakBallastFlora")
+        end,
+
+        Action = function ()
+            Traitormod.RoundEvents.TriggerEvent("WeakBallastFlora")
+        end
+    },
 
     {
         Identifier = "turnoffcommunications",
@@ -258,7 +280,7 @@ category.Products = {
 
     {
         Identifier = "OxygenSufforin",
-        Price = 3900,
+        Price = 3300,
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 500,
@@ -283,7 +305,7 @@ category.Products = {
 
     {
         Identifier = "OxygenParalyzant",
-        Price = 5400,
+        Price = 3600,
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 700,
@@ -308,7 +330,7 @@ category.Products = {
 
     {
         Identifier = "OxygenMorbusine",
-        Price = 7500,
+        Price = 4000,
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 1000,
@@ -333,7 +355,7 @@ category.Products = {
 
     {
         Identifier = "OxygenCyanide",
-        Price = 9600,
+        Price = 4500,
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 1200,
@@ -358,11 +380,11 @@ category.Products = {
 
     {
         Identifier = "ReactorShutdown",
-        Price = 1500,
+        Price = 1250,
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 300,
-        Timeout = 150,
+        Timeout = 180,
 
         RoundPrice = {
             PriceReduction = 500,
@@ -402,11 +424,11 @@ category.Products = {
 
     {
         Identifier = "JunctionBoxOverload",
-        Price = 9000,
+        Price = 1250,
         Limit = 1,
         IsLimitGlobal = true,
         PricePerLimit = 1000,
-        Timeout = 240,
+        Timeout = 180,
 
         RoundPrice = {
             PriceReduction = 2500,
@@ -423,30 +445,8 @@ category.Products = {
     },
 
     {
-        Identifier = "WeakBallastFlora",
-        Price = 4200,
-        Limit = 1,
-        IsLimitGlobal = true,
-        PricePerLimit = 750,
-        Timeout = 180,
-
-        RoundPrice = {
-            PriceReduction = 1400,
-            StartTime = 25,
-            EndTime = 35,
-        },
-        CanBuy = function ()
-            return not Traitormod.RoundEvents.IsEventActive("WeakBallastFlora")
-        end,
-
-        Action = function ()
-            Traitormod.RoundEvents.TriggerEvent("WeakBallastFlora")
-        end
-    },
-
-    {
         Identifier = "HiddenPirate",
-        Price = 5500,
+        Price = 4500,
         Limit = 2,
         IsLimitGlobal = true,
         PricePerLimit = 500,

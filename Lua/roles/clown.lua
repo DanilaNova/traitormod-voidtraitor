@@ -128,7 +128,9 @@ function role:ObjectivesToString()
         -- AssassinateDrunk objectives are primary
         local buf = objective.Name == MAIN_OBJECTIVE and primary or secondary
 
-        if objective:IsCompleted() or objective.Awarded then
+        if objective.Failed then
+            buf:append(" > ", objective.Text, Traitormod.Language.Failed)
+        elseif objective:IsCompleted() or objective.Awarded then
             buf:append(" > ", objective.Text, Traitormod.Language.Completed)
         else
             buf:append(" > ", objective.Text, string.format(Traitormod.Language.Points, objective.AmountPoints))

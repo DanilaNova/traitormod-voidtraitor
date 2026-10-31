@@ -1,4 +1,3 @@
-local weightedRandom = dofile(Traitormod.Path .. "/Lua/weightedrandom.lua")
 local gm = Traitormod.Gamemodes.Gamemode:new()
 
 gm.Name = "PvP"

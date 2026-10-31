@@ -10,7 +10,7 @@ for prefab in ItemPrefab.Prefabs do
 end
 
 local function addItems(items, inventory)
-	for value in items do
+	for _, value in ipairs(items) do
 		if type(value) == "table" then
 			for _ = 1, value[2] do
 				Entity.Spawner.AddItemToSpawnQueue(ItemPrefab.Prefabs[value[1]], inventory)
@@ -191,10 +191,7 @@ category.Products = {
             character.TeamID = CharacterTeamType.Team1
             character.GiveJobItems(false, nil)
 			
-			Traitormod.GhostRoles.Ask("assistant", function (client)
-			Traitormod.LostLivesThisRound[client.SteamID] = false
-			client.SetClientCharacter(character)
-			end, character)
+			Traitormod.GhostRoles.Create("pointshop.assistant", character)
         end
     },
 }

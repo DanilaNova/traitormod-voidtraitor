@@ -5,12 +5,15 @@ rm.Objectives = {}
 
 rm.RoundRoles = {}
 
+local objectiveCheckTimer = 0.25
+
 rm.FindObjective = function(name)
     return rm.Objectives[name]
 end
 
 rm.RandomObjective = function(allowedObjectives)
     if allowedObjectives == nil then
+        allowedObjectives = {}
         for key, value in pairs(rm.Objectives) do
             table.insert(allowedObjectives, key)
         end
@@ -41,15 +44,17 @@ rm.AddObjective = function(objective)
     objective.Static()
 end
 
-rm.CheckObjectives = function(endRound)
+rm.CheckObjectives = function(endRound, silentFailures)
+    if Traitormod.IsSecretEnding() then return end
+
     for character, role in pairs(rm.RoundRoles) do
         if not character.IsDead and role.Objectives then
             for _, objective in pairs(role.Objectives) do
-                if objective.EndRoundObjective == endRound and not objective.Awarded then
+                if objective.EndRoundObjective == endRound and not objective.Awarded and not objective.Failed then
                     if objective:IsCompleted() then
                         objective:Award()
                     elseif objective:IsFailed() then
-                        objective:Fail()
+                        objective:Fail(silentFailures)
                     end
                 end
             end
@@ -88,18 +93,34 @@ rm.AssignRole = function(character, newRole)
 
     newRole:Init(character)
     newRole:Start()
+
+    if Traitormod.ObjectiveHud ~= nil then
+        Traitormod.ObjectiveHud.SyncRole(newRole)
+    end
 end
 
 rm.TransferRole = function(character, oldRole)
+    if Traitormod.ObjectiveHud ~= nil then
+        Traitormod.ObjectiveHud.ClearRole(oldRole)
+    end
+
     rm.RoundRoles[oldRole.Character] = nil
     rm.RoundRoles[character] = oldRole
 
     oldRole:Transfer(character)
+
+    if Traitormod.ObjectiveHud ~= nil then
+        Traitormod.ObjectiveHud.SyncRole(oldRole)
+    end
 end
 
 rm.RemoveRole = function (character)
     local role = rm.GetRole(character)
     if role == nil then return end
+
+    if Traitormod.ObjectiveHud ~= nil then
+        Traitormod.ObjectiveHud.ClearRole(role)
+    end
 
     role:End()
     rm.RoundRoles[character] = nil
@@ -129,6 +150,10 @@ rm.AssignRoles = function(characters, newRoles)
 
     for i = 1, #characters, 1 do
         newRoles[i]:Start()
+
+        if Traitormod.ObjectiveHud ~= nil then
+            Traitormod.ObjectiveHud.SyncRole(newRoles[i])
+        end
     end
 end
 
@@ -195,10 +220,12 @@ rm.IsSameRole = function (character1, character2)
 end
 
 rm.CallObjectiveFunction = function (functionName, ...)
+    if Traitormod.IsSecretEnding() then return end
+
     for character, role in pairs(rm.RoundRoles) do
         if not character.IsDead and role.Objectives then
             for _, objective in pairs(role.Objectives) do
-                if objective[functionName] then
+                if not objective.Awarded and not objective.Failed and objective[functionName] then
                     objective[functionName](objective, ...)
                 end
             end
@@ -206,8 +233,16 @@ rm.CallObjectiveFunction = function (functionName, ...)
     end
 end
 
-Hook.Add("think", "Traitormod.RoleManager.Think", function()
-    if not Game.RoundStarted then return end
+Hook.Add("think", "Traitormod.RoleManager.Think", function(deltaTime)
+    if not Game.RoundStarted then
+        objectiveCheckTimer = 0.25
+        return
+    end
+
+    objectiveCheckTimer = objectiveCheckTimer + deltaTime
+    if objectiveCheckTimer < 0.25 then return end
+    objectiveCheckTimer = 0
+
     rm.CheckObjectives(false)
 end)
 
@@ -216,13 +251,20 @@ Hook.Add("characterDeath", "Traitormod.RoleManager.CharacterDeath", function(dea
 
     local role = rm.GetRole(deadCharacter)
     if role then
+        if Traitormod.ObjectiveHud ~= nil then
+            Traitormod.ObjectiveHud.ClearRole(role)
+        end
+
         role:End()
     end
 end)
 
 Hook.Patch("Barotrauma.Items.Components.Repairable", "StopRepairing", function (instance, ptable)
-    rm.CallObjectiveFunction("StopRepairing", instance.Item, ptable["character"])
-end)
+    local character = ptable["character"]
+    if instance.CurrentFixer ~= character then return end
+
+    rm.CallObjectiveFunction("StopRepairing", instance.Item, character, instance.CurrentFixerAction)
+end, Hook.HookMethodType.Before)
 
 Hook.Patch("Barotrauma.HumanAIController", "StructureDamaged", function (instance, ptable)
     local damage = ptable["damageAmount"]
@@ -244,6 +286,10 @@ rm.EndRound = function ()
     rm.CheckObjectives(true)
 
     for key, role in pairs(rm.RoundRoles) do
+        if Traitormod.ObjectiveHud ~= nil then
+            Traitormod.ObjectiveHud.ClearRole(role)
+        end
+
         role:End(true)
     end
 

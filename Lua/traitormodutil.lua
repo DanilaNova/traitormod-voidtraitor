@@ -143,12 +143,14 @@ local GAME_VOTE_LEGACY_KEYS = {
     "HideModeIdentifier",
     "HideTraitorProbability",
     "HideMaps",
+    "HideMissionTypes",
+    "HideKeepSecretMissionTypes",
+    "HideOutpostName",
 }
 
 local DISCORD_INLINE_KEYS = {
     "Enabled",
     "DebugResponses",
-    "RoundCounterFile",
     "StateFile",
     "ModeNames",
 }
@@ -171,7 +173,6 @@ local function normalizeLegacyDiscordWebhookConfig(value)
 
     local result = copyMappedKeys(value, {
         DebugResponses = "DebugResponses",
-        RoundCounterFile = "CounterFile",
     })
 
     local presence = copyMappedKeys(value, {
@@ -234,7 +235,7 @@ Traitormod.Patching = loadfile(Traitormod.Path .. "/Lua/xmlpatching.lua")(Traito
 
 Traitormod.Languages = Traitormod.Config.Languages
 Traitormod.DefaultLanguage = Traitormod.Languages[1]
----@module "language.english"
+---@module "language.russian"
 Traitormod.Language = Traitormod.DefaultLanguage
 
 for _, language in pairs(Traitormod.Languages) do
@@ -279,14 +280,89 @@ Traitormod.FormatText = function(key, ...)
         return formatted
     end
 
+    if Traitormod.Error ~= nil then
+        Traitormod.Error("Failed to format language key " .. tostring(key) .. ": " .. tostring(formatted))
+    end
     return text
 end
 
 local json = dofile(Traitormod.Path .. "/Lua/json.lua")
 
+Traitormod.GetClientLegacySteamId = function(client)
+    if client == nil then return nil end
+
+    local steamId = tostring(client.SteamID or "")
+    if steamId == "" or steamId == "0" then
+        return nil
+    end
+
+    return steamId
+end
+
+Traitormod.GetClientAccountKey = function(client)
+    if client == nil then return nil end
+
+    if client.AccountId ~= nil then
+        return tostring(client.AccountId)
+    end
+
+    return Traitormod.GetClientLegacySteamId(client) or ("UNAUTHENTICATED_SESSION_" .. tostring(client.SessionId))
+end
+
+Traitormod.ReadJsonFile = function(path, fallback)
+    fallback = fallback or {}
+
+    if not File.Exists(path) then
+        Traitormod.WriteJsonFile(path, fallback)
+        return fallback
+    end
+
+    local ok, result = pcall(json.decode, File.Read(path))
+    if ok and type(result) == "table" then
+        return result
+    end
+
+    local corruptPath = path .. ".corrupt"
+    local suffix = 1
+    while File.Exists(corruptPath) do
+        corruptPath = path .. ".corrupt." .. suffix
+        suffix = suffix + 1
+    end
+    File.Move(path, corruptPath)
+    Traitormod.Error("Failed to decode JSON file " .. tostring(path) .. ". Corrupt data moved to " .. tostring(corruptPath) .. ": " .. tostring(result))
+    Traitormod.WriteJsonFile(path, fallback)
+    return fallback
+end
+
+Traitormod.WriteJsonFile = function(path, value)
+    local temporaryPath = path .. ".tmp"
+    File.Write(temporaryPath, json.encode(value or {}))
+    File.Move(temporaryPath, path)
+end
+
+local function getRemoteAccount(client)
+    return Traitormod.GetClientLegacySteamId(client) or Traitormod.GetClientAccountKey(client)
+end
+
+local function getClientDataKey(client)
+    local accountKey = Traitormod.GetClientAccountKey(client)
+    if Traitormod.ClientData[accountKey] ~= nil then
+        return accountKey
+    end
+
+    local legacySteamId = Traitormod.GetClientLegacySteamId(client)
+    if legacySteamId ~= nil and legacySteamId ~= accountKey and Traitormod.ClientData[legacySteamId] ~= nil then
+        Traitormod.ClientData[accountKey] = Traitormod.ClientData[legacySteamId]
+        Traitormod.ClientData[legacySteamId] = nil
+    end
+
+    return accountKey
+end
+
 Traitormod.LoadRemoteData = function (client, loaded)
+    local account = getRemoteAccount(client)
     local data = {
-        Account = client.SteamID,
+        Account = account,
     }
 
     for key, value in pairs(Traitormod.Config.RemoteServerAuth) do
@@ -302,7 +378,7 @@ Traitormod.LoadRemoteData = function (client, loaded)
 
         if result.Points then
             local originalPoints = Traitormod.GetData(client, "Points") or 0
-            Traitormod.Log("Retrieved points from server for " .. client.SteamID .. ": " .. originalPoints .. " -> " .. result.Points)
+            Traitormod.Log("Retrieved points from server for " .. account .. ": " .. originalPoints .. " -> " .. result.Points)
             Traitormod.SetData(client, "Points", result.Points)
         end
 
@@ -311,14 +387,15 @@ Traitormod.LoadRemoteData = function (client, loaded)
 end
 
 Traitormod.PublishRemoteData = function (client)
+    local account = getRemoteAccount(client)
     local data = {
-        Account = client.SteamID,
+        Account = account,
         Points = Traitormod.GetData(client, "Points")
     }
 
     if data.Points == nil then return end
 
-    Traitormod.Log("Published points from server for " .. client.SteamID .. ": " .. data.Points)
+    Traitormod.Log("Published points from server for " .. account .. ": " .. data.Points)
 
     for key, value in pairs(Traitormod.Config.RemoteServerAuth) do
         data[key] = value
@@ -328,13 +405,14 @@ Traitormod.PublishRemoteData = function (client)
 end
 
 Traitormod.NewClientData = function (client)
-    Traitormod.ClientData[client.SteamID] = {}
-    Traitormod.ClientData[client.SteamID]["Points"] = Traitormod.Config.StartPoints
+    local accountKey = Traitormod.GetClientAccountKey(client)
+    Traitormod.ClientData[accountKey] = {}
+    Traitormod.ClientData[accountKey]["Points"] = Traitormod.Config.StartPoints
 end
 
 Traitormod.LoadData = function ()
     if Traitormod.Config.PermanentPoints then
-        Traitormod.ClientData = json.decode(File.Read(Traitormod.Path .. "/Lua/data.json")) or {}
+        Traitormod.ClientData = Traitormod.ReadJsonFile(Traitormod.Path .. "/Lua/data/data.json", {})
     else
         Traitormod.ClientData = {}
     end
@@ -342,7 +420,7 @@ end
 
 Traitormod.SaveData = function ()
     if Traitormod.Config.PermanentPoints then
-        File.Write(Traitormod.Path .. "/Lua/data.json", json.encode(Traitormod.ClientData))
+        Traitormod.WriteJsonFile(Traitormod.Path .. "/Lua/data/data.json", Traitormod.ClientData)
     end
 end
 
@@ -354,20 +432,34 @@ Traitormod.GetMasterData = function (name)
     return Traitormod.ClientData[name]
 end
 
+Traitormod.IsSecretEnding = function ()
+    return Traitormod.SelectedGamemode ~= nil
+        and Traitormod.SelectedGamemode.Name == "Secret"
+        and Traitormod.SelectedGamemode.Ending == true
+end
+
 Traitormod.SetData = function (client, name, amount)
-    if Traitormod.ClientData[client.SteamID] == nil then 
+    local accountKey = getClientDataKey(client)
+    if Traitormod.ClientData[accountKey] == nil then
         Traitormod.NewClientData(client)
     end
 
-    Traitormod.ClientData[client.SteamID][name] = amount
+    Traitormod.ClientData[accountKey][name] = amount
+    if name == "Points" and Traitormod.Pointshop ~= nil and Traitormod.Pointshop.NotifyGuiBalanceChanged ~= nil then
+        Traitormod.Pointshop.NotifyGuiBalanceChanged(client)
+    end
+    if name == "Points" and Traitormod.GhostRoles ~= nil and Traitormod.GhostRoles.NotifyGuiBalanceChanged ~= nil then
+        Traitormod.GhostRoles.NotifyGuiBalanceChanged(client)
+    end
 end
 
 Traitormod.GetData = function (client, name)
-    if Traitormod.ClientData[client.SteamID] == nil then 
+    local accountKey = getClientDataKey(client)
+    if Traitormod.ClientData[accountKey] == nil then
         Traitormod.NewClientData(client)
     end
 
-    return Traitormod.ClientData[client.SteamID][name]
+    return Traitormod.ClientData[accountKey][name]
 end
 
 Traitormod.AddData = function(client, name, amount)
@@ -376,7 +468,7 @@ end
 
 Traitormod.FindClient = function (name)
     for key, value in pairs(Client.ClientList) do
-        if value.Name == name or tostring(value.SteamID) == name then
+        if value.Name == name or Traitormod.GetClientAccountKey(value) == name or Traitormod.GetClientLegacySteamId(value) == name then
             return value
         end
     end
@@ -434,7 +526,7 @@ Traitormod.SendMessageCharacter = function (character, text, icon)
     local client = Traitormod.FindClientCharacter(character)
 
     if client == nil then
-        Traitormod.Error("SendMessageCharacter() Client is null, ", character.name, " ", text)
+        Traitormod.Error("SendMessageCharacter() Client is null, character=%s, text=%s", tostring(character.Name), tostring(text))
         return
     end
 
@@ -445,6 +537,25 @@ Traitormod.MissionIdentifier =  "easterbunny" -- can be any defined Traitor miss
 Traitormod.SendTraitorMessageBox = function (client, text, icon)
     --Game.SendTraitorMessage(client, text, icon or Traitormod.MissionIdentifier, TraitorMessageType.ServerMessageBox);
     Game.SendDirectChatMessage("", text, nil, Traitormod.Config.ChatMessageType, client)
+end
+
+Traitormod.SendVanillaTraitorState = function(client)
+    if client == nil or client.Connection == nil then return end
+
+    local message = Networking.Start()
+    message.WriteByte(Byte(ServerPacketHeader.TRAITOR_MESSAGE))
+    message.WriteByte(Byte(0))
+    message.WriteIdentifier(Identifier("saboteur"))
+    Networking.Send(message, client.Connection, DeliveryMethod.Reliable)
+end
+
+local setHighlightEventData = LuaUserData.CreateStatic("Barotrauma.Item+SetHighlightEventData", true)
+
+Traitormod.SetClientItemHighlight = function(client, item, highlighted)
+    if client == nil or item == nil or item.Removed then return end
+
+    -- the table is converted to the IEnumerable<Client> the event data expects
+    Networking.CreateEntityEvent(item, setHighlightEventData.__new(highlighted == true, Color(255, 165, 0, 255), { client }))
 end
 
 -- set character traitor to enable sabotage, set mission objective text then sync with session
@@ -536,15 +647,18 @@ end
 ---@param callback fun(client: Barotrauma.Networking.Client, args: string[]): boolean?
 Traitormod.AddCommand = function (commandName, callback)
     if type(commandName) == "table" then
-        for command in commandName do
+        for _, command in ipairs(commandName) do
             Traitormod.AddCommand(command, callback)
         end
-    else
-        local cmd = {}
-    
-        Traitormod.Commands[string.lower(commandName)] = cmd
-        cmd.Callback = callback;
+        return
     end
+
+    local key = string.lower(tostring(commandName or ""))
+    if key == "" then return end
+
+    Traitormod.Commands[key] = {
+        Callback = callback,
+    }
 end
 
 Traitormod.RemoveCommand = function (commandName)
@@ -563,24 +677,20 @@ Traitormod.Debug = function (message)
 end
 
 Traitormod.Error = function (message, ...)
-    Game.Log("[TraitorMod-Error] " .. message, 9)
-    
-    if Traitormod.Config.DebugLogs then
-        printerror(string.format(message, ...))
-    end
-end
-
-Traitormod.AllCrewMissionsCompleted = function (missions)
-    if not missions then
-        if Game.GameSession == nil or Game.GameSession.Missions == nil then return end
-        missions = Game.GameSession.Missions
-    end
-    for key, value in pairs(missions) do
-        if not value.Completed then
-            return false
+    local formatted = tostring(message)
+    if select("#", ...) > 0 then
+        local ok, result = pcall(string.format, formatted, ...)
+        if ok then
+            formatted = result
+        else
+            formatted = formatted .. " [format error: " .. tostring(result) .. "]"
         end
     end
-    return true
+
+    Game.Log("[TraitorMod-Error] " .. formatted, 9)
+    if Traitormod.Config.DebugLogs then
+        printerror(formatted)
+    end
 end
 
 Traitormod.LoadExperience = function (client)
@@ -612,19 +722,22 @@ Traitormod.GiveExperience = function (character, amount, isMissionXP)
 end
 
 Traitormod.AwardPoints = function (client, amount, isMissionXP)
+    if Traitormod.IsSecretEnding() then return 0 end
     if not Traitormod.Config.TestMode then
         Traitormod.AddData(client, "Points", amount)
         Traitormod.Stats.AddClientStat("PointsGained", client, amount)
         Traitormod.Log(string.format("Client %s was awarded %d points.", Traitormod.ClientLogName(client), math.floor(amount)))
         if Traitormod.SelectedGamemode and Traitormod.SelectedGamemode.AwardedPoints then
-            local oldValue = Traitormod.SelectedGamemode.AwardedPoints[client.SteamID] or 0
-            Traitormod.SelectedGamemode.AwardedPoints[client.SteamID] = oldValue + amount
+            local accountKey = Traitormod.GetClientAccountKey(client)
+            local oldValue = Traitormod.SelectedGamemode.AwardedPoints[accountKey] or 0
+            Traitormod.SelectedGamemode.AwardedPoints[accountKey] = oldValue + amount
         end
     end
     return amount
 end
 
 Traitormod.AdjustLives = function (client, amount)
+    if Traitormod.IsSecretEnding() then return end
     if not amount or amount == 0 then
         return
     end
@@ -710,8 +823,9 @@ Traitormod.ClientLogName = function(client, name)
     if name == nil then name = client.Name end
 
     name = string.gsub(name, "%‖", "")
+    local accountKey = string.gsub(Traitormod.GetClientAccountKey(client), "%‖", "")
 
-    local log = "‖metadata:" .. client.SteamID .. "‖" .. name .. "‖end‖"
+    local log = "‖metadata:" .. accountKey .. "‖" .. name .. "‖end‖"
     return log
 end
 
@@ -776,7 +890,10 @@ Traitormod.ParseSubmarineConfig = function (description)
     local configString = string.sub(description, endIndex + 1)
     local success, result = pcall(json.decode, configString)
 
-    if not success then return {} end
+    if not success or type(result) ~= "table" then
+        Traitormod.Error("Failed to parse [traitormod] submarine config: " .. tostring(result))
+        return {}
+    end
 
     return result
 end
